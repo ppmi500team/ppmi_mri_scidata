@@ -1,0 +1,89 @@
+---
+title: "Multiple modality PPMI MRI data"
+author:
+  - Brian B. Avants^1,†^
+  - Olivia Hampton^2,†^
+  - Leon Fonville^1,2^
+  - Xue Fonville^1,2^
+  - Roger Gunn^2,*^
+affiliation:
+  - "1: Affiliation, department, city, postcode, country"
+  - "2: Affiliation, department, city, postcode, country"
+corresponding_author: "Derek Author (corresponding.author@email.example)"
+contributed_equally: "† these authors contributed equally to this work"
+output: 
+  pdf_document:
+    keep_tex: true
+    template: null
+    citation_package: natbib
+bibliography: sample.bib
+header-includes:
+  - \usepackage{jabbrv}
+linenumbers: true
+---
+
+# Abstract
+
+This is a manuscript template for Data Descriptor submissions to *Scientific Data* ([http://www.nature.com/scientificdata](http://www.nature.com/scientificdata)). The abstract must be no longer than 170 words, and should succinctly describe the study, the assay(s) performed, the resulting data, and the reuse potential, but should not make any claims regarding new scientific findings. No references are allowed in this section.
+
+# Background & Summary
+
+(700 words maximum) An overview of the study design, the assay(s) performed, and the created data, including any background information needed to put this study in the context of previous work and the literature. ...
+
+# Methods
+
+The Methods should include detailed text describing any steps or procedures used in producing the data...
+
+## Subsection
+
+Example text under a subsection. Bulleted lists may be used where appropriate, e.g.
+
+- First item
+- Second item
+
+### Third-level section
+
+Topical subheadings are allowed.
+
+# Data Records
+
+...
+
+# Technical Validation
+
+...
+
+# Usage Notes
+
+...
+
+# Code availability
+
+...
+
+# Acknowledgements
+
+Acknowledgements should be brief...
+
+# Author contributions statement
+
+...
+
+# Competing interests
+
+...
+
+# Figures & Tables
+
+Figures, tables, and their legends, should be included in the appropriate section of the document. Figures and tables can be referenced using Markdown syntax.
+
+<!-- ![](stream.png)-->
+Figure: Legend (350 words max). Example legend text.
+
+| Condition | n  | p     |
+|-----------|----|-------|
+| A         | 5  | 0.1   |
+| B         | 10 | 0.01  |
+Table: Legend (350 words max). Example legend text.
+
+
