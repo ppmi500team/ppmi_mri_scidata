@@ -1,1 +1,9 @@
-./src/*pdf
+src/ppmi_sci_data.pdf
+src/stream.jpg
+src/jabbrv-ltwa-all.ldf
+src/jabbrv-ltwa-en.ldf
+src/main.tex
+src/ppmi_sci_data.aux
+src/ppmi_sci_data.bib
+src/ppmi_sci_data.log
+src/ppmi_sci_data.tex

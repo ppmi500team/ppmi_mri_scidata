@@ -16,7 +16,7 @@ output:
     keep_tex: true
     template: null
     citation_package: natbib
-bibliography: sample.bib
+bibliography: ppmi_sci_data.bib
 header-includes:
   - \usepackage{jabbrv}
 linenumbers: true
@@ -77,7 +77,7 @@ Acknowledgements should be brief...
 
 Figures, tables, and their legends, should be included in the appropriate section of the document. Figures and tables can be referenced using Markdown syntax.
 
-<!-- ![](stream.png)-->
+![](stream.jpg)
 Figure: Legend (350 words max). Example legend text.
 
 | Condition | n  | p     |
