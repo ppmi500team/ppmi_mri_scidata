@@ -1,10 +1,13 @@
 ---
-title: "Multiple modality PPMI MRI data"
+title: "Enhancing Parkinson's Disease Analysis with Tabulated Multi-Modality MRI from PPMI"
 author:
   - Brian B. Avants^1,†^
-  - Olivia Hampton^2,†^
+  - Lino Becerra^1,2^
   - Leon Fonville^1,2^
-  - Xue Fonville^1,2^
+  - Olivia Hampton^2,†^
+  - Alex Reardon^2,†^
+  - Nicohlas J. Tustison^2,†^
+  - Xue Wang^1,2^
   - Roger Gunn^2,*^
 affiliation:
   - "1: Affiliation, department, city, postcode, country"
@@ -16,6 +19,7 @@ output:
     keep_tex: true
     template: null
     citation_package: natbib
+biblio-style: naturemag-doi
 bibliography: ppmi_sci_data.bib
 header-includes:
   - \usepackage{jabbrv}
@@ -24,7 +28,11 @@ linenumbers: true
 
 # Abstract
 
-This is a manuscript template for Data Descriptor submissions to *Scientific Data* ([http://www.nature.com/scientificdata](http://www.nature.com/scientificdata)). The abstract must be no longer than 170 words, and should succinctly describe the study, the assay(s) performed, the resulting data, and the reuse potential, but should not make any claims regarding new scientific findings. No references are allowed in this section.
+Title: Enhancing Parkinson's Disease Analysis with Tabulated Multi-Modality MRI from PPMI
+
+Abstract:
+
+Parkinson's disease (PD) necessitates a diverse analytical approach, particularly with MRI data. In PD studies, multiple modality MRI from the Parkinson’s Progression Markers Initiative (PPMI) provides a multi-perspective view of a patient’s evolving condition, yielding essential insights into the disease’s trajectory and effects. Each modality, representing distinct dimensions of PD, is intrinsically complementary. However, their collective analysis poses challenges, especially for experts in statistical analysis and machine learning (ML). Addressing this, we have innovated a method to convert these intricate MRI modalities into an organized, tabular format. This conversion streamlines the data, enhancing its accessibility and interpretability for sophisticated statistical and ML applications. Our process is bolstered by open-source coding and processing resources, promoting research transparency and replicability. We introduce the inaugural edition of the PPMI-derived, tabulated multi-modality MRI dataset, a pivotal enhancement in PD research, paving the way for improved handling and analysis of complex imaging data in various neurological conditions.
 
 # Background & Summary
 
