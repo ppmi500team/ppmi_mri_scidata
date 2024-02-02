@@ -30,7 +30,7 @@ linenumbers: true
 
 # Abstract
 
-A hallmark of Parkinson's disease (PD) is heterogenous clinical presentation over time and across subjects.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. The Parkinson's Progression Markers Initiative (PPMI) provides the raw multiple modality MRI (M3RI) that may provide essential insights into the disease's trajectory and effects.  Each modality, representing distinct dimensions of PD, is intrinsically complementary.  However, the collective and consistent analytical representation of M3RI poses challenges to image analysis and clinial experts alike due to the unique . Addressing this, we have innovated a method to convert these intricate MRI modalities into an organized, tabular format. This conversion streamlines the data, enhancing its accessibility and interpretability for sophisticated statistical and ML applications. Our process is bolstered by open-source coding and processing resources, promoting research transparency and replicability. We introduce the inaugural edition of the PPMI-derived, tabulated multi-modality MRI dataset, a pivotal enhancement in PD research, paving the way for improved handling and analysis of complex imaging data in various neurological conditions.
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. The Parkinson's Progression Markers Initiative (PPMI) provides the raw multiple modality MRI (M3RI) that may provide a prismatic view into the trajectory of this neurodegenerative disorder.  However, the collective and consistent analytical representation of M3RI poses challenges to image analysis and clinical experts alike due to the unique characteristics of T1-weighted, diffusion weighted and resting state functional MRI. This effort systematically applies the open source Advanced Normalization Tools X (ANTsX) ecosystem to the PPMI M3RI to convert these intricate MRI modalities into an organized, tabular format. The transparent, open-source system for M3RI to tabular conversion streamlines the PPMI M3RI data and enhances its accessibility and interpretability for both clinical and technical researchers. This effort summarizes both the methods and face validity of this contribution.
 
 # Background & Summary
 
@@ -51,6 +51,7 @@ This study builds upon previous efforts in PD research and MRI analysis, offerin
 
 The creation of the PPMI-derived, tabulated multi-modality MRI dataset marks a pivotal advancement in PD research. It paves the way for more sophisticated and efficient analysis of complex imaging data, potentially leading to breakthroughs in understanding and treating PD. Looking ahead, this methodology could inspire similar innovations in the study of other neurological disorders.
 
+MRI data from the Parkinson's Progression Markers Initiative (PPMI) is transformed into a structured format using ANTsX, improving accessibility and analysis for PD research.
 
 # Methods
 
@@ -74,6 +75,7 @@ Topical subheadings are allowed.
 # Technical Validation
 
 ```{r pkgs,echo=FALSE,eval=TRUE,messages=FALSE,cache=TRUE}
+set.seed( 0 )
 library( GoodmanKruskal )
 library(heatmap3)
 library("permute")
@@ -138,7 +140,7 @@ scaleqvars <- function( mydf, myeq ) {
   return(mydf)
 }
 
-normalizersfmri = function( dd, applyit='meansd' ) {
+normalizersfmri = function( dd, applyit='none' ) {
   nums=c(122,129,134)
   t=c('_2_', "_falff", "_alff", "_peraf")
   tnm=c("fcnxmean" ,'falffmean', 'alffmean', 'perafmean')
@@ -224,13 +226,14 @@ temp = ppmi[ ppmi$studyName %in% c('PPMI','ADNI') &
 #  subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2" ) ) &
   subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2","PDSporadic" ) ) &
   ysel & ppmi$T1Hier_resnetGrade > 1.05,]
-temp = normalizersfmri( temp, 'none')
+temp = normalizersfmri( temp )
 temp$joinedDX <- fct_relevel(temp$joinedDX, "CN")
 temp$DXSubAsyn <- fct_relevel(temp$DXSubAsyn, "CNNegative")
 temp$TDX = NA # as.character( temp$DXSubAsyn )
 temp$TDX[ temp$AsynStatus == 'Negative' & temp$joinedDX == 'CN' ]='CN'
 # temp$TDX[ temp$DXSubAsyn %in% ispd ]='otherPositive'
 # temp$TDX[ temp$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
+mydx='PDSpNeg'
 temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
 #temp$joinedDX = factor( temp$joinedDX, levels = mylevsx1)
 #temp$DXSubAsyn = factor( temp$DXSubAsyn, levels = mylevsx0)
@@ -304,7 +307,9 @@ for ( voi in nmstotest ) {
   if ( anvp < 1e-2 ) {
 #    print( mycoffs )
 #    print( dxdf[n,] )
-    print(prplot( mdl, 'yearsbl', dxvar, paste(voi,anvp), colorvar='commonSex', addpoints=1))
+    anvp = insight::format_p( anvp, digits=4 )
+    ttl=( paste( voi, myrez, " + ", mydx,  " = ", anvp ) )
+    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
 }
 
@@ -313,7 +318,7 @@ psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= 0.05 )
 
 ```{r dxresults,echo=FALSE,warnings=FALSE,messages=FALSE}
 temp = dxdf[psel,]
-temp[,'dx']='PDSpNeg'
+temp[,'dx']=mydx
 temp$anv = insight::format_p(  temp$anv, digits=4  )
 temp[, !(colnames(temp) %in% c("singular"))] %>%
   knitr::kable("latex", booktabs = TRUE) %>%
@@ -325,7 +330,7 @@ temp[, !(colnames(temp) %in% c("singular"))] %>%
 
 ```{r quicklmcog,echo=FALSE,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
 ####################################################################
-num='129'
+num=c(122,129,134)[1]
 signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
 ysel = ppmi$yearsbl <= 4.5
 mylevsx2=c( "CN", "ProdromalSporadic", "PDSporadic" )
@@ -350,7 +355,7 @@ if ( myrez == "sr" ) {
 #  tempids = read.csv( '/tmp/temp_ids.csv' )
 #  temp = temp[ temp[,'u_hier_id'] %in% tempids$x, ]
 }
-temp = normalizersfmri( temp, 'none' )
+temp = normalizersfmri( temp )
 #########################################################
 temp$joinedDX <- fct_relevel(temp$joinedDX, "CN")
 temp$DXSubAsyn <- fct_relevel(temp$DXSubAsyn, "CNNegative")
@@ -427,6 +432,7 @@ for ( cog in sort(cogs) ) {
     if ( anvp < qth ) {
 #      print( mycoffs[ , -c(1:3)] )
   #    print( voi )
+      anvp = insight::format_p( anvp, digits=4 )
       ttl=( paste( voi, myrez, " + ", cog,  " = ", anvp ) )
  #     mygg = visreg::visreg( mdl, 'yearsbl', by=voi, gg=T )
  #     threewayinteraction( temp2, 'yearsbl', cog,  'AsynStatus', voi, showpoints=F )
