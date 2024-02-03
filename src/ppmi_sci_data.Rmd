@@ -52,19 +52,32 @@ The present study extends previous foundations by providing standardized imaging
 
 The Methods should include detailed text describing any steps or procedures used in producing the data...
 
-
 Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [(avants2015)](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  Diffusion tensor imaging (DTI) processing leverages best practices from both ANTsX and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). 
 
-## Subsection
+## T1-weighted MRI
 
-Example text under a subsection. Bulleted lists may be used where appropriate, e.g.
 
-- First item
-- Second item
+The article "The ANTsX ecosystem for quantitative biological and medical imaging" by Nicholas J. Tustison et al. presents ANTsX, an open-source software ecosystem designed for processing and analyzing biological and medical imaging data. It highlights the integration of deep learning capabilities through ANTsR and ANTsPy for R and Python, respectively, enhancing computational efficiency and accuracy. The ecosystem includes tools for image registration, segmentation, and analysis, demonstrating superior performance in applications like cortical thickness measurement from MRI data. For further details, visit the [Nature article](https://www.nature.com/articles/s41598-021-87564-6).
 
-### Third-level section
+The study enhances the UK Biobank neuroimaging structural Imaging-Derived Phenotypes (IDPs) by incorporating measurements from the Advanced Normalization Tools Ecosystem, alongside traditional software libraries like FSL and FreeSurfer. It includes cortical and subcortical measurements, morphological measurements of the hippocampus and cerebellum, among others. Through predictive modeling, the study assesses the clinical utility of these IDPs, exploring their predictive accuracy for various sociodemographic variables. The results highlight differences in performance across software libraries and the combined utility of IDP sets, underscoring the importance of selection and utilization in research.
 
-Topical subheadings are allowed.
+
+## diffusion weighted MRI
+
+
+The function `joint_dti_recon` is designed to conduct a comprehensive reconstruction of Diffusion Tensor Imaging (DTI) data, integrating both left-right (LR) and right-left (RL) acquisitions, with the inclusion of optional motion correction, denoising, dewarping based on fractional anisotropy (FA) or other modalities, and data imputation or censoring. It processes input DTI images alongside b-value and b-vector files, utilizing a 1mm John Hopkins University (JHU) atlas for spatial normalization and labeling. The function supports optional super-resolution modeling, T1-weighted neuroimages for enhanced dewarping, and a brain mask to constrain analysis within the brain region. The workflow includes initial reconstruction and optional motion correction, dewarping using specified modalities or T1-weighted images, reapplication of dewarping to original data, secondary DTI reconstruction, and spatial normalization to the JHU atlas for labeling.
+
+The function's outputs are encapsulated in a dictionary containing the mean fractional anisotropy (FA) image, its summary statistics mapped against JHU labels, the registration to the JHU atlas, dewarping details, and DTI reconstruction parameters. Optional RL image processing is provided, with the function capable of handling either single or combined LR and RL datasets. This allows for flexibility in addressing various data quality issues, such as motion artifacts or distortions inherent in diffusion MRI data. The function highlights the significance of integrating advanced preprocessing steps like super-resolution and dewarping in enhancing the quality of DTI analyses, thereby facilitating more accurate and reliable neuroimaging studies.
+
+### resting state functional MRI
+
+The function `resting_state_fmri_networks` is designed to compute resting-state network correlation maps based on J. Power's labels, aiming to produce a map for each major network system within the brain. It takes as inputs the BOLD fMRI image, a reference fMRI template, a 3-D T1 brain image, and a six-tissue segmentation image, among other parameters. The function incorporates a series of preprocessing steps such as registration, despiking, smoothing, nuisance regression, bandpass filtering, and censoring, tailored to enhance the quality of the resting-state fMRI data analysis.
+
+Key features include the optional upsampling of data, the computation of temporal and spatial derivatives, the application of CompCor for noise reduction, and the implementation of ICA components as part of the nuisance regression. Additionally, the function utilizes bandpass limits for frequency filtering, with parameters adjustable to the user's requirements.
+
+The methodology follows a structured pipeline, commencing with data registration and concluding with the calculation of correlation matrices that capture the functional connectivity between different brain regions. This process also involves the extraction and analysis of motion parameters to address motion-related artifacts, reflecting a comprehensive approach to fMRI data preprocessing and analysis.
+
+By outputting a dictionary containing derived network maps, the function facilitates further studies on the functional architecture of the brain, supporting the advancement of research in neuroimaging. This tool integrates a variety of analytical strategies, drawing upon existing literature and recommended practices to ensure the effective denoising and analysis of resting-state fMRI data.
 
 # Data Records
 
