@@ -1,5 +1,5 @@
 ---
-title: "Enhancing Parkinson's Disease Analysis with Tabulated Multi-Modality MRI from PPMI"
+title: "Enhancing Parkinson's Disease Research with Tabulated Multi-Modality MRI for PPMI"
 author:
   - Brian B. Avants^1,2^
   - Lino Becerra^1
@@ -26,28 +26,23 @@ classoption: table
 # header-includes:
 #  - \usepackage{jabbrv}
 linenumbers: true
+urlcolor: blue
 ---
 
 # Abstract
 
-Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. The Parkinson's Progression Markers Initiative (PPMI) provides multiple modality MRI (M3RI) that provides a prismatic view into the trajectory of this neurodegenerative disorder.  However, the collective and consistent analytical representation of M3RI poses challenges to image analysis and clinical experts alike due to the unique characteristics of T1-weighted, diffusion weighted and resting state functional MRI. This effort systematically applies the open source Advanced Normalization Tools X (ANTsX) ecosystem to the PPMI M3RI to convert these intricate MRI modalities into an organized, tabular format.  We summarize these data, methods and technical validity of this effort.
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. The Parkinson's Progression Markers Initiative (PPMI) provides multiple modality MRI (M3RI) and biomarker-confirmation for PD that provides a prismatic view into the trajectory of this neurodegenerative disorder.  However, the collective and consistent analytical representation of M3RI poses challenges to image analysis and clinical experts alike due to the unique characteristics of T1-weighted, diffusion weighted and resting state functional MRI. This effort systematically applies the open source Advanced Normalization Tools X (ANTsX) ecosystem to the PPMI M3RI to convert these intricate MRI modalities into an organized, tabular format.  We summarize these data, methods and technical validity of this effort.
 
 # Background & Summary
 
-(700 words maximum) An overview of the study design, the assay(s) performed, and the created data, including any background information needed to put this study in the context of previous work and the literature. ...
+Parkinson's Disease (PD) is characterized by the progressive accumulation of Lewy Bodies, primarily composed of misfolded alpha-synuclein, and appearing early in the substantia nigra [(Fearnley1991)](https://academic.oup.com/brain/article-abstract/114/5/2283/399854). The spread of this pathology correlates with both motor and non-motor symptoms of PD, underscoring alpha-synuclein's pivotal role in disease progression [(Lee & Trojanowski, 2006)](https://www.cell.com/neuron/fulltext/S0896-6273(06)00733-1) [(Dickson et al., 2009)](https://pubmed.ncbi.nlm.nih.gov/20082965/) [(Calabresi, 2023)](https://www.nature.com/articles/s41419-023-05672-9). The synuclein amplification assay (SAA) significantly advanced PD research by enabling in vivo confirmation for the first time. The Parkinson's Progression Markers Initiative (PPMI) study enhances this development by offering a comprehensive dataset of subjects assessed with SAA and multimodal MRI (M3RI), facilitating the monitoring of PD progression and the impact of synucleinopathy on brain structure and function [(Shahnawaz et al., 2020)](https://pubmed.ncbi.nlm.nih.gov/32025029/); [(Siderowf et al., 2023)](https://pubmed.ncbi.nlm.nih.gov/37059509/).
 
-Parkinson's Disease (PD) represents a progressive neurodegenerative disorder characterized by a long pre-symptomatic phase followed by an array of motor and non-motor symptoms. The pathological hallmark of PD is the accumulation of Lewy Bodies in specific brain regions such as the substantia nigra. These pathological inclusions are composed of misfolded alpha-synuclein, a protein predominantly located in the presynaptic terminals of neurons. Importantly, the topographical distribution and quantitative density of Lewy Bodies correlates with the clinical manifestations and temporal progression of PD.
-
-Until very recently, the presence of alpha synuclein pathology in the brain could only be confirmed post-mortem.  However, the synuclein amplification assay (SAA) has revolutionized PD research by providing the first measure of the disease's pathology during life.  Furthermore, the Parkinson's Progression Markers Initiative (PPMI) study has released a large cohort of subjects with both SAA status and multiple modality MRI.  These data provide an opportunity to track progressive changes in brain structure and function linked to biomarker-confirmed synucleinopathy in PD and related disorders.
-
-Deciphering the relationship between SAA status and longitudinal multi-modality MRI in PPMI requires a representation of these data that is accessible to the broader PD research community. Each MRI modality offers unique insights into PD's multifaceted nature but collectively, they present a formidable challenge for data analysis due to the high-dimensional nature and large computational burden of processing volumetric and time-series MRI. Thus, consistent, accessible and concise representations of these data will fill a pressing need for researchers and lead to new insights into PD.
+Analyzing the link between SAA status and longitudinal M3RI in the PPMI study necessitates accessible data representations for the PD research community. While each MRI modality provides distinct insights, their combined analysis is challenging due to the data's high dimensionality and computational demands. Therefore, creating clear, accessible data representations is crucial for advancing PD research and fostering new discoveries in particular using multi-view data linking pathology, symptoms and imaging [(nemmi2019)](https://www.sciencedirect.com/science/article/pii/S2213158219302086) [(dagher2020)](https://academic.oup.com/brain/article/143/10/3052/5912110) [(markello2021)](https://www.nature.com/articles/s41531-020-00144-9).
 
 
-The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI datasets from 2010 to 2023, focusing on T1-weighted, diffusion-weighted, and resting-state MRI for analyzing neurodegenerative diseases. This long-term data collection highlights the need for robust processing methods due to image quality heterogeneity. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient data processing. This approach is validated by Tustison et al. (2021) who detailed ANTsX's capabilities in quantitative imaging analysis, demonstrating its utility in medical image analysis through enhancements in statistical, visualization, and deep learning functionalities [(Tustison et al., 2021)](https://www.nature.com/articles/s41598-021-87564-6).
+The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI datasets from 2010 to 2023, focusing on T1-weighted, diffusion-weighted, and resting-state MRI for analyzing neurodegenerative diseases. The extended duration of data collection underscores the necessity for robust processing techniques that manage the resultant heterogeneity in images. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient multi-site M3RI data processing [avants2015](https://www.nature.com/articles/sdata20153) [(Tustison et al., 2021)](https://www.nature.com/articles/s41598-021-87564-6).   
 
-Technical validity for these methods is established in part by prior efforts including but not limited to several open quantitative MRI analysis challenges.  We add to this foundation by establishing ANTsX reproducibility/reliability in three traveling subject cohorts and an additional young control cohort.  The traveling subject cohorts are combined to provide specific and reproducible estimates of reliability (via intra-class correlation) across a variety of scanner manufacturers and models and imaging modalities.  The young control cohort -- the pediatric template of brain perfusion (PTBP) data -- provides face validity that multiple modality tabular data (as processed by ANTsX) may be combined to improve prediction of population characteristics.  In summary, these supplemental analyses provide numerical reference for reliability and predictive power that may be used to inform power analyses in other contexts.
-
-To establish face validity for Parkinson's Disease (PD), this study leverages data to reproduce models identified in prior studies of Magnetic Resonance Imaging (MRI) within the Parkinson's Progression Markers Initiative (PPMI). Historically, research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate the neuroanatomical changes associated with the disease. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra. This neurodegeneration has been corroborated by post-mortem analyses, which indicate that the clinical onset of PD symptoms is associated with the loss of dopaminergic neurons in the substantia nigra [(Kordower et al., 2013)](https://doi.org/10.1002/mds.25687). 
+To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts and an additional easily accessible M3RI young control cohort.  We collectively analyze these data in a uniform manner to establish reliability benchmarks and demonstrate the empirical significance of multi-view data in predicting population characteristics from neuroimaging.  Additionally, we illustrate statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD. Historically, research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate the neuroanatomical changes associated with the disease. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra. This neurodegeneration has been corroborated by post-mortem analyses, which indicate that the clinical onset of PD symptoms is associated with the loss of dopaminergic neurons in the substantia nigra . 
 
 Diffusion MRI (dMRI) has further enhanced our understanding by allowing for the investigation of white matter microstructural integrity. Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dMRI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes beyond the substantia nigra [(Planetta et al., 2016)](https://doi.org/10.1016/j.neuroimage.2015.09.062). 
 
@@ -62,6 +57,9 @@ The tabulated multi-modality MRI dataset derived from deeply validated open sour
 # Methods
 
 The Methods should include detailed text describing any steps or procedures used in producing the data...
+
+
+Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [avants2015](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  Diffusion tensor imaging (DTI) processing leverages best practices from both ANTsX and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). 
 
 ## Subsection
 
@@ -79,6 +77,15 @@ Topical subheadings are allowed.
 ...
 
 # Technical Validation
+
+The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges FIXME. We further this by demonstrating ANTsX reproducibility and reliability through analysis of three traveling subject cohorts and a young control cohort. By aggregating data from the traveling subject cohorts, we offer precise, reproducible reliability estimates (via intra-class correlation) across different scanner types and imaging modalities. The young control cohort, using the pediatric template of brain perfusion (PTBP) data, validates the utility of combining multi-modality tabular data processed by ANTsX to enhance predictions of population characteristics. In essence, our additional analyses furnish numerical benchmarks for reliability and predictive accuracy and may be extended to other contexts.
+
+## Multi-site reproducibility
+
+## Multi-view prediction 
+
+## PPMI case studies
+
 
 ```{r pkgs,echo=FALSE,eval=TRUE,messages=FALSE,cache=TRUE}
 set.seed( 0 )
