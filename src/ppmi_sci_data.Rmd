@@ -127,6 +127,7 @@ library(analyzer)
 library(forcats)
 options( ztable.type="html" )
 tblcmd = ztable
+buildsci=FALSE
 ```
 
 ```{r functions,echo=FALSE,eval=TRUE,warnings=FALSE,messages=FALSE,cache=FALSE}
@@ -173,7 +174,7 @@ normalizersfmri = function( dd, applyit='none' ) {
 }
 ```
 
-```{r readdata,echo=FALSE,eval=TRUE,warnings=FALSE,messages=FALSE,cache=FALSE}
+```{r readdata,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE,cache=FALSE}
 is_test = TRUE
 if ( ! exists( "ppmi" ) ) {
 
@@ -197,7 +198,7 @@ if ( ! exists( "ppmi" ) ) {
 
 ### mixed effects diagnosis
 
-```{r quicklmdx,echo=FALSE,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
 ######################################################################
 ######################################################################
 dxform="~  (1|PATNO)+ (1|SITE) + commonEdu +  age_BL + commonSex + brainVolume_BL "
@@ -316,7 +317,7 @@ for ( voi in nmstotest ) {
 psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= 0.05 )
 ```
 
-```{r dxresults,echo=FALSE,warnings=FALSE,messages=FALSE}
+```{r dxresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
 temp = dxdf[psel,]
 temp[,'dx']=mydx
 temp$anv = insight::format_p(  temp$anv, digits=4  )
@@ -328,7 +329,7 @@ temp[, !(colnames(temp) %in% c("singular"))] %>%
 
 ### mixed effects UPDRS changes over time
 
-```{r quicklmcog,echo=FALSE,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
 ####################################################################
 num=c(122,129,134)[1]
 signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
@@ -457,7 +458,7 @@ for ( cog in cogs ) {
 ###########################################################################
 ```
 
-```{r cogresults,echo=FALSE,warnings=FALSE,messages=FALSE}
+```{r cogresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
 qdf$anv = insight::format_p(  qdf$anv, digits=4  )
 qdf[,c("cog","voi","anv","res")] %>%
   knitr::kable("latex", booktabs = TRUE) %>%
