@@ -23,8 +23,8 @@ output:
 biblio-style: naturemag-doi
 bibliography: ppmi_sci_data.bib
 classoption: table
-header-includes:
-  - \usepackage{jabbrv}
+# header-includes:
+#  - \usepackage{jabbrv}
 linenumbers: true
 ---
 
@@ -744,7 +744,7 @@ Our sincere appreciation to the Michael J. Fox Foundation (MJFF) for supporting 
 
 Figures, tables, and their legends, should be included in the appropriate section of the document. Figures and tables can be referenced using Markdown syntax.
 
-![](stream.jpg)
+<!-- ![](stream.jpg) -->
 Figure: Legend (350 words max). Example legend text.
 
 | Condition | n  | p     |
