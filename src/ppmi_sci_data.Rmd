@@ -20,14 +20,14 @@ output:
     keep_tex: true
     template: null
 #    citation_package: natbib
-# biblio-style: naturemag-doi
+biblio-style: naturemag-doi
 bibliography: ppmiscidata.bib
 classoption: table
 # header-includes:
 #  - \usepackage{jabbrv}
 linenumbers: true
 urlcolor: blue
-nocite: '@*'
+# nocite: '@*'
 link-citations: true
 ---
 
@@ -37,7 +37,7 @@ The Parkinson's Progression Markers Initiative (PPMI) delivers multiple modality
 
 # Background & Summary
 
-Parkinson's Disease (PD) is characterized by the progressive accumulation of Lewy bodies, primarily composed of misfolded alpha-synuclein, and appearing early in the substantia nigra @fearnley_ageing_1991. The spread of this pathology correlates with both motor and non-motor symptoms of PD, underscoring alpha-synuclein's pivotal role in disease progression [(Lee & Trojanowski, 2006)](https://www.cell.com/neuron/fulltext/S0896-6273(06)00733-1) [(Dickson et al., 2009)](https://pubmed.ncbi.nlm.nih.gov/20082965/) [(Calabresi, 2023)](https://www.nature.com/articles/s41419-023-05672-9). The synuclein amplification assay (SAA) significantly advanced PD research by enabling in vivo confirmation for the first time. The Parkinson's Progression Markers Initiative (PPMI) study enhances this development by offering a comprehensive dataset of subjects assessed with SAA and multimodal MRI (M3RI), facilitating the monitoring of PD progression and the impact of synucleinopathy on brain structure and function [(Shahnawaz et al., 2020)](https://pubmed.ncbi.nlm.nih.gov/32025029/); [(Siderowf et al., 2023)](https://pubmed.ncbi.nlm.nih.gov/37059509/).
+Parkinson's Disease (PD) is characterized by the progressive accumulation of Lewy bodies, primarily composed of misfolded alpha-synuclein, and appearing early in the substantia nigra [@fearnley_ageing_1991]. The spread of this pathology correlates with both motor and non-motor symptoms of PD, underscoring alpha-synuclein's pivotal role in disease progression [@lee_mechanisms_2006);@dickson_neuropathology_2009;@calabresi_alpha-synuclein_2023]. The synuclein amplification assay (SAA) significantly advanced PD research by enabling in vivo confirmation for the first time. The Parkinson's Progression Markers Initiative (PPMI) study enhances this development by offering a comprehensive dataset of subjects assessed with SAA and multimodal MRI (M3RI), facilitating the monitoring of PD progression and the impact of synucleinopathy on brain structure and function [(Shahnawaz et al., 2020)](https://pubmed.ncbi.nlm.nih.gov/32025029/); [(Siderowf et al., 2023)](https://pubmed.ncbi.nlm.nih.gov/37059509/).
 
 Analyzing the link between SAA status and longitudinal M3RI in the PPMI study necessitates accessible data representations for the PD research community. While each MRI modality provides distinct insights, their combined analysis is challenging due to the data's high dimensionality and computational demands. Therefore, creating clear, accessible data representations is crucial for advancing PD research and fostering new discoveries in particular using multi-view data linking pathology, symptoms and imaging [(nemmi2019)](https://www.sciencedirect.com/science/article/pii/S2213158219302086) [(dagher2020)](https://academic.oup.com/brain/article/143/10/3052/5912110) [(markello2021)](https://www.nature.com/articles/s41531-020-00144-9).
 
