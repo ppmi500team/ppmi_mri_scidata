@@ -1,5 +1,5 @@
 ---
-title: "Enhancing Parkinson's Disease Research with Tabulated Multi-Modality Magnetic Resononance Imaging"
+title: "Magnetic Resonance Imaging Data Phenotypes for the Parkinson's Progression Markers Initiative"
 author:
   - Brian B. Avants^1,2^
   - Lino Becerra^1
@@ -31,23 +31,33 @@ urlcolor: blue
 link-citations: true
 ---
 
+
+```{r samplesizes,echo=FALSE,eval=TRUE}
+npd=1000
+ncn=500
+ngpd=750
+nprepd=300
+nvizmed=3
+```
+
 # Abstract
 
-The Parkinson's Progression Markers Initiative (PPMI) delivers multiple modality MRI (M3RI) and biomarker data for a comprehensive longitudinal study of Parkinson's Disease (PD), offering detailed insights into its progression. Integrating and uniformly analyzing M3RI alongside non-imaging biological and clinical data is challenging due to the distinct nature of T1-weighted, diffusion-weighted, and resting-state functional MRI. This study systematically organizes this complex data into a structured format, provides a PD-focused evaluation of the methodologies and evidence for technical robustness of the approach.
+The Parkinson's Progression Markers Initiative (PPMI) delivers multiple modality MRI (M3RI) and biomarker data for a comprehensive longitudinal study of Parkinson's Disease (PD).  These provide quantitative indices of deep brain and cortical structure (T1-weighted MRI), axonal integrity (diffusion-weighted imaging) and resting brain function (resting state functional MRI).  Integrating and uniformly analyzing M3RI alongside non-imaging biological and clinical data is challenging due to the distinct nature of each modality. This study systematically organizes this complex data into a structured format, provides a PD-focused evaluation of the methodologies and evidence for technical robustness of the approach.  The cohort encompasses `r npd` idiopathic PD, `r ngpd` genetic PD, `r nprepd` presymptomatic PD and `r ncn` control subjects at baseline with a median number of `r nvizmed` followup visits.
 
 # Background & Summary
 
-Parkinson's Disease (PD) is characterized by the progressive accumulation of Lewy bodies, primarily composed of misfolded alpha-synuclein, and appearing early in the substantia nigra [@fearnley_ageing_1991]. The spread of this pathology correlates with both motor and non-motor symptoms of PD, underscoring alpha-synuclein's pivotal role in disease progression [@lee_mechanisms_2006);@dickson_neuropathology_2009;@calabresi_alpha-synuclein_2023]. The synuclein amplification assay (SAA) significantly advanced PD research by enabling in vivo confirmation for the first time. The Parkinson's Progression Markers Initiative (PPMI) study enhances this development by offering a comprehensive dataset of subjects assessed with SAA and multimodal MRI (M3RI), facilitating the monitoring of PD progression and the impact of synucleinopathy on brain structure and function [(Shahnawaz et al., 2020)](https://pubmed.ncbi.nlm.nih.gov/32025029/); [(Siderowf et al., 2023)](https://pubmed.ncbi.nlm.nih.gov/37059509/).
+Parkinson's Disease (PD) is characterized by the progressive accumulation of Lewy bodies, primarily composed of misfolded alpha-synuclein, and appearing in the substantia nigra at an early stage [@fearnley_ageing_1991]. The spread of this pathology correlates with both motor and non-motor symptoms of PD, underscoring alpha-synuclein's pivotal role in disease progression [@lee_mechanisms_2006;@dickson_neuropathology_2009;@calabresi_alpha-synuclein_2023]. The synuclein amplification assay (SAA) significantly advanced PD research by enabling in vivo confirmation for the first time. The Parkinson's Progression Markers Initiative (PPMI) study enhances this development by offering a comprehensive dataset of subjects assessed with SAA and multimodal MRI (M3RI), facilitating the monitoring of PD progression and the impact of synucleinopathy on brain structure and function [@shahnawaz_discriminating_2020; @siderowf_assessment_2023].
 
-Analyzing the link between SAA status and longitudinal M3RI in the PPMI study necessitates accessible data representations for the PD research community. While each MRI modality provides distinct insights, their combined analysis is challenging due to the data's high dimensionality and computational demands. Therefore, creating clear, accessible data representations is crucial for advancing PD research and fostering new discoveries in particular using multi-view data linking pathology, symptoms and imaging [(nemmi2019)](https://www.sciencedirect.com/science/article/pii/S2213158219302086) [(dagher2020)](https://academic.oup.com/brain/article/143/10/3052/5912110) [(markello2021)](https://www.nature.com/articles/s41531-020-00144-9).
+Analyzing the link between SAA status and longitudinal M3RI in the PPMI study necessitates accessible data representations for the PD research community. While each MRI modality provides distinct insights, their combined analysis is challenging due to the data's high dimensionality and computational demands. Therefore, creating clear, accessible data representations is crucial for advancing PD research and fostering new discoveries in particular using multi-view data linking pathology, symptoms and imaging [@nemmi_totally_2019; @tremblay_sex_2020; @markello_multimodal_2021].
 
-The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI from 2010 to 2023, focusing on T1-weighted, diffusion-weighted, and resting-state functional MRI for analyzing neurodegenerative diseases. The extended duration of data collection underscores the necessity for robust processing techniques that manage the resultant heterogeneity in images. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient multi-site M3RI data processing [(avants2015)](https://www.nature.com/articles/sdata20153) [(stone2020)](https://doi.org/10.1089/neu.2020.7141) [(Tustison et al., 2021)](https://www.nature.com/articles/s41598-021-87564-6).   
+The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI from 2010 to 2023, focusing on T1-weighted, diffusion-weighted, and resting-state functional MRI for analyzing neurodegenerative diseases. The extended duration of data collection underscores the necessity for robust processing techniques that manage the resultant heterogeneity in images. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient multi-site M3RI data processing [@avants_pediatric_2015; 
+@stone_functional_2020; @tustison_antsx_2020]
 
-To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts [(hawco2022)](https://www.nature.com/articles/s41597-022-01386-3) [(srpbs)](https://www.nature.com/articles/s41597-021-01004-8) [(dtitravel)](https://doi.org/10.1016/j.mri.2019.02.011) and an additional easily accessible M3RI young control cohort [(avants2015)](https://www.nature.com/articles/sdata20153) .  We collectively analyze these data in a uniform manner to establish reliability benchmarks and demonstrate the empirical significance of multi-view data in predicting population characteristics from neuroimaging.  Additionally, we illustrate statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD. 
+To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts [@hawco_longitudinal_2022; @tanaka_multi-site_2021; @tong_reproducibility_2019] and an additional easily accessible M3RI young control cohort [@avants_pediatric_2015].  We collectively analyze these data in a uniform manner to establish reliability benchmarks and demonstrate the empirical significance of multi-view data in predicting population characteristics from neuroimaging.  Additionally, we illustrate statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD. 
 
-Historically, MRI research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate the neuroanatomical changes. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra  [(schwarz2011)](https://doi.org/10.1002/mds.23722) [(Aquino2013)](https://link.springer.com/article/10.1007/s10072-013-1595-2) [(poston2020)](https://doi.org/10.1016/j.parkreldis.2019.10.002). Diffusion-weighted MRI (dwMRI) has further enhanced our understanding by allowing for the investigation of white matter microstructural integrity which may be impacted not only in sporadic PD [(peran2010)](https://academic.oup.com/brain/article/133/11/3423/313450) but also in LRRK2-PD [(tolosa2020)](https://www.nature.com/articles/s41582-019-0301-2) [(ross2011)](https://doi.org/10.1016/S1474-4422(11)70175-2). Similarly, resting state functional MRI (rsfMRI) has unveiled alterations in network connectivity in PD patients, highlighting changes in the functional integration and segregation of brain networks involved in motor and cognitive functions [(hacker2012)](https://doi.org/10.1093/brain/aws281) [(kim2017)](https://doi.org/10.1093/brain/awx233). Taken together, these findings suggest that PD impacts both the structural and functional aspects of the brain, pointing towards a more integrative approach to understanding PD [(menke2009)](https://doi.org/10.1016/j.neuroimage.2009.05.017) [(markello2021)](https://www.nature.com/articles/s41531-020-00144-9) and the role of alpha-synuclein in these effects [(simuni2024)](https://doi.org/10.1016/S1474-4422(23)00405-2).
+Historically, MRI research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate the neuroanatomical changes. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra  [@schwarz_t1-weighted_2011;@aquino_substantia_2014;@ryman_mri_2020]. Diffusion-weighted MRI (dwMRI) has further enhanced our understanding by allowing for the investigation of white matter microstructural integrity which may be impacted not only in sporadic PD [@peran_magnetic_2010] but also in LRRK2-PD [@tolosa_lrrk2_2020]. Similarly, resting state functional MRI (rsfMRI) has unveiled alterations in network connectivity in PD patients, highlighting changes in the functional integration and segregation of brain networks involved in motor and cognitive functions [@hacker_resting_2012;@kim_abnormal_2017]. Taken together, these findings suggest that PD impacts both the structural and functional aspects of the brain, pointing towards a more integrative approach to understanding PD [@menke_mri_2009;@markello_multimodal_2021] and the role of alpha-synuclein in these effects [@simuni_biological_2024].
 
-The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs depend on standard anatomical and functional hierarchies that are well-established in the field but are consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dMwRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables are annotated with the associated demographics, SAA status, clinical data such as the Unified Parkinson's Disease Rating Scale (UPDRS) [(updrs2003)](https://doi.org/10.1002/mds.10473) and standard PPMI DAT-SPECT summary measurements [(Bega2021)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8144619/) [(Droby2022)](https://www.nature.com/articles/s41531-022-00285-z). Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
+The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs depend on standard anatomical and functional hierarchies that are well-established in the field but are consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dMwRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables easily merge with the associated demographics, SAA status, clinical data such as the Unified Parkinson's Disease Rating Scale (UPDRS) [@disease_unified_2003] and standard PPMI DAT-SPECT summary measurements [@bega_clinical_2021; @droby_aberrant_2022]. Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
 
 
 # Methods
@@ -75,23 +85,85 @@ The study enhances the UK Biobank neuroimaging structural Imaging-Derived Phenot
 
 ### diffusion weighted MRI
 
-The function `joint_dti_recon` is designed to conduct a comprehensive reconstruction of Diffusion Tensor Imaging (DTI) data, integrating both left-right (LR) and right-left (RL) acquisitions, with the inclusion of optional motion correction, denoising, dewarping based on fractional anisotropy (FA) or other modalities, and data imputation or censoring. It processes input DTI images alongside b-value and b-vector files, utilizing a 1mm John Hopkins University (JHU) atlas for spatial normalization and labeling. The function supports optional super-resolution modeling, T1-weighted neuroimages for enhanced dewarping, and a brain mask to constrain analysis within the brain region. The workflow includes initial reconstruction and optional motion correction, dewarping using specified modalities or T1-weighted images, reapplication of dewarping to original data, secondary DTI reconstruction, and spatial normalization to the JHU atlas for labeling.
 
-The function's outputs are encapsulated in a dictionary containing the mean fractional anisotropy (FA) image, its summary statistics mapped against JHU labels, the registration to the JHU atlas, dewarping details, and DTI reconstruction parameters. Optional RL image processing is provided, with the function capable of handling either single or combined LR and RL datasets. This allows for flexibility in addressing various data quality issues, such as motion artifacts or distortions inherent in diffusion MRI data. The function highlights the significance of integrating advanced preprocessing steps like super-resolution and dewarping in enhancing the quality of DTI analyses, thereby facilitating more accurate and reliable neuroimaging studies.
+The `joint_dti_recon` function embodies a comprehensive pipeline designed for the reconstruction and analysis of Diffusion Tensor Imaging (DTI) data, integrating several advanced neuroimaging preprocessing and analysis steps. This pipeline is particularly geared towards leveraging both left-right (LR) and right-left (RL) diffusion-weighted imaging (DWI) acquisitions, although the use of RL images is optional. The function is developed to accommodate various preprocessing needs, including motion correction, denoising, dewarping, and super-resolution enhancement, followed by DTI fitting. Furthermore, it incorporates atlas-based labeling and registration, facilitating anatomical interpretation of the DTI metrics.
+
+### Technical Overview and Processing Steps
+
+1. **Input Preparation**: The pipeline accepts DWI data in the LR direction as mandatory input, with optional RL direction data. It also requires associated b-values and b-vectors for each direction, alongside a T1-weighted image and a brain mask for improved spatial accuracy.
+
+2. **Initial Reconstruction and Motion Correction**: The function initiates by optionally denoising the DWI data and performing motion correction, if specified. Motion correction aligns DWI volumes within and across acquisitions to a reference B0 image, reducing artifacts due to subject movement.
+
+3. **Dewarping and Super-Resolution**: Dewarping is applied to correct for distortions using a specified modality (e.g., FA, average DWI), or a T1-weighted image. Optionally, a super-resolution model can be applied to enhance image quality, particularly useful when dealing with lower-resolution DWI data.
+
+4. **Reconstruction of DTI Metrics**: The function employs a chosen fitting method (e.g., Weighted Least Squares - WLS) to reconstruct DTI metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD) from the preprocessed DWI data. This step is pivotal in quantifying the diffusion properties of brain tissue.
+
+5. **Atlas-Based Labeling and Registration**: Utilizing the Johns Hopkins University (JHU) atlas and corresponding labels, the pipeline performs spatial registration of the DTI metrics to the atlas space. This process facilitates anatomical localization and quantification of DTI metrics within predefined brain regions.
+
+6. **Output Generation**: The pipeline yields a comprehensive output including the reconstructed DTI metrics, summary statistics of these metrics within atlas-defined regions, the spatial registration information, and additional diagnostic metrics such as framewise displacement and signal-to-noise ratio (SNR) assessments.
+
+### Advanced Features and Considerations
+
+- **Denosing**: Incorporates a preliminary step to reduce noise in the DWI data, which is crucial for improving the quality of subsequent DTI metric reconstruction.
+
+- **Imputation and Censoring**: Offers options to impute missing or corrupt data and to censor volumes with excessive motion, enhancing the robustness of the analysis against artifacts.
+
+- **Atlas Registration**: Employs the JHU atlas for anatomical labeling, leveraging advanced registration techniques to accurately map DTI metrics onto anatomically defined regions, enhancing interpretability.
+
+- **Super-Resolution Modeling**: Optionally applies a super-resolution model to the DWI data, aiming to improve spatial resolution and potentially uncover finer anatomical details not visible in the original data.
+
+- **Customizability and Diagnostic Outputs**: Provides extensive customizability through parameters like the choice of dewarping modality and DTI fitting method, along with generating diagnostic outputs such as motion metrics and SNR, which are invaluable for quality assessment and troubleshooting.
+
+### Academic Context and Implications
+
+This function represents a sophisticated approach to DTI data analysis, integrating state-of-the-art neuroimaging techniques to address common challenges such as motion artifacts, spatial resolution limitations, and anatomical localization of diffusion metrics. By offering a pipeline that combines preprocessing, reconstruction, and atlas-based analysis within a single framework, it significantly streamlines the workflow for researchers and clinicians working with DTI data. Furthermore, the inclusion of diagnostic outputs facilitates a deeper understanding of data quality and analysis reliability, which are critical for rigorous neuroimaging research. The `joint_dti_recon` function, thus, not only enhances the efficiency and accuracy of DTI analysis but also contributes to the advancement of neuroscientific research and clinical diagnostics.
 
 ### resting state functional MRI
+The function `resting_state_fmri_networks` is designed to compute correlation maps of resting-state networks from functional magnetic resonance imaging (fMRI) data, utilizing the J. Power labels to delineate major network systems. The function is structured to perform a sequence of preprocessing steps critical for resting-state fMRI analysis, including registration, despiking, anatomical segmentation, spatial and temporal smoothing, nuisance signal regression, band-pass filtering, censoring, fractional amplitude of low-frequency fluctuations (fALFF) calculation, and correlation analysis. This sequence is intended to enhance the signal-to-noise ratio and reduce artifacts, thereby isolating true neural signal fluctuations related to resting-state networks.
 
-The function `resting_state_fmri_networks` is designed to compute resting-state network correlation maps based on J. Power's labels, aiming to produce a map for each major network system within the brain. It takes as inputs the BOLD fMRI image, a reference fMRI template, a 3-D T1 brain image, and a six-tissue segmentation image, among other parameters. The function incorporates a series of preprocessing steps such as registration, despiking, smoothing, nuisance regression, bandpass filtering, and censoring, tailored to enhance the quality of the resting-state fMRI data analysis.
+### Function Parameters and Their Academic Justification
 
-Key features include the optional upsampling of data, the computation of temporal and spatial derivatives, the application of CompCor for noise reduction, and the implementation of ICA components as part of the nuisance regression. Additionally, the function utilizes bandpass limits for frequency filtering, with parameters adjustable to the user's requirements.
+- **fMRI Inputs**: The function accepts BOLD fMRI data (`fmri`), a reference fMRI template (`fmri_template`), and T1-weighted anatomical images (`t1` and `t1segmentation`). These inputs are foundational for aligning functional data with anatomical landmarks and for ensuring that subsequent analyses are anatomically informed.
 
-The methodology follows a structured pipeline, commencing with data registration and concluding with the calculation of correlation matrices that capture the functional connectivity between different brain regions. This process also involves the extraction and analysis of motion parameters to address motion-related artifacts, reflecting a comprehensive approach to fMRI data preprocessing and analysis.
+- **Frequency Filtering (`f`)**: Implements band-pass filtering within the specified frequency range, typically between 0.03 and 0.08 Hz, following Shirer et al. (2015), to focus on the frequency band most relevant to resting-state fluctuations.
 
-By outputting a dictionary containing derived network maps, the function facilitates further studies on the functional architecture of the brain, supporting the advancement of research in neuroimaging. This tool integrates a variety of analytical strategies, drawing upon existing literature and recommended practices to ensure the effective denoising and analysis of resting-state fMRI data.
+- **Spatial and Temporal Smoothing (`spa`, `spt`)**: Applies Gaussian smoothing kernels to the spatial and temporal dimensions of the data to increase the signal-to-noise ratio, an essential step for improving the reliability of resting-state network detection.
+
+- **Component-Based Noise Correction (`nc`)**: Determines the number of components for CompCor, a method for reducing noise related to physiological and other non-neural signals, as per the methodology described by Shirer et al. (2015).
+
+- **Independent Component Analysis (`ica_components`)**: Optionally includes ICA components to identify and remove sources of noise, enhancing the specificity of resting-state network identification.
+
+- **Censoring and Despiking (`censor`, `despike`)**: Implements strategies to mitigate the impact of motion artifacts, including voxel-wise despiking and the exclusion of time points with excessive motion (Frame Displacement, `FD_threshold`).
+
+- **Nuisance Regression (`motion_as_nuisance`)**: Incorporates motion parameters and their derivatives as nuisance regressors to control for motion-related artifacts, a critical step for isolating neural signals of interest.
+
+- **Frequency Upsampling (`upsample`)**: Provides an option to isotropically upsample the data to a specified resolution during the registration process, facilitating improved alignment with the reference template.
+
+### Computational Workflow
+
+The computational workflow integrates several advanced neuroimaging analysis techniques:
+
+1. **Preprocessing**: Initial steps include motion correction, application of a despiking algorithm akin to AFNI's 3dDespike, and anatomical registration to align the fMRI data with the T1-weighted image.
+   
+2. **Noise Reduction**: Techniques such as aCompCor and ICA-AROMA are used to mitigate physiological and other noise sources. This is based on recommendations from studies examining the impact of preprocessing strategies on functional connectivity (Ciric et al., 2017; Parkes et al., 2018).
+
+3. **Band-pass Filtering**: The application of a specific frequency range for filtering aligns with recommendations from Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.
+
+4. **Network Correlation Analysis**: The final step involves calculating correlation matrices for identified resting-state networks, utilizing labels from the J. Power atlas or the Yeo 17-network parcellation, depending on the user's selection.
+
+### Theoretical Foundations and Empirical Support
+
+The methodology implemented by `resting_state_fmri_networks` is grounded in the contemporary understanding of resting-state fMRI analysis. It incorporates recommendations from seminal works in the field, including Shirer et al. (2015) for component-based noise reduction, and leverages empirical findings regarding the optimal preprocessing strategies for minimizing motion artifacts and other sources of noise (Ciric et al., 2017; Parkes et al., 2018). The function's design reflects a comprehensive approach to resting-state fMRI preprocessing, aiming to facilitate the reliable extraction of functional connectivity patterns that are consistent with underlying neural mechanisms.
+
+### Conclusion
+
+In summary, the `resting_state_fmri_networks` function embodies a robust and empirically informed pipeline for the preprocessing and analysis of resting-state fMRI data. Through its sophisticated integration of noise reduction, artifact mitigation, and network analysis techniques, it offers a powerful tool for the exploration of resting-state neural networks, contributing to the broader understanding of brain connectivity patterns in health and disease.
 
 # Data Records
 
-...
+The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the LONI Imaging Data Archive (LONI IDA). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all column headers are available on the LONI IDA.
+
+
 
 # Technical Validation
 
