@@ -8,6 +8,9 @@ author:
   - Alex Reardon^1,†^
   - Nicholas J. Tustison^2
   - Xue Wang^1,†^
+  - Linda
+  - Zahra
+  - Adam
   - Roger Gunn^1
 affiliation:
   - "1: Invicro, Boston, MA, FIMXE, USA"
@@ -38,7 +41,257 @@ ncn=500
 ngpd=750
 nprepd=300
 nvizmed=3
+redomerge=TRUE
 ```
+
+
+```{r ppmimerge, echo=FALSE,eval=redomerge}
+library(subtyper)
+rdir=path.expand('~/code/multidisorder/data/')
+curfn=paste0(rdir,'PPMI_Curated_Data_Cut_Public_20230612_rev.csv')
+ppmidemog0=read.csv( curfn )
+saa=read.csv( paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv') )
+ppmi = merge( ppmidemog0, saa, by=c("PATNO","EVENT_ID"), suffixes = c(".x","") )
+ppmi[ppmi=='.']=NA
+rm( ppmidemog0 )
+# pym = read.csv( paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.7.csv') )
+pym = read.csv( paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.7.csv') )
+pymf = pym[ , !(colnames(pym) %in% getNamesFromDataframe("u_hier_id", pym))] # junk
+pymf = filterNAcolumns( pymf, 20 ) # remove columns with > 20% missing
+pymf[ is.na(pymf$mrimfg), 'mrimfg' ]='Unk'
+pymf[ is.na(pymf$mrimodel), 'mrimodel' ]='Unk'
+rm(pym)
+idcols = c("subjectID","date","subjectIDdate", "imageID",'filename')
+head( pymf[ , idcols ] )
+idcolsdemog = c("PATNO","visit_date","EVENT_ID")
+head( ppmidemog[ , idcolsdemog ] )
+clin2 = pymf
+clin2$PATNO = pymf$subjectID
+
+udx = sort(unique(ppmi$subgroup))
+dxmapper = data.frame( ppmisubgroup=udx )
+rownames(dxmapper)=udx
+for ( gdx in c("GBA","LRRK2","PINK1","SNCA","PRKN") )
+  dxmapper[ udx[grep(gdx,udx)],c('genetictype')]=gdx
+dxmapper[is.na(dxmapper$genetictype),'genetictype']='Sporadic'
+dxmapper["Healthy Control",'genetictype']='CN'
+dxmapper["GBA",'jdx']='PDGBA'         # 1
+dxmapper["GBA + Hyposmia",'jdx']='ProdromalGBA'         # 2
+dxmapper["GBA + RBD + Hyposmia",'jdx']='ProdromalGBA'   # 3
+dxmapper["Healthy Control",'jdx']='CN' # 4
+dxmapper["Hyposmia",'jdx']='ProdromalSporadic' # 5
+dxmapper["LRRK2",'jdx']='PDLRRK2'     # 6
+dxmapper["LRRK2 + GBA",'jdx']='PDLRRK2'     # 7
+dxmapper["LRRK2 + GBA + Hyposmia",'jdx']='ProdromalLRRK2'     # 8
+dxmapper["LRRK2 + Hyposmia",'jdx']='ProdromalLRRK2'     # 9
+dxmapper["PINK1",'jdx']='PDPINK1' # 10
+dxmapper["PRKN",'jdx']='PDPRKN'   # 11
+dxmapper["RBD",'jdx']='ProdromalSporadic' # 12
+dxmapper["RBD + Hyposmia",'jdx']='ProdromalSporadic' # 13
+dxmapper["SNCA",'jdx']='PDSNCA' # 14
+dxmapper["SNCA + Hyposmia",'jdx']='ProdromalSNCA' # 15
+dxmapper["Sporadic",'jdx']='PDSporadic'   # 16
+clin2ppmi=unique( clin2$PATNO[ clin2$projectID == 'PPMI' ] )
+ppmidx = ppmi[ , c("PATNO", 'COHORT', 'CONCOHORT', "subgroup")]
+ppmidx$CONCOHORT[ ppmidx$CONCOHORT == 1  ]='PD'
+ppmidx$CONCOHORT[ ppmidx$CONCOHORT == 2  ]='CN'
+ppmidx$CONCOHORT[ ppmidx$CONCOHORT == 4  ]='Prodromal'
+ppmidx$COHORT[ ppmidx$COHORT == 1  ]='PD'
+ppmidx$COHORT[ ppmidx$COHORT == 2  ]='CN'
+ppmidx$COHORT[ ppmidx$COHORT == 4  ]='Prodromal'
+paireddx = data.frame( PATNO=clin2ppmi )
+rownames(  paireddx )=clin2ppmi
+clin2$joinedDX=NA
+for ( uid in clin2ppmi ) {
+        uid = as.character( uid )
+        dx2=unique( ppmidx$subgroup[ subtyper::fs(ppmidx$PATNO == uid )])
+        dx1=as.character(unique( clin2$joinedDX[ subtyper::fs(clin2$PATNO == uid )]))
+        dx1new=dxmapper[dx2,'jdx']
+        seluid = subtyper::fs(ppmidx$PATNO == uid )
+        if ( sum(seluid) > 0 ) {
+          ccdx=unique( ppmidx$CONCOHORT[ subtyper::fs(ppmidx$PATNO == uid )])
+          ccdx2=unique( ppmidx$COHORT[ subtyper::fs(ppmidx$PATNO == uid )])
+          stopifnot( length(ccdx)==1)
+          mygroup=dxmapper[dx2,'genetictype']
+          if ( dx2 == "Healthy Control" ) mygroup=""
+          if ( !is.na(ccdx)) newjdx = paste0(ccdx,mygroup)
+          if ( is.na(ccdx)) newjdx = paste0(ccdx2,mygroup)
+          clin2$joinedDX[ subtyper::fs(clin2$PATNO == uid )]=newjdx
+          paireddx[uid,c('ppmidx','ccdx', 'ccdx2', 'group', 'joinedDXNew')]=c(dx2,ccdx,ccdx2, mygroup, newjdx)
+        }  else print(uid)
+    }
+paireddx$isConsensus=!is.na(paireddx$ccdx)
+table( paireddx$ppmidx, paireddx$joinedDXNew  )
+clin2$joinedDX[ clin2$joinedDX == 'CNGBA'] = 'CN'
+
+head(clin2[ is.na(  clin2$ageatimaging ) , c(idcols,'joinedDX') ])
+
+# message("HERE WE DEAL WITH STATS ASYN")
+clin2$AsynStatus=NA
+ppmi$CSFSAA[ ppmi$CSFSAA %in% c(2,3)]=NA
+uids = unique( ppmi$PATNO[ !is.na( ppmi$CSFSAA)] )
+for ( u in uids ) {
+  clin2sel=clin2$PATNO == as.character(u)
+  if ( sum(clin2sel) > 0 ) {
+    suppas = unique(ppmi[ ppmi$PATNO == as.character(u), 'CSFSAA'])
+    if ( 1 %in% suppas ) {
+      suppas='Positive'
+    } else if ( 0 %in% suppas ) {
+      suppas='Negative'
+    } else suppas=NA
+    clin2[clin2sel,'AsynStatus']=suppas
+  }
+}
+
+imagingdate=rep( NA, nrow( clin2 ) )
+for ( k in 1:nrow( clin2 ) ) {
+  imagingdate[k] = substr( unlist(strsplit( clin2$filename[k], '-' ))[3],0,4)
+  }
+clin2$imaging_year = imagingdate
+demog=read.csv("~/code/multidisorder/data/ppmi_gwas/Demographics_06Feb2024.csv")
+demog[demog=='.']=NA
+testid="102529"
+ppmi$PATNO=as.character(ppmi$PATNO)
+demog$PATNO = as.character( demog$PATNO )
+commonids = unique( intersect( ppmi$PATNO, demog$PATNO ) )
+ppmi = merge( ppmi, demog, by='PATNO', all.x=TRUE )
+rmnames=names(ppmi)[ grep("[.]y",names(ppmi))]
+ppmi=ppmi[,!(names(ppmi) %in% rmnames)]
+# names(ppmi)=gsub("[.]x","",names(ppmi))
+ppmi$birthdate=ppmi$BIRTHDT
+# convert birtdate to NRG format
+for ( k in 1:nrow(ppmi) ) {
+        if ( ! is.na( ppmi$BIRTHDT[k] ) ) {
+            temp=unlist(strsplit(ppmi$BIRTHDT[k], "/"))
+            ppmi$birthdate[k]=as.numeric(paste0(temp[2],temp[1],15)) # add the 15th as the estimated date
+        }
+    }
+# now we can compute age at imaging using imaging date in addition to BIRTHDT
+clin2$ageatimaging=NA
+clin2$EVENT_ID=NA
+clin2$clin_imaging_mismatch=TRUE
+for ( k in 1:nrow( clin2 ) ) {
+    subjectbdate = unique( ppmi$birthdate[ ppmi$PATNO == clin2$PATNO[k] ] )
+    clin2$ageatimaging[k] = as.numeric( 
+            difftime( 
+                nrgDateToRDate( clin2$date[k] ), 
+                nrgDateToRDate( subjectbdate ), units='weeks' )/52.0)
+    # find the closest EVENT_ID using ageviz
+    agesel=which( ppmi$PATNO == clin2$PATNO[k] )
+    if ( length( agesel ) == 0 | is.na( clin2$ageatimaging[k] ) ) {
+        next # this is like continue
+        }
+    locages=ppmi[agesel,'age_at_visit']
+    closest=which.min( abs(clin2$ageatimaging[k]-locages))
+    wclin = agesel[closest]
+    clin2$EVENT_ID[k]=ppmi[wclin,'EVENT_ID.x']
+    # select clin
+    if ( length(wclin) == 1 ) {
+        if ( ! exists("clin2add" ) ) {
+            clin2add=names(ppmi)[ !(names(ppmi) %in% names(clin2) )]
+            }
+        clin2[k,clin2add]=ppmi[wclin,clin2add]
+        clin2$clin_imaging_mismatch[k]=FALSE
+        } else {
+            stop("akred - should not reach this point")
+            wclin = which(ppmi$PATNO == clin2$PATNO[k] )
+            # find next closest match
+            if ( length(wclin) > 0 ) {
+                locclin=ppmi[wclin,]
+                closest=which.min( abs(clin2$ageatimaging[k]-locclin$age_at_visit))
+                clin2[k,clin2add]=locclin[closest,clin2add]
+            }
+        }
+}
+
+clin2$DX = NA
+clin2$DX = 'CN'
+clin2$DX[ clin2$CONCOHORT == 1 ]='PD'
+clin2$DX[ clin2$CONCOHORT == 4 ]='Prodromal'
+clin2$DXSubRaw=paste0( clin2$DX, "_", clin2$subgroup )
+clin2$DXSub=NA
+clin2$DXSub[ clin2$DX == 'CN' ]='CN'
+ispd = which( clin2$DX == 'PD' )
+ispro = which( clin2$DX == 'Prodromal' )
+isgba = grep("GBA",clin2$subgroup)
+islrrk2 = grep("LRRK2",clin2$subgroup)
+isprkn = grep("PRKN",clin2$subgroup)
+issnca = grep("SNCA",clin2$subgroup)
+issporadic = grep("Sporadic",clin2$subgroup)
+isprodspor = which( clin2$subgroup %in% c("Hyposmia","RBD","Sporadic","RBD + Hyposmia") )
+clin2$DXSub[ intersect(ispd,issporadic) ]='PDSporadic'
+clin2$DXSub[ intersect(ispd,islrrk2) ]='PDLRRK2'
+clin2$DXSub[ intersect(ispd,isgba) ]='PDGBA'
+clin2$DXSub[ intersect(ispro,isprodspor) ]='ProdromalSporadic'
+clin2$DXSub[ intersect(ispro,islrrk2) ]='ProdromalLRRK2'
+clin2$DXSub[ intersect(ispro,isgba) ]='ProdromalGBA'
+isbl = clin2$EVENT_ID == 'BL'
+print( table( clin2$DXSub[isbl], clin2$AsynStatus[isbl] ) )
+isv4 = clin2$EVENT_ID == 'V04'
+print( table( clin2$DXSub[isv4], clin2$AsynStatus[isv4] ) )
+clin2$DXSubAsyn=NA
+nna=!is.na(clin2$AsynStatus)
+clin2$DXSubAsyn[ nna ]=paste0( clin2$DXSub[nna], clin2$AsynStatus[nna] )
+clin2$DXSubAsyn[ is.na( clin2$AsynStatus)|is.na(clin2$DXSub)]=NA
+
+# get the baseline age for imaging and the change in time
+clin2$yearsbl=NA
+clin2$age_BL=NA
+clin2$imaging_EVENT_ID=NA
+usubs=unique(clin2$PATNO)
+for ( u in usubs ) {
+    seller=clin2$PATNO == u
+    losel = clin2[seller, ]
+    minage=min(losel$ageatimaging,na.rm=T)
+    clin2$age_BL[seller]=minage
+    loy=losel$ageatimaging-minage
+    clin2$yearsbl[seller]=loy
+    clin2$imaging_EVENT_ID[seller]=paste0("V",round(loy*4))
+    }
+clin2$brainVolume = rowSums( clin2[,getNamesFromDataframe( c("T1Hier","vol","hemis"), clin2 )])
+clin2$brainVolume = clin2$brainVolume/mean(clin2$brainVolume,na.rm=T)
+clin2$mrimfg[ clin2$mrimfg == ""]="Unk"
+clin2$APOE[ clin2$APOE == "" ] = "e3/e3"
+clin2$abeta = as.numeric( clin2$abeta )
+clin2$tau = as.numeric( clin2$tau )
+clin2$DXSubAsyn = NA
+nna=!is.na( clin2$AsynStatus )
+clin2$DXSubAsyn[nna]=paste0(clin2$joinedDX[nna], clin2$AsynStatus[nna] )
+updrsnames = c( getNamesFromDataframe( 'updrs' , clin2), 
+  getNamesFromDataframe( 'moca' , clin2) )
+for ( u in c(updrsnames,"duration_yrs") ) clin2[,u]=as.numeric( clin2[,u])
+clin2bl=clin2[clin2$EVENT_ID=='BL',]
+aggregate( updrs_totscore ~ DXSubAsyn, clin2bl, mean, na.rm=T )
+negcnids = clin2bl$PATNO[ subtyper::fs(clin2bl$DXSubAsyn == 'CNPositive') ]
+table( 
+  clin2bl$subgroup[ subtyper::fs(clin2bl$PATNO %in% negcnids)  ],
+  clin2bl$DXSub[ subtyper::fs(clin2bl$PATNO %in% negcnids)  ] )
+
+
+clin2bl$DXSubAsyn[ subtyper::fs(clin2bl$PATNO %in% negcnids)  ]
+clin2bl$DXSub[ subtyper::fs(clin2bl$PATNO %in% negcnids)  ]
+
+table( 
+  ppmi$subgroup[ subtyper::fs(ppmi$PATNO %in% negcnids)  ],
+  ppmi$CONCOHORT[ subtyper::fs(ppmi$PATNO %in% negcnids)  ] )
+##########################
+clin2$commonID=clin2$PATNO
+clin2$commonAge=clin2$age_BL
+clin2$commonSex="Male"
+clin2$commonSex[clin2$SEX ==0 ]="Female"
+clin2$commonEdu=as.numeric( clin2$educ )
+clin2$MOCA=clin2$moca
+clin2$studyName = clin2$projectID
+clin2$hy=as.numeric( clin2$hy )
+clin2b = fillBaselineColumn( clin2,
+        c('brainVolume','hy','MOCA'), 
+        'commonID', 'yearsbl', 0, 
+        fast=T, verbose=F )[[1]]
+# write.csv( clin2, '/tmp/ppmi.csv', row.names=FALSE )
+# write.csv( clin2b, '/tmp/ppmib.csv', row.names=FALSE )
+ppmi = clin2b
+```
+
 
 # Abstract
 
@@ -163,6 +416,7 @@ In summary, the `resting_state_fmri_networks` function embodies a robust and emp
 
 The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the LONI Imaging Data Archive (LONI IDA). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all column headers are available on the LONI IDA.
 
+We attach the neuroimaging data to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) available on the LONI IDA.  Code for this merging process is available.
 
 
 # Technical Validation
@@ -180,6 +434,11 @@ Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individua
 Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dMRI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes beyond the substantia nigra [(Talai2018)](https://www.sciencedirect.com/science/article/pii/S2213158218303036). 
 
 The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD's progression and effects. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
+
+### effect of PRS
+
+something here.  Linda?
+
 
 ```{r pkgs,echo=FALSE,eval=TRUE,messages=FALSE,cache=TRUE}
 set.seed( 0 )
@@ -234,7 +493,7 @@ library(analyzer)
 library(forcats)
 options( ztable.type="html" )
 tblcmd = ztable
-buildsci=FALSE
+buildsci=TRUE
 ```
 
 ```{r functions,echo=FALSE,eval=TRUE,warnings=FALSE,messages=FALSE,cache=FALSE}
@@ -288,6 +547,7 @@ if ( ! exists( "ppmi" ) ) {
   ppmifn = "../data/latest_ppmi_plus.csv"; myrez='or'
   ppmifn = "../data/latest_ppmi_plus_sr.csv"; myrez='sr'
   ppmifn = "../data/latest_ppmi_plus_sr_fmri_up.csv"; myrez='sr'
+  ppmifn = '/tmp/ppmi.csv'
   ppmi = read.csv(ppmifn)
   ppmi = fillBaselineColumn( ppmi,
         c('brainVolume','hy','MOCA'), 
@@ -298,6 +558,7 @@ if ( ! exists( "ppmi" ) ) {
         "PDPRKN", "PDLRRK2", "PDGBA", "PDSporadic",
         "CBSPSP", "L_SD", "SV", "PNFA", "bvFTD",
         "SMC",  "MCI", "AD" ) 
+  ppmi$joinedDX[ !(ppmi$joinedDX %in% mylevs) ]=NA
   ppmi$joinedDX = factor( ppmi$joinedDX, levels=mylevs )
 
 }
@@ -458,7 +719,7 @@ temp = ppmi[ ppmi$studyName %in% c('PPMI','ADNI') &
   subtyper::fs(ppmi$AsynStatus == 'Positive') &
   ysel &ppmi$T1Hier_resnetGrade >= 1.05,]
 if ( myrez == "sr" ) {
-  write.csv( temp[,'u_hier_id'], '/tmp/temp_ids.csv', row.names=FALSE )
+#  write.csv( temp[,'filename'], '/tmp/temp_ids.csv', row.names=FALSE )
 } else {
 #  tempids = read.csv( '/tmp/temp_ids.csv' )
 #  temp = temp[ temp[,'u_hier_id'] %in% tempids$x, ]
@@ -521,6 +782,7 @@ for ( cog in sort(cogs) ) {
     cogformcommon=paste( cog, "  ~ (1|PATNO) + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
+#    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
     temp2 = temp[ !is.na( temp[,voi]) & temp$yearsbl < 5.85, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
