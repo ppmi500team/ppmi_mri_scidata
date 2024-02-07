@@ -87,6 +87,9 @@ if ( ! exists("clin2b") ) {
     } # else print(paste("miss",u))
   }
   clin2b$LRRK2_study = !is.na( clin2b$LRRK2_cohort)
+ summary( lm( LRRK2_MRIPROTOCOL ~ DTI_dti_tsnr_dwi_mean +T1Hier_evratio + noise + snr + msk_vol,data=clin2b) )
+ summary( lm( LRRK2_MRIPROTOCOL ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+DTI_dti_ssnr_dwi_mean+T1Hier_resnetGrade +T1Hier_evratio + cnr + noise,data=clin2b) )
+ summary( lm( LRRK2_MRIPROTOCOL ~  cnr + noise  + msk_vol + spc0+	spc1+	spc2,data=clin2b) )
 }
 ppmi = clin2b
 ```
@@ -385,33 +388,39 @@ posate = c( #"CNPositive",
 posate = c( "ProdromalSporadicPositive","PDGBAPositive", "PDLRRK2Positive",  "PDSporadicPositive" )
 ispd = c(   "PDSporadicPositive"  )
 ispd = c( "PDGBAPositive", "PDLRRK2Positive",  "PDSporadicPositive", "MCIPositive"  )
-ysel = ppmi$yearsbl <= 4.5 
 dxsel2 = ppmi$DXSubAsyn %in% c(
   negate, posate, ispd ) & ysel 
 mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 mylevsx1=c( "CN", "ProdromalSporadic", "PDSporadic", "MCI", "AD" )
-temp = ppmi[ ppmi$studyName %in% c('PPMI','ADNI') & 
-  ppmi$commonAge <= 800 &
+# keep the "best" 2900 examples
+ntokeep = 2950
+temp = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+ysel = temp$yearsbl <= 4.5 
+temp = temp[ temp$studyName %in% c('PPMI','ADNI') & ysel &
 #  ppmi$DXSubAsyn %in%  mylevsx0[c(1,2,3)]&  
 #  ppmi$joinedDX %in%  mylevsx1[c(1,2,3)] &  
 #  subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2" ) ) &
-  subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2","PDSporadic" ) ) &
-  ysel & ppmi$T1Hier_resnetGrade > 1.05,]
+  subtyper::fs( temp$joinedDX %in% c( "CN","PDLRRK2","PDSporadic" ) ),]
 temp = normalizersfmri( temp )
 temp$joinedDX <- fct_relevel(temp$joinedDX, "CN")
 temp$DXSubAsyn <- fct_relevel(temp$DXSubAsyn, "CNNegative")
 ###############################################
 temp$TDX = NA #as.character( temp$DXSubAsyn )
-temp$TDX = temp$DXSubAsyn
-temp$TDX[ temp$LRRK2_study == FALSE ] = NA
-mydx='PDLRRK2'
+dolrrk2=FALSE
+if ( dolrrk2 ) {
+  temp$TDX = temp$DXSubAsyn
+  temp$TDX[ temp$LRRK2_study == FALSE ] = NA
+  mydx='PDLRRK2'
+} else {
 # temp$TDX[ temp$AsynStatus == 'Negative' & temp$joinedDX == 'CN' ]='CN'
 # temp$TDX[ temp$DXSubAsyn %in% ispd ]='otherPositive'
 # temp$TDX[ temp$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
+  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DXPD-'
+  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicPositive' ]='DXPD+'
+  mydx='PDSp'
 # mydx='PDSpNeg'
-# temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
-# mydx='PDSpPos'
-# temp$TDX[ temp$DXSubAsyn  == 'PDSporadicPositive' ]='DX'
+#  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
+}
 #temp$joinedDX = factor( temp$joinedDX, levels = mylevsx1)
 #temp$DXSubAsyn = factor( temp$DXSubAsyn, levels = mylevsx0)
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_n_outliers < 100 ) &
@@ -425,7 +434,9 @@ subjectcount = table( temp$commonID )
 mysubs = names(  subjectcount > 1 )
 temp = temp[ temp$commonID %in% mysubs , ]
 xcl = c( "evr", "snr", "dvars","FD","motion","file","wide","SNR","_nc_",'paramset','u_hier_','censor', 'bandpass')
-rsfnames = getNamesFromDataframe( c("rsfMRI_fcnxpro"),  ppmi, exclusions=xcl )
+rsfnames = c( 
+  getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), temp, exclusions=xcl ),
+  getNamesFromDataframe( c("rsf","Asym",num,'_falff'), temp, exclusions=xcl ) )
 rsfnamescnx = getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_"),  ppmi, exclusions=xcl )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
 fdnames = getNamesFromDataframe( "_FD_", ppmi  )
@@ -439,11 +450,10 @@ dtinamesasymlr = c(
   getNamesFromDataframe( c("DTI","LRAVG"), temp ),
   getNamesFromDataframe( c("DTI","Asym"), temp ) )
 idpst1 = c( getNamesFromDataframe(c("T1Hier","cit168","vol"),temp, exclusions=c("left","right")), getNamesFromDataframe(c("T1Hier","dktcortex","thk"),temp, exclusions=c("left","right")) )
-derka
 ######################################
 # print( table( temp[,dxvar]))
 temp = fillBaselineColumn( temp,
-        c( idpst1, rsfnamescnx, dtinamesasymlr, 'hy' ),
+        c( idpst1, rsfnamescnx, rsfnames, dtinamesasymlr, 'hy' ),
         'commonID', 'yearsbl', 0, 
         fast=T, verbose=F )[[1]]
 temp$hy_BL[ is.na( temp$hy_BL ) & temp$joinedDX == 'CN' ]=0
@@ -458,6 +468,9 @@ if ( is_test ) {
 #  nmstotest = sample( nmstotest, 4 )
   mycorr='none'
 }
+
+derka
+
 dxdf=data.frame()
 for ( voi in nmstotest ) {
   n=nrow(dxdf)+1
@@ -468,6 +481,8 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ (LRRK2_MRIPROTOCOL) + ", dxform )
   bform = paste( voi, " ~ LRRK2_MRIPROTOCOL+DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+DTI_dti_ssnr_dwi_mean+", dxform )
   bform = paste( voi, " ~ LRRK2_MRIPROTOCOL+DTI_dti_tsnr_b0_mean + DTI_dti_tsnr_dwi_mean+", dxform )
+  bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ spc0 +spc1+", dxform )
+  bform = paste( voi, " ~ brainVolume_BL + T1Hier_resnetGrade+spc0+spc2+", dxform )
   newform = paste( bform, " * ", dxvar  )
   temp2 = temp[ !is.na( temp[,voi]), ]
 #  temp2[,vois[2]]=psych::winsor( temp2[,vois[2]], 0.005 )
@@ -494,6 +509,8 @@ for ( voi in nmstotest ) {
     print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
 }
+psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= .05 )
+table(psel)
 
 ```
 
@@ -523,10 +540,11 @@ mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "PDSporadic" )
 mylevsx2=c(   "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
-temp = ppmi[ ppmi$studyName %in% c('PPMI','ADNI') & 
-  ppmi$joinedDX %in%  mylevsx2 &
-  subtyper::fs(ppmi$AsynStatus == 'Positive') &
-  ysel & ppmi$T1Hier_resnetGrade >= 1.05,]
+temp = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+ysel = temp$yearsbl <= 4.5 
+temp = temp[ temp$studyName %in% c('PPMI','ADNI') & 
+  temp$joinedDX %in%  mylevsx2 &
+  subtyper::fs(temp$AsynStatus == 'Positive') & ysel ,]
 if ( myrez == "sr" ) {
 #  write.csv( temp[,'filename'], '/tmp/temp_ids.csv', row.names=FALSE )
 } else {
