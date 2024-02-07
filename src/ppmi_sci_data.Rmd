@@ -62,9 +62,13 @@ ppmi[ppmi=='.']=NA
 ppmi$yearsbl = ppmi$age_at_visit - ppmi$age
 rm( ppmidemog0 )
 if ( ! exists("pymf") ) {
-#  pym = read.csv( paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v1.2.7.csv') )
-  pym = read.csv( paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.7.csv') )
-#  pym = read.csv( paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.7.csv') )
+  pymfns = data.frame( 
+    fns=c( 
+      paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.7.csv'),
+      paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.7.csv'),
+      paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v1.2.7.csv')  ),
+    rez=c("OR","SRF","SRP") )
+  pym = read.csv(  pymfns$fn[pymfns$rez == myrez ] )
   pymf = pym[ , !(colnames(pym) %in% getNamesFromDataframe("u_hier_id", pym))] # junk
   pymf = filterNAcolumns( pymf, 20 ) # remove columns with > 20% missing
   pymf[ is.na(pymf$mrimfg), 'mrimfg' ]='Unk'
@@ -277,7 +281,6 @@ clin2b = fillBaselineColumn( clin2,
 # write.csv( clin2b, '/tmp/ppmib.csv', row.names=FALSE )
 }
 ppmi = clin2b
-myrez='or'
 ```
 
 
@@ -593,7 +596,9 @@ temp$TDX[ temp$AsynStatus == 'Negative' & temp$joinedDX == 'CN' ]='CN'
 # temp$TDX[ temp$DXSubAsyn %in% ispd ]='otherPositive'
 # temp$TDX[ temp$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
 mydx='PDSpNeg'
-temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
+# temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
+mydx='PDSpPos'
+temp$TDX[ temp$DXSubAsyn  == 'PDSporadicPositive' ]='DX'
 #temp$joinedDX = factor( temp$joinedDX, levels = mylevsx1)
 #temp$DXSubAsyn = factor( temp$DXSubAsyn, levels = mylevsx0)
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_n_outliers < 100 ) &
@@ -636,6 +641,7 @@ nmstotest = idpst1
 mycorr = 'BY'
 if ( is_test ) {
   nmstotest = idpst1[ grep("_gp",idpst1)]
+  nmstotest = idpst1[ multigrep( c("dktcortex","thk"),idpst1,intersect=T)]
   mycorr='none'
 }
 dxdf=data.frame()
@@ -733,7 +739,10 @@ dtinamesasymlr = c(
   getNamesFromDataframe( c("DTI","LRAVG"), temp, exclusions=c('_BL',"_delta" )),
   getNamesFromDataframe( c("DTI","Asym"), temp, exclusions=c('_BL',"_delta") ) )
 #######################################################
-rsfnames = getNamesFromDataframe( paste0(c("rsfMRI_fcnxpro"),num),  ppmi, exclusions=xcl )
+rsfnames = c( 
+  idps[  multigrep(c("rsf","LRAVG",num), idps, intersect=TRUE ) ],
+  idps[  multigrep(c("rsf","Asym",num), idps, intersect=TRUE ) ]
+)
 rsfnamescnx = getNamesFromDataframe( c(paste0(c("rsfMRI_fcnxpro"),num),"_2_"),  ppmi, exclusions=xcl )
 #######
 fdnames = getNamesFromDataframe( "_FD_", temp  )
@@ -750,7 +759,7 @@ stadfrsf=data.frame()
 nmstotest = sort( rsfnamescnx )
 qth=1e-4
 if ( is_test ) {
-  nmstotest = sample( nmstotest, 10 )
+  nmstotest = sample( rsfnames, 30 )
   qth=0.01
 }
 for ( cog in sort(cogs) ) {
