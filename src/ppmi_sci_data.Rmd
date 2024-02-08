@@ -350,7 +350,6 @@ normalizersfmri = function( dd, applyit='none' ) {
 ```{r readdata,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE,cache=FALSE}
 is_test = FALSE
 if ( ! exists( "ppmi" ) ) {
-
   ppmifn = "../data/latest_ppmi_plus.csv"; myrez='or'
   ppmifn = "../data/latest_ppmi_plus_sr.csv"; myrez='sr'
   ppmifn = "../data/latest_ppmi_plus_sr_fmri_up.csv"; myrez='sr'
@@ -534,12 +533,7 @@ mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "PDSporadic" )
 mylevsx2=c(   "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
-idpst1 = c( 
-  idps[ multigrep(c("thk","dktcortex","LRAVG"), idps, intersect=TRUE )],
-  idps[ multigrep(c("thk","dktcortex","Asym"), idps, intersect=TRUE )],
-  idps[ multigrep(c("vol","cit168","LRAVG"), idps, intersect=TRUE )],
-  idps[ multigrep(c("vol","cit168","Asym"), idps, intersect=TRUE )])
-nmidps = getNamesFromDataframe( c("NM2DMT"), temp, 
+nmidps = getNamesFromDataframe( c("NM2DMT"), mydog, 
   exclusions=c(xcl,"_q","min","sd","pt","count","_BL","_delta","coordinate"))
 xcl = c( "evr", "snr", "dvars","FD","motion","file","wide","SNR","_nc_",'paramset','u_hier_','censor', 'bandpass',"_BL", "outlier_threshold")
 #########################################################
@@ -558,8 +552,9 @@ rsfnamescnx = getNamesFromDataframe( c(paste0(c("rsfMRI_fcnxpro"),num),"_2_"),  
 #######
 fdnames = getNamesFromDataframe( "_FD_", mydog  )
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
+col2sbl = unique(c( idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs ))
 mydog = fillBaselineColumn( mydog,
-        c(dtinamesasymlr,rsfnames, rsfnamescnx, idpst1, nmidps, fdnames, cogs ), 
+        col2sbl,
         'PATNO', 'yearsbl', 0, 
         fast=T, verbose=F )[[1]]
 #########################################################
@@ -577,14 +572,13 @@ if ( is_test ) {
 for ( cog in sort(cogs) ) {
   for ( voi in nmstotest ) {
     n = nrow(stadfrsf)+1
-#    if ( n %% 10 == 0 ) print(stadfrsf[which.min(stadfrsf$anv),])
     voi = paste0(voi,"_BL")
     motname = paste( 
       paste0( "rsfMRI_fcnxpro",num,"_n_outliers_BL"), " + ",
       paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL") )
     cogformcommon=paste( cog, "  ~ (1|PATNO) + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
     temp2 = mydog[ !is.na( mydog[,voi]) , ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
