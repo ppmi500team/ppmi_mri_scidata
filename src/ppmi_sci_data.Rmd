@@ -46,9 +46,12 @@ redomerge=TRUE
 
 
 ```{r ppmimerge, echo=FALSE,eval=redomerge}
+library(subtyper)
+library(forcats)
+library(lmerTest)
+library(lme4)
+library(ggplot2)
 if ( ! exists("clin2b") ) {
-  library(subtyper)
-  library(forcats)
   rdir=path.expand('~/code/multidisorder/data/')
   if ( ! exists("pymf") ) {
     pymfns = data.frame( 
@@ -372,6 +375,7 @@ if ( ! exists( "ppmi" ) ) {
 
 ```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
 ######################################################################
+num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
 dxform="~  (1|PATNO)+ (1|SITE) + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="~  (1|PATNO) + studyName + commonEdu +  age_BL + commonSex + brainVolume_BL "
@@ -509,7 +513,7 @@ for ( voi in nmstotest ) {
 }
 psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= .05 )
 table(psel)
-
+##########################################################
 ```
 
 ```{r dxresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
@@ -529,7 +533,6 @@ dxdfsel[, !(colnames(dxdfsel) %in% c("singular"))] %>%
 
 ```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
 ####################################################################
-num=c(122,129,134)[1]
 signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
 mylevsx2=c( "CN", "ProdromalSporadic", "PDSporadic" )
 mylevsx2=c(  "ProdromalSporadic", "PDSporadic" )
