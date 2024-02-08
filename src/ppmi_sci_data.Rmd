@@ -398,49 +398,44 @@ mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 mylevsx1=c( "CN", "ProdromalSporadic", "PDSporadic", "MCI", "AD" )
 # keep the "best" 2900 examples
 ntokeep = 2950
-temp = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
-ysel = temp$yearsbl <= 4.5 
-temp = temp[ temp$studyName %in% c('PPMI','ADNI') & ysel &
+mydog = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+ysel = mydog$yearsbl <= 4.5 
+mydog = mydog[ mydog$studyName %in% c('PPMI','ADNI') & ysel &
 #  ppmi$DXSubAsyn %in%  mylevsx0[c(1,2,3)]&  
 #  ppmi$joinedDX %in%  mylevsx1[c(1,2,3)] &  
 #  subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2" ) ) &
-  subtyper::fs( temp$joinedDX %in% c( "CN","PDLRRK2","PDSporadic" ) ),]
-temp = normalizersfmri( temp )
-temp$joinedDX <- fct_relevel(temp$joinedDX, "CN")
-temp$DXSubAsyn <- fct_relevel(temp$DXSubAsyn, "CNNegative")
+  subtyper::fs( mydog$joinedDX %in% c( "CN","PDLRRK2","PDSporadic" ) ),]
+mydog = normalizersfmri( mydog )
+mydog$joinedDX <- fct_relevel(mydog$joinedDX, "CN")
+mydog$DXSubAsyn <- fct_relevel(mydog$DXSubAsyn, "CNNegative")
 ###############################################
-temp$TDX = NA #as.character( temp$DXSubAsyn )
+mydog$TDX = NA #as.character( mydog$DXSubAsyn )
 dolrrk2=FALSE
 if ( dolrrk2 ) {
-  temp$TDX = temp$DXSubAsyn
-  temp$TDX[ temp$LRRK2_study == FALSE ] = NA
+  mydog$TDX = mydog$DXSubAsyn
+  mydog$TDX[ mydog$LRRK2_study == FALSE ] = NA
   mydx='PDLRRK2'
 } else {
-# temp$TDX[ temp$AsynStatus == 'Negative' & temp$joinedDX == 'CN' ]='CN'
-# temp$TDX[ temp$DXSubAsyn %in% ispd ]='otherPositive'
-# temp$TDX[ temp$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
-  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DXPD-'
-  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicPositive' ]='DXPD+'
+# mydog$TDX[ mydog$AsynStatus == 'Negative' & mydog$joinedDX == 'CN' ]='CN'
+# mydog$TDX[ mydog$DXSubAsyn %in% ispd ]='otherPositive'
+# mydog$TDX[ mydog$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
+  mydog$TDX[ mydog$DXSubAsyn  == 'PDSporadicNegative' ]='DXPD-'
+  mydog$TDX[ mydog$DXSubAsyn  == 'PDSporadicPositive' ]='DXPD+'
   mydx='PDSp'
-# mydx='PDSpNeg'
-#  temp$TDX[ temp$DXSubAsyn  == 'PDSporadicNegative' ]='DX'
 }
-#temp$joinedDX = factor( temp$joinedDX, levels = mylevsx1)
-#temp$DXSubAsyn = factor( temp$DXSubAsyn, levels = mylevsx0)
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_n_outliers < 100 ) &
-#  subtyper::fs( ppmi$rsfMRI_fcnxpro122_FD_mean <= 0.5 ) &
-#  !is.na(ppmi$AsynStatus) & ppmi$T1Hier_resnetGrade > 1.05,]
+#  subtyper::fs( ppmi$rsfMRI_fcnxpro122_FD_mean <= 0.5 )
 
 
-temp = antspymm_predictors(temp, TRUE )
-idps = antspymm_predictors(temp, TRUE, TRUE )
-subjectcount = table( temp$commonID )
-mysubs = names(  subjectcount > 1 )
-temp = temp[ temp$commonID %in% mysubs , ]
+mydog = antspymm_predictors(mydog, TRUE )
+idps = antspymm_predictors(mydog, TRUE, TRUE )
+subjectcount = table( mydog$commonID )
+# mysubs = names(  subjectcount > 1 )
+# mydog = mydog[ mydog$commonID %in% mysubs , ]
 xcl = c( "evr", "snr", "dvars","FD","motion","file","wide","SNR","_nc_",'paramset','u_hier_','censor', 'bandpass')
 rsfnames = c( 
-  getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), temp, exclusions=xcl ),
-  getNamesFromDataframe( c("rsf","Asym",num,'_falff'), temp, exclusions=xcl ) )
+  getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), mydog, exclusions=xcl ),
+  getNamesFromDataframe( c("rsf","Asym",num,'_falff'), mydog, exclusions=xcl ) )
 rsfnamescnx = getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_"),  ppmi, exclusions=xcl )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
 fdnames = getNamesFromDataframe( "_FD_", ppmi  )
@@ -449,20 +444,20 @@ dxvar = 'AsynStatus'
 dxvar = 'joinedDX'
 dxvar = 'DXSubAsyn'
 dxvar = 'TDX'
-temp = temp[ !is.na( temp[,dxvar]), ]
+mydog = mydog[ !is.na( mydog[,dxvar]), ]
 dtinamesasymlr = c( 
-  getNamesFromDataframe( c("DTI","LRAVG"), temp ),
-  getNamesFromDataframe( c("DTI","Asym"), temp ) )
-idpst1 = c( getNamesFromDataframe(c("T1Hier","cit168","vol"),temp, exclusions=c("left","right")), getNamesFromDataframe(c("T1Hier","dktcortex","thk"),temp, exclusions=c("left","right")) )
+  getNamesFromDataframe( c("DTI","LRAVG"), mydog ),
+  getNamesFromDataframe( c("DTI","Asym"), mydog ) )
+idpst1 = c( getNamesFromDataframe(c("T1Hier","cit168","vol"),mydog, exclusions=c("left","right")), getNamesFromDataframe(c("T1Hier","dktcortex","thk"),mydog, exclusions=c("left","right")) )
 ######################################
-# print( table( temp[,dxvar]))
-temp = fillBaselineColumn( temp,
+# print( table( mydog[,dxvar]))
+mydog = fillBaselineColumn( mydog,
         c( idpst1, rsfnamescnx, rsfnames, dtinamesasymlr, 'hy' ),
         'commonID', 'yearsbl', 0, 
         fast=T, verbose=F )[[1]]
-temp$hy_BL[ is.na( temp$hy_BL ) & temp$joinedDX == 'CN' ]=0
-temp$hy_BL[ is.na( temp$hy_BL ) & temp$joinedDX != 'CN' ]=2
-temp$hy_BL = factor( temp$hy_BL )
+mydog$hy_BL[ is.na( mydog$hy_BL ) & mydog$joinedDX == 'CN' ]=0
+mydog$hy_BL[ is.na( mydog$hy_BL ) & mydog$joinedDX != 'CN' ]=2
+mydog$hy_BL = factor( mydog$hy_BL )
 ######################################
 nmstotest = idpst1
 mycorr = 'BY'
@@ -486,8 +481,7 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ spc0 +spc1+", dxform )
   bform = paste( voi, " ~ brainVolume_BL + T1Hier_resnetGrade+spc0+spc2+", dxform )
   newform = paste( bform, " * ", dxvar  )
-  temp2 = temp[ !is.na( temp[,voi]), ]
-#  temp2[,vois[2]]=psych::winsor( temp2[,vois[2]], 0.005 )
+  temp2 = mydog[ !is.na( mydog[,voi]), ]
   mdl=lmer( newform, data=temp2 )
   temp3 = temp2[ names(predict(mdl)),]
   temp3 = scaleqvars( temp3, newform )
@@ -540,23 +534,6 @@ mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "PDSporadic" )
 mylevsx2=c(   "PDLRRK2", "PDGBA", "PDSporadic" )
 mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
-temp = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
-ysel = temp$yearsbl <= 4.5 
-temp = temp[ temp$studyName %in% c('PPMI','ADNI') & 
-  temp$joinedDX %in%  mylevsx2 &
-  subtyper::fs(temp$AsynStatus == 'Positive') & ysel ,]
-if ( myrez == "sr" ) {
-#  write.csv( temp[,'filename'], '/tmp/temp_ids.csv', row.names=FALSE )
-} else {
-#  tempids = read.csv( '/tmp/temp_ids.csv' )
-#  temp = temp[ temp[,'u_hier_id'] %in% tempids$x, ]
-}
-temp = normalizersfmri( temp )
-#########################################################
-temp$joinedDX <- fct_relevel(temp$joinedDX, "CN")
-temp$DXSubAsyn <- fct_relevel(temp$DXSubAsyn, "CNNegative")
-temp = antspymm_predictors( temp, TRUE )
-idps = antspymm_predictors( temp, TRUE, TRUE )
 idpst1 = c( 
   idps[ multigrep(c("thk","dktcortex","LRAVG"), idps, intersect=TRUE )],
   idps[ multigrep(c("thk","dktcortex","Asym"), idps, intersect=TRUE )],
@@ -564,17 +541,14 @@ idpst1 = c(
   idps[ multigrep(c("vol","cit168","Asym"), idps, intersect=TRUE )])
 nmidps = getNamesFromDataframe( c("NM2DMT"), temp, 
   exclusions=c(xcl,"_q","min","sd","pt","count","_BL","_delta","coordinate"))
-subjectcount = table( temp$commonID )
-mysubs = names(  subjectcount > 0 )
-temp = temp[ temp$commonID %in% mysubs , ]
 xcl = c( "evr", "snr", "dvars","FD","motion","file","wide","SNR","_nc_",'paramset','u_hier_','censor', 'bandpass',"_BL", "outlier_threshold")
 #########################################################
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
 fdnames = getNamesFromDataframe( "_FD_", ppmi  )
 # dxvar = 'joinedDX'
 dtinamesasymlr = c( 
-  getNamesFromDataframe( c("DTI","LRAVG"), temp, exclusions=c('_BL',"_delta" )),
-  getNamesFromDataframe( c("DTI","Asym"), temp, exclusions=c('_BL',"_delta") ) )
+  getNamesFromDataframe( c("DTI","LRAVG"), mydog, exclusions=c('_BL',"_delta" )),
+  getNamesFromDataframe( c("DTI","Asym"), mydog, exclusions=c('_BL',"_delta") ) )
 #######################################################
 rsfnames = c( 
   idps[  multigrep(c("rsf","LRAVG",num,'_falff'), idps, intersect=TRUE ) ],
@@ -582,15 +556,15 @@ rsfnames = c(
 )
 rsfnamescnx = getNamesFromDataframe( c(paste0(c("rsfMRI_fcnxpro"),num),"_2_"),  ppmi, exclusions=xcl )
 #######
-fdnames = getNamesFromDataframe( "_FD_", temp  )
-cogs = getNamesFromDataframe( c("updrs","score"), temp, exclusions=c(4,'_BL',"_delta") )
-temp = fillBaselineColumn( temp,
+fdnames = getNamesFromDataframe( "_FD_", mydog  )
+cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
+mydog = fillBaselineColumn( mydog,
         c(dtinamesasymlr,rsfnames, rsfnamescnx, idpst1, nmidps, fdnames, cogs ), 
         'PATNO', 'yearsbl', 0, 
         fast=T, verbose=F )[[1]]
 #########################################################
 #########################################################
-temp$hy_BL = factor( temp$hy_BL )
+mydog$hy_BL = factor( mydog$hy_BL )
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 stadfrsf=data.frame()
 nmstotest = sort( rsfnamescnx )
@@ -612,16 +586,14 @@ for ( cog in sort(cogs) ) {
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
-    temp2 = temp[ !is.na( temp[,voi]) & temp$yearsbl < 2.85, ]
+    temp2 = mydog[ !is.na( mydog[,voi]) , ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
-#    temp2[,voi]=temp2[,voi]/temp2$NM2DMT_NM_range
     newform = paste(  cogformcommon, " * ", voi )
     temp2 = scaleqvars( temp2, newform )
     bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
     mdl=suppressMessages(lmer( newform, data=temp2 ))
     mycoffs = coefficients( summary( mdl ) )
-  #  if ( any(  mycoffs[ multigrep( voi,rownames(mycoffs)), 5 ] < 1e-2 ) ) {
     anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
     stadfrsf[n,'cog']=cog
     stadfrsf[n,'voi']=voi
