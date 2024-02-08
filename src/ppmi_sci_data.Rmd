@@ -389,7 +389,7 @@ posate = c( "ProdromalSporadicPositive","PDGBAPositive", "PDLRRK2Positive",  "PD
 ispd = c(   "PDSporadicPositive"  )
 ispd = c( "PDGBAPositive", "PDLRRK2Positive",  "PDSporadicPositive", "MCIPositive"  )
 dxsel2 = ppmi$DXSubAsyn %in% c(
-  negate, posate, ispd ) & ysel 
+  negate, posate, ispd )
 mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 mylevsx1=c( "CN", "ProdromalSporadic", "PDSporadic", "MCI", "AD" )
 # keep the "best" 2900 examples
@@ -469,8 +469,6 @@ if ( is_test ) {
   mycorr='none'
 }
 
-derka
-
 dxdf=data.frame()
 for ( voi in nmstotest ) {
   n=nrow(dxdf)+1
@@ -533,7 +531,6 @@ dxdfsel[, !(colnames(dxdfsel) %in% c("singular"))] %>%
 ####################################################################
 num=c(122,129,134)[1]
 signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
-ysel = ppmi$yearsbl <= 4.5
 mylevsx2=c( "CN", "ProdromalSporadic", "PDSporadic" )
 mylevsx2=c(  "ProdromalSporadic", "PDSporadic" )
 mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
