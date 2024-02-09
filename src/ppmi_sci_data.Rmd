@@ -74,6 +74,29 @@ if ( ! exists("clin2b") ) {
   ppmidemog0=read.csv( curfn )
   clin2b = merge_ppmi_imaging_clinical_demographic_data(
     demog, ppmidemog0, pymf, pymversion=myrez, saa )
+  # add tracker
+  tracker = read.csv("/Users/stnava/code/multidisorder/data/ppmi_2_0_internal_scan_tracking_report_v12-2024-02-08.csv")
+  tracker = tracker[ tracker$Modality == "MR", ]
+  tracker$EVENT_ID=tracker$Visit
+  tracker$EVENT_ID[ grep("Baseline",tracker$EVENT_ID)]="BL"
+  tracker$date=NA
+  momap=data.frame( num=c( paste0("0",1:9), "10", "11", "12") )
+  rownames(momap)=c("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC")
+  for ( k in 1:nrow(tracker) ) {
+    fixedev=unlist(strsplit( tracker$Visit[k], "/"))
+    if ( length( fixedev ) > 1 ) fixedev=fixedev[length( fixedev )]
+    tracker$EVENT_ID[k]=fixedev
+    fixeddt = unlist(strsplit( tracker$Scan.Date[k],"-"))
+    fixeddt[2] = momap[ fixeddt[2], 'num' ]
+    fixeddt = paste0( fixeddt[3] , fixeddt[2], fixeddt[1] )
+    tracker$date[k]=fixeddt
+    }
+  trackersub = tracker[, c("Subject.ID","date" )]
+  trackersub$imaging_protocol=2
+  names(trackersub)=c("PATNO","date", "imaging_protocol" )
+  clin2b=merge( clin2b, trackersub, by=c("PATNO","date"), all.x=TRUE )
+  clin2b$imaging_protocol[ is.na(clin2b$imaging_protocol) ]=1
+  # add LRRK2 
   lrrk2 = read.csv( paste0(rdir,'CSFSAA_LRRK2_MRI_SAMPLES_08Jan2024/Data-Table1.csv'))
   lrrk2$SAAGroup[ lrrk2$SAAGroup == " " ]=NA
   clin2b$LRRK2_study=NA
@@ -95,6 +118,7 @@ if ( ! exists("clin2b") ) {
  summary( lm( LRRK2_MRIPROTOCOL ~  cnr + noise  + msk_vol + spc0+	spc1+	spc2,data=clin2b) )
 }
 ppmi = clin2b
+ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
 ```
 
 
@@ -370,7 +394,7 @@ if ( ! exists( "ppmi" ) ) {
 }
 ```
 
-### mixed effects diagnosis
+### mixed effects diagnosis : T1
 
 ```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
 ######################################################################
@@ -379,7 +403,7 @@ num=c(122,129,134)[1] # resting state protocol numbers ###############
 dxform="~  (1|PATNO)+ (1|SITE) + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="~  (1|PATNO) + studyName + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="  (1|PATNO)  + commonEdu +  age_BL + commonSex + brainVolume_BL "
-dxform="  (1|PATNO) +  age_BL + commonSex "
+dxform="  (1|PATNO) + imaging_protocol + age_BL + commonSex "
 dxform = paste( dxform, "  + yearsbl ")
 # dxform = paste( dxform, " + DTI_dti_FD_mean + yearsbl ")
 # dxform = paste( dxform, " + yearsbl ")
@@ -415,12 +439,13 @@ if ( dolrrk2 ) {
   mydog$TDX[ mydog$LRRK2_study == FALSE ] = NA
   mydx='PDLRRK2'
 } else {
-# mydog$TDX[ mydog$AsynStatus == 'Negative' & mydog$joinedDX == 'CN' ]='CN'
+  mydog$TDX[ mydog$AsynStatus == 'Negative' & mydog$joinedDX == 'CN' ]='CN'
 # mydog$TDX[ mydog$DXSubAsyn %in% ispd ]='otherPositive'
-# mydog$TDX[ mydog$DXSubAsyn  == 'PDLRRK2Positive' ]='DX'
-  mydog$TDX[ mydog$DXSubAsyn  == 'PDSporadicNegative' ]='DXPD-'
+#  mydog$TDX[ mydog$DXSubAsyn  == 'PDLRRK2Positive' ]='LRRK2PD+'
+#  mydx='PDLRRK2+'
+#  mydog$TDX[ mydog$DXSubAsyn  == 'PDSporadicNegative' ]='DXPD-'
   mydog$TDX[ mydog$DXSubAsyn  == 'PDSporadicPositive' ]='DXPD+'
-  mydx='PDSp'
+  mydx='PDSp+'
 }
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_n_outliers < 100 ) &
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_FD_mean <= 0.5 )
@@ -467,9 +492,9 @@ if ( is_test ) {
   mycorr='none'
 }
 
-dxdf=data.frame()
+dxdfT1=data.frame()
 for ( voi in nmstotest ) {
-  n=nrow(dxdf)+1
+  n=nrow(dxdfT1)+1
   vois = paste0( voi, c("_BL", "_delta" ) )
   bform = paste( vois[2], " ~ hy_BL + ", vois[1], "+", dxform )
   bform = paste( vois[2], " ~ 1 + ", vois[1], "+", dxform )
@@ -488,41 +513,107 @@ for ( voi in nmstotest ) {
   bmdl=lmer( bform, data=temp3 )
   mycoffs = coefficients( summary( mdl ) )
   anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
-  dxdf[n,'voi']=voi
-  dxdf[n,'anv']=anvp
-  dxdf[n,'tyears']=mycoffs[ 'yearsbl', 4]
-  dxdf[n,'tcross']=mycoffs[ nrow(mycoffs)-1, 4]
-  dxdf[n,'tlong']=mycoffs[ nrow(mycoffs), 4]
-  dxdf[n,'res']=myrez
-  dxdf[n,'singular']=isSingular(mdl)
+  dxdfT1[n,'voi']=voi
+  dxdfT1[n,'anv']=anvp
+  dxdfT1[n,'tyears']=mycoffs[ 'yearsbl', 4]
+  dxdfT1[n,'tcross']=mycoffs[ nrow(mycoffs)-1, 4]
+  dxdfT1[n,'tlong']=mycoffs[ nrow(mycoffs), 4]
+  dxdfT1[n,'res']=myrez
+  dxdfT1[n,'singular']=isSingular(mdl)
 #  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
   if ( anvp < 1e-4 ) {
     print( mycoffs )
-    print( dxdf[n,] )
+    print( dxdfT1[n,] )
     anvp = insight::format_p( anvp, digits=4 )
     ttl=( paste( voi, myrez, " + ", mydx,  " : ", anvp ) )
     print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
 }
-psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= .05 )
+psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
 table(psel)
 ##########################################################
 ```
 
 ```{r dxresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
-psel = subtyper::fs( p.adjust( dxdf$anv, mycorr ) <= .05 )
+psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
 table(psel)
-if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdf))
-dxdfsel = dxdf[psel,]
-dxdfsel[,'dx']=mydx
-dxdfsel$anv = insight::format_p(  dxdfsel$anv, digits=4  )
-dxdfsel[, !(colnames(dxdfsel) %in% c("singular"))] %>%
+if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
+dxdfT1sel = dxdfT1[psel,]
+dxdfT1sel[,'dx']=mydx
+dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
+dxdfT1sel[, !(colnames(dxdfT1sel) %in% c("singular"))] %>%
   knitr::kable("latex", booktabs = TRUE) %>%
   kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
 
-### mixed effects UPDRS changes over time
+
+### mixed effects diagnosis : DTI
+
+```{r quicklmdxDT,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
+if ( is_test ) nmstotest=sample( dtinamesasymlr, 20) else nmstotest=dtinamesasymlr
+dxdfDTI=data.frame()
+for ( voi in nmstotest ) {
+  n=nrow(dxdfDTI)+1
+  vois = paste0( voi, c("_BL", "_delta" ) )
+  bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+", dxform )
+  bform = paste( voi, " ~ ", dxform )
+  bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ (1|PATNO) + age_BL + commonSex    + yearsbl " )
+  newform = paste( bform, " * ", dxvar  )
+  temp2 = mydog[ !is.na( mydog[,voi]) & 
+    subtyper::fs(mydog$DTI_dti_FD_mean < 5.0) &
+    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm > 0.43)&
+    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm > 0.25)&
+    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm < 0.475), ]
+  mdl=lmer( newform, data=temp2 )
+  temp3 = temp2[ names(predict(mdl)),]
+  temp3 = scaleqvars( temp3, newform )
+  mdl=lmer( newform, data=temp3 )
+  bmdl=lmer( bform, data=temp3 )
+  mycoffs = coefficients( summary( mdl ) )
+  anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
+  dxdfDTI[n,'voi']=voi
+  dxdfDTI[n,'anv']=anvp
+  dxdfDTI[n,'tyears']=mycoffs[ 'yearsbl', 4]
+  dxdfDTI[n,'tcross']=mycoffs[ nrow(mycoffs)-1, 4]
+  dxdfDTI[n,'tlong']=mycoffs[ nrow(mycoffs), 4]
+  dxdfDTI[n,'res']=myrez
+  dxdfDTI[n,'singular']=isSingular(mdl)
+#  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
+  if ( anvp < 0.001 ) {
+    print( mycoffs )
+    print( dxdfDTI[n,] )
+    anvp = insight::format_p( anvp, digits=4 )
+    ttl=( paste( voi, myrez, " + ", mydx,  " : ", anvp ) )
+    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
+  }
+}
+##########################################################
+```
+
+```{r dxresultsDT,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
+###########################################################
+psel = subtyper::fs( p.adjust( dxdfDTI$anv, 'BH' ) <= .05 )
+dxdfDTI[ multigrep(c('mean_fa',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_fa_fornix'
+dxdfDTI[ multigrep(c('mean_md',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_fornix'
+dxdfDTI[ multigrep(c('mean_md',"anterior_limb_of_internal_capsule"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_al_int_cap'
+dxdfDTI[ multigrep(c('mean_fa',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_fa_post_thal_rad'
+dxdfDTI[  multigrep(c('mean_md',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_post_thal_rad'
+dxdfDTI$voi=gsub(".jhu_icbm_labels_1mm","",dxdfDTI$voi,fixed=TRUE)
+dxdfDTI$voi=gsub("DTI_","",dxdfDTI$voi,fixed=TRUE)
+dxdfDTI$voi=gsub("dti_","",dxdfDTI$voi,fixed=TRUE)
+dxdfDTI$voi=gsub("mean_","",dxdfDTI$voi,fixed=TRUE)
+if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfDTI))
+dxdfDTIsel = dxdfDTI[psel,]
+dxdfDTIsel[,'dx']=mydx
+dxdfDTIsel$anv = insight::format_p(  dxdfDTIsel$anv, digits=4  )
+dxdfDTIsel[, !(colnames(dxdfDTIsel) %in% c("singular"))] %>%
+  knitr::kable("latex", booktabs = TRUE) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+
+### mixed effects UPDRS changes over time: resting state
 
 ```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
 ####################################################################
@@ -566,7 +657,8 @@ nmstotest = sort( rsfnamescnx )
 nmstotest = sort( rsfnames )
 qth=1e-4
 if ( is_test ) {
-  nmstotest = sample( rsfnames, 5 )
+  nmstotest = sample( rsfnames, 25 )
+  nmstotest = nmstotest[ -grep("Occ",nmstotest)]
   qth=0.01
 }
 for ( cog in sort(cogs) ) {
@@ -584,6 +676,7 @@ for ( cog in sort(cogs) ) {
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
     newform = paste(  cogformcommon, " * ", voi )
+    if ( nrow(temp2) > 100 ) {    
     temp2 = scaleqvars( temp2, newform )
     bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
     mdl=suppressMessages(lmer( newform, data=temp2 ))
@@ -605,7 +698,7 @@ for ( cog in sort(cogs) ) {
       print(prplot( mdl, 'yearsbl', voi, ttl, ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
 #      visreg::visreg( mdl, 'yearsbl', by=voi, main=ttl  )
     }
-  }
+  } }
 }
 #####################
 qdf=data.frame()
