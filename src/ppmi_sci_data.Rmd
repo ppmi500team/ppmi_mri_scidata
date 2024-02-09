@@ -348,7 +348,7 @@ normalizersfmri = function( dd, applyit='none' ) {
 ```
 
 ```{r readdata,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE,cache=FALSE}
-is_test = FALSE
+if ( ! exists( "is_test" ) ) is_test = FALSE
 if ( ! exists( "ppmi" ) ) {
   ppmifn = "../data/latest_ppmi_plus.csv"; myrez='or'
   ppmifn = "../data/latest_ppmi_plus_sr.csv"; myrez='sr'
