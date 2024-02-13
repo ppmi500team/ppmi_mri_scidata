@@ -119,8 +119,29 @@ if ( ! exists("clin2b") ) {
 }
 ppmi = clin2b
 ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
+
 ```
 
+
+```{r maketrim,echo=FALSE,eval=TRUE}
+ntokeep = 2950
+ppmitrim = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
+msnames = getNamesFromDataframe("pm_",ppmi,exclusions=c("BL","delta"))
+ppmitrim = antspymm_predictors( ppmitrim, TRUE )
+t1namesctx = getNamesFromDataframe( c("T1Hier","LRAVG",'dktcortex','thk'), ppmitrim)
+t1namescit = getNamesFromDataframe( c("T1Hier","LRAVG",'deep','vol'), ppmitrim)
+t1namesctxa = gsub("LRAVG","Asym",t1namesctx)
+t1namescita = gsub("LRAVG","Asym",t1namescit)
+t1vars = c(t1namesctx,t1namescit,t1namesctxa,t1namescita)
+ppmitrim0 = ppmitrim[ , c("subjectID","age_BL",'commonSex', "hy_BL", "duration_yrs","LEDD","moca",updnames, msnames, 'joinedDX','AsynStatus',"educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', 'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
+# write.csv( ppmitrim0, '~/Downloads/ppmitrim0_SR_first.csv',row.names=FALSE)
+# head( ppmitrim0, 2 )
+# isbl=subtyper::fs(ppmitrim$yearsbl==0 & ppmitrim$joinedDX == 'PDSporadic')
+# temp=ppmitrim[isbl,]
+# trimT1 = dcurvarsel( temp, c(t1namesctx,t1namescit), 1 )
+
+```
 
 # Abstract
 
@@ -419,8 +440,7 @@ dxsel2 = ppmi$DXSubAsyn %in% c(
   negate, posate, ispd )
 mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 mylevsx1=c( "CN", "ProdromalSporadic", "PDSporadic", "MCI", "AD" )
-# keep the "best" 2900 examples
-ntokeep = 2950
+# keep the "best" ntokeep examples
 mydog = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 ysel = mydog$yearsbl <= 4.5 
 mydog = mydog[ mydog$studyName %in% c('PPMI','ADNI') & ysel &
@@ -559,12 +579,16 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+", dxform )
   bform = paste( voi, " ~ ", dxform )
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ (1|PATNO) + age_BL + commonSex    + yearsbl " )
+  bform = paste( voi, " ~DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ imaging_protocol + (1|PATNO) + age_BL + commonSex    + yearsbl " )
   newform = paste( bform, " * ", dxvar  )
+  qcclow = quantile( mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm, 0.01,na.rm=T )
+  qcorlow = quantile( mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm, 0.01,na.rm=T )
+  qcorhi = quantile( mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm, 0.99,na.rm=T )
   temp2 = mydog[ !is.na( mydog[,voi]) & 
     subtyper::fs(mydog$DTI_dti_FD_mean < 5.0) &
-    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm > 0.43)&
-    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm > 0.25)&
-    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm < 0.475), ]
+    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm > qcclow )&
+    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm > qcorlow)&
+    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm < qcorhi), ]
   mdl=lmer( newform, data=temp2 )
   temp3 = temp2[ names(predict(mdl)),]
   temp3 = scaleqvars( temp3, newform )
@@ -594,11 +618,13 @@ for ( voi in nmstotest ) {
 ```{r dxresultsDT,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
 ###########################################################
 psel = subtyper::fs( p.adjust( dxdfDTI$anv, 'BH' ) <= .05 )
-dxdfDTI[ multigrep(c('mean_fa',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_fa_fornix'
-dxdfDTI[ multigrep(c('mean_md',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_fornix'
-dxdfDTI[ multigrep(c('mean_md',"anterior_limb_of_internal_capsule"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_al_int_cap'
-dxdfDTI[ multigrep(c('mean_fa',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_fa_post_thal_rad'
-dxdfDTI[  multigrep(c('mean_md',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='DTI_mean_md_post_thal_rad'
+dxdfDTI[ multigrep(c('mean_fa',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_fornix'
+dxdfDTI[ multigrep(c('mean_md',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='md_fornix'
+dxdfDTI[ multigrep(c('mean_md',"anterior_limb_of_internal_capsule"),dxdfDTI$voi,intersect=TRUE),'voi']='md_al_int_cap'
+dxdfDTI[ multigrep(c('mean_fa',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_post_thal_rad'
+dxdfDTI[  multigrep(c('mean_md',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='md_post_thal_rad'
+dxdfDTI[  multigrep(c('mean_fa',"occipital_fasciculus_"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_superior_fronto_occipital_fasciculus'
+dxdfDTI[  multigrep(c('mean_md',"occipital_fasciculus_"),dxdfDTI$voi,intersect=TRUE),'voi']='md_superior_fronto_occipital_fasciculus'
 dxdfDTI$voi=gsub(".jhu_icbm_labels_1mm","",dxdfDTI$voi,fixed=TRUE)
 dxdfDTI$voi=gsub("DTI_","",dxdfDTI$voi,fixed=TRUE)
 dxdfDTI$voi=gsub("dti_","",dxdfDTI$voi,fixed=TRUE)
