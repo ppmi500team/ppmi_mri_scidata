@@ -71,7 +71,10 @@ if ( ! exists("clin2b") ) {
     }
   demog=read.csv(paste0(rdir,"Demographics_06Feb2024.csv"))
   curfn=paste0(rdir,'PPMI_Curated_Data_Cut_Public_20230612_rev.csv')
-  saa=read.csv( paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv') )
+  saafn = paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv')
+  if ( ! exists( saafn ) )
+    saafn = paste0(rdir,'ppmi_gwas/PPMI_CSFSAA_09Oct2023.csv')
+  saa=read.csv( saafn )
   ppmidemog0=read.csv( curfn )
   clin2b = merge_ppmi_imaging_clinical_demographic_data(
     demog, ppmidemog0, pymf, pymversion=myrez, saa )
@@ -129,14 +132,21 @@ ntokeep = 2950
 ppmitrim = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
 msnames = getNamesFromDataframe("pm_",ppmi,exclusions=c("BL","delta"))
+lrrk2names= getNamesFromDataframe("LRRK2_",ppmi,exclusions=c("BL","delta","LRRK2_MRIPROTOCOL"))
 ppmitrim = antspymm_predictors( ppmitrim, TRUE )
 t1namesctx = getNamesFromDataframe( c("T1Hier","LRAVG",'dktcortex','thk'), ppmitrim)
 t1namescit = getNamesFromDataframe( c("T1Hier","LRAVG",'deep','vol'), ppmitrim)
+t1namesnbm = getNamesFromDataframe( c("T1Hier","LRAVG",'nbm','vol'), ppmitrim)
+t1namesbst = getNamesFromDataframe( c("T1Hier",'brainstem','vol'), ppmitrim, exclusions=c("tissues","lobes"))[-1]
+t1namescrb = getNamesFromDataframe( c("T1Hier",'cerebellu','LRAVG','vol'), ppmitrim, exclusions=c("tissues","lobes","dktregion"))
 t1namesctxa = gsub("LRAVG","Asym",t1namesctx)
 t1namescita = gsub("LRAVG","Asym",t1namescit)
-t1vars = c(t1namesctx,t1namescit,t1namesctxa,t1namescita)
-ppmitrim0 = ppmitrim[ , c("subjectID","age_BL",'commonSex', "hy_BL", "duration_yrs","LEDD","moca",updnames, msnames, 'joinedDX','AsynStatus',"educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', 'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
-# write.csv( ppmitrim0, '~/Downloads/ppmitrim0_SR_first.csv',row.names=FALSE)
+t1namesnbma = gsub("LRAVG","Asym",t1namesnbm)
+t1namescrba = gsub("LRAVG","Asym",t1namescrb)
+t1vars = c(t1namesbst,t1namesctx,t1namescit,t1namesnbm,t1namescrb,t1namesctxa,t1namescita,t1namesnbma,t1namescrba)
+ppmitrim0 = ppmitrim[ , c("subjectID","age_BL",'commonSex', "hy_BL", "duration_yrs","LEDD","moca",updnames, msnames, 'joinedDX','AsynStatus', "DXSubAsyn", "educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', lrrk2names,  'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
+
+# write.csv( ppmitrim0, '~/Downloads/ppmitrim0_SR_first_extended.csv',row.names=FALSE)
 # head( ppmitrim0, 2 )
 # isbl=subtyper::fs(ppmitrim$yearsbl==0 & ppmitrim$joinedDX == 'PDSporadic')
 # temp=ppmitrim[isbl,]
