@@ -79,7 +79,7 @@ if ( ! exists("clin2b") ) {
   clin2b = merge_ppmi_imaging_clinical_demographic_data(
     demog, ppmidemog0, pymf, pymversion=myrez, saa )
   # add tracker
-  tracker = read.csv("/Users/stnava/code/multidisorder/data/ppmi_2_0_internal_scan_tracking_report_v12-2024-02-08.csv")
+  tracker = read.csv(paste0(rdir,"ppmi_2_0_internal_scan_tracking_report_v12-2024-02-08.csv"))
   tracker = tracker[ tracker$Modality == "MR", ]
   tracker$EVENT_ID=tracker$Visit
   tracker$EVENT_ID[ grep("Baseline",tracker$EVENT_ID)]="BL"
