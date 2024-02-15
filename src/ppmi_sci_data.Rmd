@@ -46,6 +46,7 @@ redomerge=TRUE
 
 
 ```{r ppmimerge, echo=FALSE,eval=redomerge}
+library(plyr)
 library(subtyper)
 library(forcats)
 library(lmerTest)
@@ -72,14 +73,13 @@ if ( ! exists("clin2b") ) {
   demog=read.csv(paste0(rdir,"Demographics_06Feb2024.csv"))
   curfn=paste0(rdir,'PPMI_Curated_Data_Cut_Public_20230612_rev.csv')
   saafn = paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv')
-  if ( ! exists( saafn ) )
-    saafn = paste0(rdir,'ppmi_gwas/PPMI_CSFSAA_09Oct2023.csv')
   saa=read.csv( saafn )
   ppmidemog0=read.csv( curfn )
   clin2b = merge_ppmi_imaging_clinical_demographic_data(
     demog, ppmidemog0, pymf, pymversion=myrez, saa )
   # add tracker
   tracker = read.csv(paste0(rdir,"ppmi_2_0_internal_scan_tracking_report_v12-2024-02-08.csv"))
+
   tracker = tracker[ tracker$Modality == "MR", ]
   tracker$EVENT_ID=tracker$Visit
   tracker$EVENT_ID[ grep("Baseline",tracker$EVENT_ID)]="BL"
@@ -127,7 +127,7 @@ ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
 ```
 
 
-```{r maketrim,echo=FALSE,eval=TRUE}
+```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
 ntokeep = 2950
 ppmitrim = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
@@ -180,13 +180,34 @@ The Methods should include detailed text describing any steps or procedures used
 
 ## MRI data collection 
 
-## Semi-automated quality assessment
+MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  
+Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as 
+part of exploratory investigations.  In 2020, a 
+new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities 
+collected.  The details of the sequences used is covered elsewhere **Lino - FIXME IS IT? CITATION?**.  
+The "phase" of data collection is captured in the variable FIXME.
 
-Maybe this should not appear here ...
+### Semi-automated quality assessment
+
+Each T1w image was reviewed by a `resnetGrader` (a deep learning model trained to predict image quality) [@avants2022] 
+as well as inspected visually for usability.  The visual inspection is performed by BA and serves as a sanity check 
+to the automated method.  The `resnetGrader` successfully filtered unusable data and we selected a 
+quality cutoff at `r min(ppmitrim$T1Hier_resnetGrade)` to filter out low quality images.  Similarly, the rsfMRI and DTI were 
+visually inspected in `post hoc` fashion.  This process involved visually inspecting each estimated FA image and each estimated default 
+mode network connectivity map and its associated mean BOLD image.  Particular focus was paid to cases with high motion and/or low SNR.
 
 ## Neuroanatomical coordinate systems
 
-Neuroanatomical coordinate systems, such as Yeo's functional parcellations, the Desikan-Killiany-Tourville (DKT) system, and the Johns Hopkins University (JHU) white matter labels, play a critical role in brain imaging research. Yeo's parcellations categorize the cortex into distinct functional areas based on resting-state functional connectivity, facilitating the study of brain networks. The DKT system offers a detailed anatomical framework for cortical structures, enhancing morphological studies. JHU white matter labels provide essential references for analyzing white matter tracts, crucial for understanding brain connectivity and pathology.
+The interpretation of processed images is
+
+Neuroanatomical coordinate systems, such as Yeo's functional parcellations, 
+the Desikan-Killiany-Tourville (DKT) system, and the Johns Hopkins University (JHU) white matter labels, 
+play a critical role in brain imaging research. Yeo's parcellations categorize the 
+cortex into distinct functional areas based on resting-state functional connectivity, 
+facilitating the study of brain networks. The DKT system offers a detailed anatomical 
+framework for cortical structures, enhancing morphological studies. 
+JHU white matter labels provide essential references for analyzing white matter tracts, 
+crucial for understanding brain connectivity and pathology.
 
 Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [(avants2015)](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  Diffusion tensor imaging (DTI) processing leverages best practices from both ANTsX and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). 
 
@@ -284,25 +305,22 @@ We attach the neuroimaging data to the PPMI Curated Data Cut Curated (v.2023-06-
 
 The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges FIXME. We further this by demonstrating ANTsX reproducibility and reliability through analysis of three traveling subject cohorts and a young control cohort. By aggregating data from the traveling subject cohorts, we offer precise, reproducible reliability estimates (via intra-class correlation) across different scanner types and imaging modalities. The young control cohort, using the pediatric template of brain perfusion (PTBP) data, validates the utility of combining multi-modality tabular data processed by ANTsX to enhance predictions of population characteristics. In essence, our additional analyses furnish numerical benchmarks for reliability and predictive accuracy and may be extended to other contexts.
 
-Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. 
-
 ## Multi-site reproducibility
 
 ## Multi-view prediction 
 
 ## PPMI case studies
 
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. 
+
 Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dMRI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes beyond the substantia nigra [(Talai2018)](https://www.sciencedirect.com/science/article/pii/S2213158218303036). 
 
 The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD's progression and effects. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
-### effect of PRS
-
-something here.  Linda?
-
 
 ```{r pkgs,echo=FALSE,eval=TRUE,messages=FALSE,cache=TRUE}
 set.seed( 0 )
+library(plyr)
 library(ggplot2)
 library( GoodmanKruskal )
 library(forcats)
@@ -312,28 +330,17 @@ library(interactions)
 library(reghelper)
 library(MGMM) # GMM methods (FIXME)
 library(WeightedCluster) # cluster quality (FIXME)
-library( kmed ) # silhouette plots and such
-library( clustree ) # cluster validation tools
-library( factoextra )
-library(flexclust)
 library(tidyverse)
-library(magrittr)
-library(cluster)
-library(cluster.datasets)
-library(cowplot)
-library(NbClust)
 library(clValid)
-library(ggfortify)
-library(clustree)
-library(dendextend)
-library(factoextra)
-library(FactoMineR)
+library( cluster.datasets )
+library(magrittr)
 library(corrplot)
 library(GGally)
 library(ANTsR)
 library(subtyper)
 library(plyr)
 library(data.table)
+library(ggfortify)
 library(ztable)
 library(moonBook)
 library(kableExtra)
