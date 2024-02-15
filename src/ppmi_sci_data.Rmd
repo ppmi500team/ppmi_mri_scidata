@@ -53,6 +53,7 @@ library(lme4)
 library(ggplot2)
 if ( ! exists("clin2b") ) {
   rdir=path.expand('~/code/multidisorder/data/')
+  rdir=path.expand('~/Downloads/ppmi_pym_data/')
   if ( ! exists("pymf") ) {
     pymfns = data.frame( 
       fns=c( 
@@ -68,7 +69,7 @@ if ( ! exists("clin2b") ) {
     pymf[ is.na(pymf$mrimodel), 'mrimodel' ]='Unk'
     rm(pym)
     }
-  demog=read.csv("~/code/multidisorder/data/ppmi_gwas/Demographics_06Feb2024.csv")
+  demog=read.csv(paste0(rdir,"Demographics_06Feb2024.csv"))
   curfn=paste0(rdir,'PPMI_Curated_Data_Cut_Public_20230612_rev.csv')
   saa=read.csv( paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv') )
   ppmidemog0=read.csv( curfn )
