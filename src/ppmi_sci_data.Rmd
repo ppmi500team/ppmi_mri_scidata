@@ -190,7 +190,7 @@ The Methods should include detailed text describing any steps or procedures used
 
 ## MRI data collection 
 
-MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The details of the sequences used is covered elsewhere **Lino - FIXME IS IT? CITATION?*. The "phase" of data collection is captured in the variable `imaging_protocol`.
+MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The details of the sequences used is covered elsewhere **Lino - FIXME IS IT? CITATION?*. The "phase" of data collection is captured in the variable `imaging_protocol`.  Table FIXME summarizes the cohort characteristics.
 
 ### Semi-automated quality assessment
 
@@ -228,12 +228,14 @@ Diffusion tensor imaging (DTI) processing leverages best practices from both ANT
 
 ### Resting state functional MRI processing 
 
-Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [(avants2015)](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  The procedure is based on the findings described in three comprehensive evaluation studies [@FIXME] and is designed to compute both functional activity and correlation maps utilizing the recently proposed homotopic labels to delineate major network systems [@FIXME]. The methodology described below is grounded in contemporary understanding of resting-state fMRI analysis. It incorporates recommendations from seminal works in the field, including Shirer et al. (2015) for component-based noise reduction, and leverages empirical findings regarding the optimal preprocessing strategies for minimizing motion artifacts and other sources of noise (Ciric et al., 2017; Parkes et al., 2018). The function's design reflects a comprehensive approach to resting-state fMRI preprocessing, aiming to facilitate the reliable extraction of functional connectivity patterns that are consistent with underlying neural mechanisms.  The steps are outlined in Figure FIXME:
+Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [(avants2015)](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  The procedure is based on the findings described in three comprehensive evaluation studies [@FIXME] and is designed to compute both functional activity and correlation maps utilizing the recently proposed homotopic labels to delineate major network systems [@FIXME]. The methodology described below is grounded in contemporary understanding of resting-state fMRI analysis. It incorporates recommendations from seminal works in the field, including Shirer et al. (2015) for component-based noise reduction, and leverages empirical findings regarding the optimal preprocessing strategies for minimizing motion artifacts and other sources of noise (Ciric et al., 2017; Parkes et al., 2018). The function's design reflects a comprehensive approach to resting-state fMRI preprocessing, aiming to facilitate the reliable extraction of functional connectivity patterns that are consistent with underlying neural mechanisms.  Similar to the DWI processing, the procedure accepts either a single image or a pair of images with reversed phase encoding direction.  The steps are outlined in Figure FIXME:
+
+![Figure FIXME. Overview of the rsfMRI processing pipeline based on ANTsX.](../figs/fmri_pipe.jpg)
 
 1. **Input Preparation**: Inputs include the raw BOLD fMRI data (`fmri`), a reference fMRI template (`fmri_template`), and T1-weighted anatomical images (`t1` and `t1segmentation`) all from the same subject. These inputs are foundational for aligning functional data with anatomical landmarks and for ensuring that subsequent analyses are anatomically informed.  By default, the input fMRI is upsampled to 3mm isotropic resolution and 8 initial volumes are discarded to allow for both signal and subject stabilization.
 
-2. **Preprocessing**: Initial steps include motion correction, application of a despiking algorithm (a `python` implementation of AFNI's 3dDespike [@FIMXE]), and anatomical registration to align the fMRI data with the T1-weighted image.
-   
+2. **Preprocessing**: Initial steps include motion correction, application of a despiking algorithm (a `python` implementation of AFNI's 3dDespike [@FIMXE]), and anatomical registration to align the fMRI data with the T1-weighted image.  If a pair of images is passed, these are concatenated along the time axis.
+
 3. **Noise Reduction**: Anatomical CompCor (aCompCor) is used to mitigate physiological and other noise sources. This is based on recommendations from studies examining the impact of preprocessing strategies on functional connectivity (Ciric et al., 2017; Parkes et al., 2018).
 
 4. **Band-pass Filtering**: The application of a specific frequency range for filtering aligns with recommendations from Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.
@@ -969,8 +971,7 @@ An example of processing used here is shown in the github respository [https://g
 
 # Code availability
 
-ANTsPyMM is installable via `pypi` and available at [github](https://github.com/stnava/ANTsPyMM).  
-The version used for this work is `1.2.7` along with tensorflow `2.11.0`, antspyx `0.4.2`, antspynet `0.2.3` and antspyt1w `0.9.1`.
+ANTsPyMM is installable via `pypi` and available at [github](https://github.com/stnava/ANTsPyMM). The version used for this work is `1.2.7` along with tensorflow `2.11.0`, antspyx `0.4.2`, antspynet `0.2.3` and antspyt1w `0.9.1`.
 
 # Acknowledgements
 
