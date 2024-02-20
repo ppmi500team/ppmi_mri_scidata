@@ -204,13 +204,13 @@ The statistical interpretation of processed images is aided by automatic anatomi
 
 ### T1-weighted MRI processing
 
-T1-weighted MRI processing is described in detail in @tustison_antsx_2021. This open-source software ecosystem includes tools for image registration, segmentation, and super resolution as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The processing results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and super-resolution (SR) results as part of this effort.  For SR processing, the network is applied -- first -- over the whole head T1w image to double resolution along all axes.  Otherwise, SR and OR processing are identical.  See Figure FIXME for examples of these outputs. Outputs from the T1 processing are denoted by prefixes `T1Hier` and `T1w`.
+T1-weighted MRI processing is described in detail in @tustison_antsx_2021. This open-source software ecosystem includes tools for image registration, segmentation, and super-resolution (SR) as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The processing results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and SR results as part of this effort.  For SR processing, the network is applied -- first -- over the whole head T1w image to double resolution along all axes.  Otherwise, SR and OR processing are identical. SR training with 3D perceptual losses is documented in the `python` package [siq](https://pypi.org/project/siq/) and is based on `tensorflow` implementations of a volumetric deep back projection network (DBPN) [@FIXME].  See Figure FIXME for examples of these outputs. Outputs from the T1 processing are denoted by prefixes `T1Hier` and `T1w`.
 
 ![Example ANTsPyMM SR outputs applied to T1-weighted MRI (upper left) and diffusion MRI. T1w is super resolved to 0.5mm isotropic and DTI to 1mm.](../figs/sr_comparison.jpg)
 
 ### Diffusion weighted MRI processing
 
-Diffusion tensor imaging (DTI) processing leverages best practices from both ANTsX [@FIXMEPTBP] and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through super-resolution techniques, culminating in an optimized DTI reconstruction. Additionally, it integrates atlas-based labeling and registration processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure FIXME summarizes the pipeline which follows these steps:
+Diffusion tensor imaging (DTI) processing leverages best practices from both ANTsX [@FIXMEPTBP] and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through SR techniques, culminating in an optimized DTI reconstruction. Additionally, it integrates atlas-based labeling and registration processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure FIXME summarizes the pipeline which follows these steps:
 
 ![Overview of the DTI processing pipeline based on ANTsX and DiPy.](../figs/dti_pipe.jpg)
 
@@ -228,7 +228,7 @@ Diffusion tensor imaging (DTI) processing leverages best practices from both ANT
 
 Outputs from the DWI processing are denoted by prefixes `DTI_`.
 
-![Example super resolution processing for DTI highligting the multiple coordinate systems that are available to aid interpretation.](../figs/dti_SR.jpg)
+![Example SR processing for DTI highligting the multiple coordinate systems that are available to aid interpretation.](../figs/dti_SR.jpg)
 
 
 ### Resting state functional MRI processing 
