@@ -7,17 +7,20 @@ author:
   - Olivia Hampton^1,†^
   - Alex Reardon^1,†^
   - Nicholas J. Tustison^2
+  - Philip A. Cook^4
   - Xue Wang^1,†^
   - Linda
   - Zahra
   - Adam
   - Barbara?
   - Roger Gunn?
+  - Kathleen L Poston?
   - Ken?
 affiliation:
   - "1: Invicro, Boston, MA, FIMXE, USA"
   - "2: University of Virginia, Department of Radiology and Medical Imaging, Charlottesville, VA, FIXME, USE"
   - "3: Invicro, FIMXE, UK"
+  - "4: UPENN, FIMXE, Philly"
 corresponding_author: "Brian B. Avants (stnava@gmail.com)"
 contributed_equally: "† these authors contributed equally to this work"
 output: 
@@ -322,7 +325,7 @@ library(analyzer)
 library(forcats)
 options( ztable.type="html" )
 tblcmd = ztable
-buildsci=TRUE
+buildsci=FALSE
 ```
 
 ```{r functions,echo=FALSE,eval=TRUE,warnings=FALSE,messages=FALSE,cache=FALSE}
