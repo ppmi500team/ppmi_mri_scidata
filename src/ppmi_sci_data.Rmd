@@ -11,7 +11,9 @@ author:
   - Linda
   - Zahra
   - Adam
-  - Roger Gunn^1
+  - Barbara?
+  - Roger Gunn?
+  - Ken?
 affiliation:
   - "1: Invicro, Boston, MA, FIMXE, USA"
   - "2: University of Virginia, Department of Radiology and Medical Imaging, Charlottesville, VA, FIXME, USE"
