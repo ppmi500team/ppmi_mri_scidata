@@ -186,7 +186,7 @@ The present study extends previous foundations by providing standardized imaging
 
 # Methods
 
-![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.](../figs/antspymm_3.jpg)
+![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro122`.  Output from sets [134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/4d10c3a7c4a962c00a3c198ba0e00f35da25776d/antspymm/mm.py#L6496-L6506) are also available.](../figs/antspymm_3.jpg)
 
 ## MRI data collection 
 
@@ -198,12 +198,11 @@ Each T1w image was reviewed by a `resnetGrader` (a deep learning model trained t
 
 ## Neuroanatomical coordinate systems
 
-The statistical interpretation of processed images is aided by automatic anatomic labeling with pre-specified coodinate systems or maps overlaid on each subject's neuroimage. We leverage a recent homotopic parcellation [@FIXME],
-the Desikan-Killiany-Tourville (DKT) system [@FIXME], the CIT168 atlas [@FIXME], the Johns Hopkins University (JHU) white matter labels [@FIXME], the Schmahmann cerebellar parcellation [@FIXME], brain stem labels [@FIXME], a medial temporal lobe schema [@FIXME] and labels derived from probabilistic maps of the basal forebrain [@FIXME].  These systems are described in detail in the data dictionary and associated documentation. These coordinate system enable PD researchers to interrogate a variety of hypotheses related to, for example, functional networks, cholinergic networks, the striatum or dopaminergic systems.
+The statistical interpretation of processed images is aided by automatic anatomic labeling with pre-specified coodinate systems or maps overlaid on each subject's neuroimage. We leverage a recent homotopic parcellation [@FIXME], the Desikan-Killiany-Tourville (DKT) system [@FIXME], the CIT168 atlas [@FIXME], the Johns Hopkins University (JHU) white matter labels [@FIXME], the Schmahmann cerebellar parcellation [@FIXME], brain stem labels [@FIXME], a medial temporal lobe schema [@FIXME] and labels derived from probabilistic maps of the basal forebrain [@FIXME].  These systems are described in detail in the data dictionary and associated documentation. These coordinate system enable PD researchers to interrogate a variety of hypotheses related to, for example, functional networks, cholinergic networks, the striatum or dopaminergic systems.
 
 ### T1-weighted MRI processing
 
-T1-weighted MRI processing is described in detail in @tustison_antsx_2021. This open-source software ecosystem includes tools for image registration, segmentation, and super resolution as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The processing results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and super-resolution (SR) results as part of this effort.  For SR processing, the network is applied -- first -- over the whole head T1w image to double resolution along all axes.  Otherwise, SR and OR processing are identical.  See Figure FIXME for examples of these outputs.
+T1-weighted MRI processing is described in detail in @tustison_antsx_2021. This open-source software ecosystem includes tools for image registration, segmentation, and super resolution as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The processing results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and super-resolution (SR) results as part of this effort.  For SR processing, the network is applied -- first -- over the whole head T1w image to double resolution along all axes.  Otherwise, SR and OR processing are identical.  See Figure FIXME for examples of these outputs. Outputs from the T1 processing are denoted by prefixes `T1Hier` and `T1w`.
 
 ![Example ANTsPyMM SR outputs applied to T1-weighted MRI (upper left) and diffusion MRI. T1w is super resolved to 0.5mm isotropic and DTI to 1mm.](../figs/sr_comparison.jpg)
 
@@ -225,6 +224,8 @@ Diffusion tensor imaging (DTI) processing leverages best practices from both ANT
 
 6. **Output Generation**: The pipeline yields a comprehensive output including the reconstructed DTI metrics, summary statistics of these metrics within atlas-defined regions, the spatial registration information, and additional diagnostic metrics such as framewise displacement and signal-to-noise ratio (SNR) assessments spatially and temporally for both B0 and DWI. An example output volumetric tensor image with labels is in Figure FIXME.
 
+Outputs from the DWI processing are denoted by prefixes `DTI_`.
+
 ![Example super resolution processing for DTI highligting the multiple coordinate systems that are available to aid interpretation.](../figs/dti_SR.jpg)
 
 
@@ -242,13 +243,13 @@ Resting state functional MRI (rsfMRI) processing builds on prior multi-view tech
 
 4. **Band-pass Filtering and activity calculation**: The application of a specific frequency range for filtering aligns with recommendations from Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.  The default frequency bands are based on empirical evaluation studies described below.
 
-5. **Censoring**: Select volumes are censored based on both motion-based and intensity-based outlier detection.  The parameters for this stage derive from empirical evaluation studies on publicly available data as discussed below.
+5. **Censoring**: Select volumes are censored based on both motion-based and intensity-based outlier detection.  The parameters for this stage derive from empirical evaluation studies on publicly available data as discussed below.  Both *censored* and *imputed* versions of the time series are created.  A summary of censoring results is recorded in several ways but perhaps most relevant are the variables `*minutes_original_data` and `*minutes_censored_data` which provides the length in minutes of the original versus processed data.
 
-6. **Network Correlation Analysis**: The final step involves calculating correlation matrices for identified resting-state networks, utilizing labels described above.  Both inter and intra-network correlation values are computed for each of the sub-networks provided by the homotopic parcellation.  
+6. **Network Correlation Analysis**: This step involves calculating correlation matrices for identified resting-state networks, utilizing labels described above.  Both inter and intra-network correlation values are computed for each of the sub-networks provided by the homotopic parcellation.  
 
 7. **Functional activity**: is computed with three models: mfALFF, mALFF and mPerAf as described in [@FIXME].  These are versions of fALFF, ALFF and PerAf where each is divided by the global mean in the brain.  Summary values are averaged within each of 500 labels in the homotopic label set which facilitates left/right asymmetry and mean values which are critical to studying diseases with laterality effects.
 
-Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters (sets 122, 129 and 134) for censoring based on motion and intensity outlierness.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details.
+Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters (sets 122, 129 and 134) for censoring based on motion and intensity outlierness.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. Outputs from the DWI processing are denoted by prefixes `rsfMRI_`.
 
 
 # Data Records
