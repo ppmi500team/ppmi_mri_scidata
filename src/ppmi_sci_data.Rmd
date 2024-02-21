@@ -31,8 +31,8 @@ output:
 biblio-style: naturemag-doi
 bibliography: ppmiscidata.bib
 classoption: table
-# header-includes:
-#  - \usepackage{jabbrv}
+header-includes:
+  - \usepackage{multirow}
 linenumbers: true
 urlcolor: blue
 # nocite: '@*'
@@ -196,6 +196,45 @@ The present study extends previous foundations by providing standardized imaging
 ## MRI data collection 
 
 MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The details of the sequences used is covered elsewhere **Lino - FIXME IS IT? CITATION?*. The "phase" of data collection is captured in the variable `imaging_protocol`.  Table FIXME summarizes the cohort characteristics.
+
+
+```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
+###
+toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore")
+biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
+tblcols = unique( c( toadd, 'joinedDX' ))
+joinedem=ppmi[ppmi$yearsbl==0,tblcols]
+names(joinedem)[1]=tblcols[1]='age'
+names(joinedem)[2]=tblcols[2]='Sex'
+names(joinedem)[4]=tblcols[4]='hy.stage'
+names(joinedem)[5]=tblcols[5]='dur.yrs'
+names(joinedem)[6]=tblcols[6]='updrs.total'
+joinedem$race = as.character( joinedem$race )
+joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
+joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
+joinedem$joinedDX=as.character(joinedem$joinedDX)
+joinedem$joinedDX[ 
+  multigrep( c("ARSporadic"), joinedem$joinedDX )]='SporadicAR'
+joinedem$joinedDX[ 
+  multigrep( c("ARGBA", "ARLRRK2",  "ARSNCA"), joinedem$joinedDX )]='GenAR'
+joinedem$joinedDX[ 
+  multigrep( c("PDGBA",    "PDLRRK2", "PDPRKN", "PDSNCA"), joinedem$joinedDX )]='GenPD'
+joinedem$joinedDX[ 
+  multigrep( c("PDSporadic"), joinedem$joinedDX )]='SporadicPD'
+mlevs = c( "CN", "GenAR", "SporadicAR","GenPD", "SporadicPD")
+joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
+mytbl = joinedem[,c(tblcols)]
+sttblPD=ztable(mytable(joinedDX~.,data=mytbl[,tblcols]))
+####
+```
+
+```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
+
+# Print the ztable object, ensuring it's treated as LaTeX code
+print(sttblPD, type = "latex")
+
+
+```
 
 ### Semi-automated quality assessment
 
@@ -404,7 +443,7 @@ library( globaltest )
 library(emmeans)
 library(analyzer)
 library(forcats)
-options( ztable.type="html" )
+options( ztable.type="latex" )
 tblcmd = ztable
 buildsci=FALSE
 ```
