@@ -186,12 +186,12 @@ To establish face validity, this study leverages not only PPMI M3RI, but also tr
 
 Historically, MRI research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate the neuroanatomical changes. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra  [@schwarz_t1-weighted_2011;@aquino_substantia_2014;@ryman_mri_2020]. Diffusion-weighted MRI (dwMRI) has further enhanced our understanding by allowing for the investigation of white matter microstructural integrity which may be impacted not only in sporadic PD [@peran_magnetic_2010] but also in LRRK2-PD [@tolosa_lrrk2_2020]. Similarly, resting state functional MRI (rsfMRI) has unveiled alterations in network connectivity in PD patients, highlighting changes in the functional integration and segregation of brain networks involved in motor and cognitive functions [@hacker_resting_2012;@kim_abnormal_2017]. Taken together, these findings suggest that PD impacts both the structural and functional aspects of the brain, pointing towards a more integrative approach to understanding PD [@menke_mri_2009;@markello_multimodal_2021] and the role of alpha-synuclein in these effects [@simuni_biological_2024].
 
-The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs are computed with [ANTsPyMM](https://pypi.org/project/antspymm/) and depend on standard anatomical and functional hierarchies that are well-established in the field and consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dMwRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables easily merge with the associated demographics, SAA status, clinical data such as the Unified Parkinson's Disease Rating Scale (UPDRS) [@disease_unified_2003] and standard PPMI DAT-SPECT summary measurements [@bega_clinical_2021; @droby_aberrant_2022]. Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
+The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs are computed with [ANTsPyMM](https://pypi.org/project/antspymm/) and depend on standard anatomical and functional hierarchies that are well-established in the field and consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dwMRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables easily merge with the associated demographics, SAA status, clinical data such as the Unified Parkinson's Disease Rating Scale (UPDRS) [@disease_unified_2003] and standard PPMI DAT-SPECT summary measurements [@bega_clinical_2021; @droby_aberrant_2022]. Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
 
 
 # Methods
 
-![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro122`.  Output from sets [134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/4d10c3a7c4a962c00a3c198ba0e00f35da25776d/antspymm/mm.py#L6496-L6506) are also available.](../figs/antspymm_3.jpg)
+![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro122`.](../figs/antspymm_3.jpg)
 
 ## MRI data collection 
 
@@ -254,12 +254,11 @@ Resting state functional MRI (rsfMRI) processing builds on prior multi-view tech
 
 7. **Functional activity**: is computed with three models: mfALFF, mALFF and mPerAf as described in [@FIXME].  These are versions of fALFF, ALFF and PerAf where each is divided by the global mean in the brain.  Summary values are averaged within each of 500 labels in the homotopic label set which facilitates left/right asymmetry and mean values which are critical to studying diseases with laterality effects.
 
-Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters (sets 122, 129 and 134) for censoring based on motion and intensity outlierness.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. Outputs from the DWI processing are denoted by prefixes `rsfMRI_`.
-
+Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters (sets [122, 134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/4d10c3a7c4a962c00a3c198ba0e00f35da25776d/antspymm/mm.py#L6496-L6506)) for censoring based on motion and intensity outlierness.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. Outputs from the rsfMRI processing are denoted by prefixes `rsfMRI_fcnxpro122` for 122 and similarly for 129 and 134.
 
 # Data Records
 
-The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the LONI Imaging Data Archive (LONI IDA). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.
+The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.
 
 We attach the neuroimaging data to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) available on the LONI IDA.  Code for this merging process is available via the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are available in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are available at [this location](FIXME).  We also provide a "trim" version [here](FIXME) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables.  We base demonstrations below on the trim version of these PPMI IDPs.
 
@@ -269,7 +268,69 @@ The technical validity of these methods is supported by previous work, including
 
 ## Multi-site reproducibility
 
+
+![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state default mode connectivity shows good reproducibility with the exception of default mode to subcortical connectivity where it is poor.](../figs/antspymm_repro.png)
+
 ## Multi-view prediction 
+
+We classify PD and control cases based on the available data.
+
+```{r classified,echo=FALSE}
+library(mlr3learners)
+library(ANTsR)
+library(mlr3verse)
+############################
+dtvec = ppmitrim$DTI_mean_fa.body_of_corpus_callosum.jhu_icbm_labels_1mm
+seldti = subtyper::fs( dtvec >= quantile(dtvec,0.005, na.rm=TRUE) )
+selfmri=!is.na(  ppmitrim$rsfMRI_fcnxpro122_VisPeri_2_SalVentAttnA)
+cohortCCbl = ppmitrim[ 
+  ppmitrim$yearsbl == 0 & 
+  seldti & 
+  !is.na( ppmitrim$T1Hier_thk_r_i_iicerebellum) , ]
+cohortCCbl = cohortCCbl[ cohortCCbl$DXSubAsyn %in% c("CNNegative","PDSporadicPositive"), ]
+cohortCCbl$DXbio = 0 #as.character( cohortCCbl$joinedDX )
+cohortCCbl$DXbio[  cohortCCbl$DXSubAsyn == "PDSporadicPositive" ] = 1
+idps = antspymm_predictors(cohortCCbl, TRUE, TRUE )
+idps = idps[ -grep("rsfMRI_fcnxpro129",idps)]
+idps = idps[ -grep("rsfMRI_fcnxpro134",idps)]
+idps = idps[ -grep("rsfMRI_fcnxpro122",idps)]
+idps = idps[ -grep("unclass",idps)]
+idps = idps[ -grep("T1Hier_RandBasis",idps)]
+# idps = idps[ -grep("DTI_mean_md",idps)]
+idps = idps[ multigrep( c("Asym","LRAVG"), idps ) ]
+idpst1 = idps[ grep("T1Hier",idps)]
+idpsdt = idps[ multigrep(c("DTI","mean_fa"),idps)]
+cohortCCbl[,idps]=antsrimpute(cohortCCbl[,idps])
+idpnas = rep(0,length(idps))
+for ( k in 1:length( idps ) ) idpnas[k]=sum(is.na(cohortCCbl[,idps[k]]))
+idpvars = apply( cohortCCbl[,idps], MARGIN=2, FUN=var )
+names(idpvars)=idps
+cohortCCbl$imaging_protocol = as.numeric( cohortCCbl$imaging_protocol )
+#########################
+mycx = mlr3classifiers()
+mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost") ) ]
+mycx = c( mycx, "classif.featureless" )
+mycv = mlr3classifiercv(
+       cohortCCbl,
+       tcols = c("DXbio", idpst1, idpsdt ),
+       nrepeats = 50,
+       partrate = 0.9,
+       dup_size = 3,
+       balancing = "under",
+       mylearners = mycx,
+       verbose = TRUE
+     )
+mycvagg = aggregate( bacc ~ mdl, mycv, mean )
+print( mycvagg )
+mycvagg = aggregate( acc ~ mdl, mycv, mean )
+print( mycvagg )
+#########################
+g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Bal. Acc. T1 @")))
+g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Raw Acc. T1 @")))
+
+print( g1 )
+
+```
 
 ## PPMI case studies
 
@@ -364,7 +425,7 @@ normalizersfmri = function( dd, applyit='none' ) {
 ```
 
 ```{r readdata,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE,cache=FALSE}
-if ( ! exists( "is_test" ) ) is_test = FALSE
+if ( ! exists( "is_test" ) ) is_test = TRUE
 if ( ! exists( "ppmi" ) ) {
   ppmifn = "../data/latest_ppmi_plus.csv"; myrez='or'
   ppmifn = "../data/latest_ppmi_plus_sr.csv"; myrez='sr'
