@@ -269,13 +269,33 @@ The technical validity of these methods is supported by previous work, including
 ## Multi-site reproducibility
 
 
+We perform reproducibility analyses for ANTsPyMM based on traveling subject data.
+
+* SRPBS (T1, rsfMRI): Tanaka Saori, C., et al. "SRPBS Traveling Subject MRI Dataset." (No Title) (2019).
+
+* Tong (T1, DTI): Tong, Qiqi, et al. "Multicenter dataset of multi-shell diffusion MRI in healthy traveling adults with identical settings." Scientific Data 7.1 (2020): 157.
+
+* Hawco (T1, rsfMRI, DTI): Hawco, Colin, et al. "A longitudinal human phantom reliability study of multi-center T1-weighted, DTI, and resting state fMRI data." Psychiatry Research: Neuroimaging 282 (2018): 134-142.
+
+Each dataset is analyzed by distributed computing with ANTsPyMM as in `src/hawco_processing`.
+
+Traveling subject studies involve scanning the same subjects on multiple MRI scanners at different locations. These studies help in assessing consistency and/or agreement of image quantification where the only variables are the machines themselves. This is crucial for understanding power in multi-site studies of natural history or intervention and for ensuring that the observed changes in brain structure or function are due to actual physiological changes rather than variations in the imaging process itself.
+
+In this study, we employ traveling cohort data to assess the agreement of imaging derived phentoypes (IDPs) pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX upon which scientific studies, machine learning platforms and other methodological comparisons are based.
+
+
+We investigate three traveling cohort datasets and ANTsPyMM reproducibility therein.  these cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
+
 ![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state default mode connectivity shows good reproducibility with the exception of default mode to subcortical connectivity where it is poor.](../figs/antspymm_repro.png)
+
+
+We find that (1) the majority of IDPs show superior reliability and (2) joint reduction of IDPs with SiMLR improves reliability further.  **ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall high reliability.**  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level.
 
 ## Multi-view prediction 
 
-We classify PD and control cases based on the available data.
+We classify PD and control cases based on the available data using a standard machine learning (ML) paradigm available in the `mlr3verse` [@FIXME].  MLR3 allows systematic comparison of cross-validated performance between different ML models as well as feature sets.  As such, we compare performance between (a) T1w only versus (b) T1w plus DTI features as a function of either OR or SR calculations.  These results demonstrate that both joint modeling (DTI and T1 together) and SR improve classification accuracy over T1 alone or OR features.  Figure FIXME demonstrates a comparison of T1 only performance versus T1 plus DTI performance in terms of both raw and balanced accuracy.  
 
-```{r classified,echo=FALSE}
+```{r classified,echo=FALSE,eval=buildsci}
 library(mlr3learners)
 library(ANTsR)
 library(mlr3verse)
@@ -312,7 +332,7 @@ mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "clas
 mycx = c( mycx, "classif.featureless" )
 mycv = mlr3classifiercv(
        cohortCCbl,
-       tcols = c("DXbio", idpst1, idpsdt ),
+       tcols = c("DXbio", idpst1 ),
        nrepeats = 50,
        partrate = 0.9,
        dup_size = 3,
@@ -325,8 +345,8 @@ print( mycvagg )
 mycvagg = aggregate( acc ~ mdl, mycv, mean )
 print( mycvagg )
 #########################
-g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Bal. Acc. T1 @")))
-g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Raw Acc. T1 @")))
+g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Bal. Acc. T1 + DTI: CN- vs sporadic PD+")))
+g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Raw Acc. T1 + DTI: CN- vs sporadic PD+")))
 
 print( g1 )
 
