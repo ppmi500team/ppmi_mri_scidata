@@ -33,6 +33,7 @@ bibliography: ppmiscidata.bib
 classoption: table
 header-includes:
   - \usepackage{multirow}
+  - \usepackage{rotating}
 linenumbers: true
 urlcolor: blue
 # nocite: '@*'
@@ -191,7 +192,7 @@ The present study extends previous foundations by providing standardized imaging
 
 # Methods
 
-![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro122`.](../figs/antspymm_3.jpg)
+![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles arterial spin labeling (perfusion), FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro122`.](../figs/antspymm_3.jpg)
 
 ## MRI data collection 
 
@@ -200,15 +201,20 @@ MRI data collection occurred between 2010 and an August 2023 cutoff date for the
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
 ###
-toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore")
+toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore", 'imaging_protocol')
 biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
 tblcols = unique( c( toadd, 'joinedDX' ))
 joinedem=ppmi[ppmi$yearsbl==0,tblcols]
+joinedem$hasDTI=!is.na(ppmi[ppmi$yearsbl==0,'DTI_dti_FD_mean'])
+joinedem$hasfMRI=!is.na(ppmi[ppmi$yearsbl==0,'rsfMRI_fcnxpro129_FD_mean'])
 names(joinedem)[1]=tblcols[1]='age'
 names(joinedem)[2]=tblcols[2]='Sex'
-names(joinedem)[4]=tblcols[4]='hy.stage'
-names(joinedem)[5]=tblcols[5]='dur.yrs'
-names(joinedem)[6]=tblcols[6]='updrs.total'
+tblcols=colnames(joinedem)
+tblcols=gsub("_",".",tblcols)
+tblcols=gsub(".mean","",tblcols)
+tblcols=gsub("DTI.","",tblcols)
+tblcols=gsub("rsfMRI.fcnxpro122.","rsfMRI.",tblcols)
+names(joinedem)=tblcols
 joinedem$race = as.character( joinedem$race )
 joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
 joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
@@ -231,7 +237,7 @@ sttblPD=ztable(mytable(joinedDX~.,data=mytbl[,tblcols]))
 ```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
 
 # Print the ztable object, ensuring it's treated as LaTeX code
-print(sttblPD, type = "latex")
+print(sttblPD, type = "latex",size=4,caption="Table 1. Baseline cohort for subjects with T1w IDPs.",sidewaystable=TRUE)
 
 
 ```
@@ -307,34 +313,20 @@ The technical validity of these methods is supported by previous work, including
 
 ## Multi-site reproducibility
 
+Traveling subject studies involve scanning the same subjects on multiple MRI scanners at different locations. These studies help in assessing consistency and/or agreement of image quantification where the only variables are the machines themselves. This is crucial for understanding power in multi-site studies of natural history or intervention and for ensuring that the observed changes in brain structure or function are due to actual physiological changes rather than variations in the imaging process itself. 
 
-We perform reproducibility analyses for ANTsPyMM based on traveling subject data.
+In this study, we employ traveling cohort data to assess the agreement of imaging derived phentoypes (IDPs) pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX upon which scientific studies, machine learning platforms and other methodological comparisons are based. These cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  Results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
 
-* SRPBS (T1, rsfMRI): Tanaka Saori, C., et al. "SRPBS Traveling Subject MRI Dataset." (No Title) (2019).
-
-* Tong (T1, DTI): Tong, Qiqi, et al. "Multicenter dataset of multi-shell diffusion MRI in healthy traveling adults with identical settings." Scientific Data 7.1 (2020): 157.
-
-* Hawco (T1, rsfMRI, DTI): Hawco, Colin, et al. "A longitudinal human phantom reliability study of multi-center T1-weighted, DTI, and resting state fMRI data." Psychiatry Research: Neuroimaging 282 (2018): 134-142.
-
-Each dataset is analyzed by distributed computing with ANTsPyMM as in `src/hawco_processing`.
-
-Traveling subject studies involve scanning the same subjects on multiple MRI scanners at different locations. These studies help in assessing consistency and/or agreement of image quantification where the only variables are the machines themselves. This is crucial for understanding power in multi-site studies of natural history or intervention and for ensuring that the observed changes in brain structure or function are due to actual physiological changes rather than variations in the imaging process itself.
-
-In this study, we employ traveling cohort data to assess the agreement of imaging derived phentoypes (IDPs) pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX upon which scientific studies, machine learning platforms and other methodological comparisons are based.
+![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state connectivity shows good to excellent reproducibility; PerAF, fALFF and ALFF are relatively less reproducible -- on average -- though variability is also high.](../figs/antspymm_repro.png)
 
 
-We investigate three traveling cohort datasets and ANTsPyMM reproducibility therein.  these cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
-
-![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state default mode connectivity shows good reproducibility with the exception of default mode to subcortical connectivity where it is poor.](../figs/antspymm_repro.png)
-
-
-We find that (1) the majority of IDPs show superior reliability and (2) joint reduction of IDPs with SiMLR improves reliability further.  **ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall high reliability.**  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level.
+We find that ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall good to high reliability with a few exceptions within resting state correlations.  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level.
 
 ## Multi-view prediction 
 
-We classify PD and control cases based on the available data using a standard machine learning (ML) paradigm available in the `mlr3verse` [@FIXME].  MLR3 allows systematic comparison of cross-validated performance between different ML models as well as feature sets.  As such, we compare performance between (a) T1w only versus (b) T1w plus DTI features as a function of either OR or SR calculations.  These results demonstrate that both joint modeling (DTI and T1 together) and SR improve classification accuracy over T1 alone or OR features.  Figure FIXME demonstrates a comparison of T1 only performance versus T1 plus DTI performance in terms of both raw and balanced accuracy.  
+We classify PD and control cases based on the available data using a standard machine learning (ML) paradigm available in the `mlr3verse` [@FIXME].  MLR3 allows systematic comparison of cross-validated performance between different ML models as well as feature sets.  As such, we compare performance between (a) T1w only versus (b) T1w plus DTI features as a function of either OR or SR calculations.  These results demonstrate that both joint modeling (DTI and T1 together) and SR improve classification accuracy over T1 alone or OR features.  Figure FIXME demonstrates a comparison of T1 only performance versus T1 plus DTI performance in terms of both raw and balanced accuracy using SR features.  Only better performing models are shown including: glmnet [@FIXME], imbalanced random forests [@FIXME], naive bayes classifier [@FIXME] and classic random forests [@FIXME].  The "featureless" model is the baseline classifier (no imaging features are used).
 
-```{r classified,echo=FALSE,eval=buildsci}
+```{r classified,echo=FALSE,eval=buildsci,fig.width=10,fig.height=16,message=FALSE,warning=FALSE}
 library(mlr3learners)
 library(ANTsR)
 library(mlr3verse)
@@ -346,9 +338,11 @@ cohortCCbl = ppmitrim[
   ppmitrim$yearsbl == 0 & 
   seldti & 
   !is.na( ppmitrim$T1Hier_thk_r_i_iicerebellum) , ]
-cohortCCbl = cohortCCbl[ cohortCCbl$DXSubAsyn %in% c("CNNegative","PDSporadicPositive"), ]
+dxs = c("PDSporadicNegative","PDSporadicPositive")
+dxs = c("CNNegative","PDSporadicPositive")
+cohortCCbl = cohortCCbl[ cohortCCbl$DXSubAsyn %in% dxs , ]
 cohortCCbl$DXbio = 0 #as.character( cohortCCbl$joinedDX )
-cohortCCbl$DXbio[  cohortCCbl$DXSubAsyn == "PDSporadicPositive" ] = 1
+cohortCCbl$DXbio[  cohortCCbl$DXSubAsyn == dxs[2] ] = 1
 idps = antspymm_predictors(cohortCCbl, TRUE, TRUE )
 idps = idps[ -grep("rsfMRI_fcnxpro129",idps)]
 idps = idps[ -grep("rsfMRI_fcnxpro134",idps)]
@@ -357,8 +351,10 @@ idps = idps[ -grep("unclass",idps)]
 idps = idps[ -grep("T1Hier_RandBasis",idps)]
 # idps = idps[ -grep("DTI_mean_md",idps)]
 idps = idps[ multigrep( c("Asym","LRAVG"), idps ) ]
-idpst1 = idps[ grep("T1Hier",idps)]
-idpsdt = idps[ multigrep(c("DTI","mean_fa"),idps)]
+idpst1 = idps[ multigrep( c("T1Hier",'vol','LRAVG'),idps,intersect=TRUE)]
+idpsdt = unique( c( 
+    idps[ multigrep(c("DTI","mean_fa","LRAVG"),idps,intersect=TRUE)] ) )
+#    idps[ multigrep(c("DTI","mean_md","LRAVG"),idps,intersect=TRUE)] ) )
 cohortCCbl[,idps]=antsrimpute(cohortCCbl[,idps])
 idpnas = rep(0,length(idps))
 for ( k in 1:length( idps ) ) idpnas[k]=sum(is.na(cohortCCbl[,idps[k]]))
@@ -367,27 +363,48 @@ names(idpvars)=idps
 cohortCCbl$imaging_protocol = as.numeric( cohortCCbl$imaging_protocol )
 #########################
 mycx = mlr3classifiers()
-mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost") ) ]
+mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost", "classif.ranger") ) ]
 mycx = c( mycx, "classif.featureless" )
-mycv = mlr3classifiercv(
+mybal = 'over'
+nrep = 40
+srate = 0.95
+dxtbl=table( cohortCCbl[,'DXbio'] )
+mysamp = floor(  max(dxtbl)/min(dxtbl)) 
+mycvt1 = mlr3classifiercv(
        cohortCCbl,
        tcols = c("DXbio", idpst1 ),
-       nrepeats = 50,
-       partrate = 0.9,
-       dup_size = 3,
-       balancing = "under",
+       nrepeats = nrep,
+       partrate = srate,
+       dup_size = mysamp,
+       balancing = mybal,
        mylearners = mycx,
-       verbose = TRUE
+       verbose = FALSE
      )
+mycv = mlr3classifiercv(
+       cohortCCbl,
+       tcols = c("DXbio", idpst1, idpsdt ),
+       nrepeats = nrep,
+       partrate = srate,
+       dup_size = mysamp,
+       balancing = mybal,
+       mylearners = mycx,
+       verbose = FALSE
+     )
+mycvagg = aggregate( bacc ~ mdl, mycvt1, mean )
+print( mycvagg )
 mycvagg = aggregate( bacc ~ mdl, mycv, mean )
 print( mycvagg )
 mycvagg = aggregate( acc ~ mdl, mycv, mean )
 print( mycvagg )
 #########################
-g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Bal. Acc. T1 + DTI: CN- vs sporadic PD+")))
-g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.comparisons = F ) + ggtitle(paste("Raw Acc. T1 + DTI: CN- vs sporadic PD+")))
+g1t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 alone: CN- vs sporadic PD+")))
+g2t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none') + ggtitle(paste("Raw Acc. T1 alone: CN- vs sporadic PD+")))
+g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI: CN- vs sporadic PD+")))
+g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI: CN- vs sporadic PD+")))
 
-print( g1 )
+mygg = grid.arrange( grobs=list(g1t1,g1,g2t1,g2), nrow=4, top='DTI + T1 features outperform T1 features alone in discriminating SAA confirmed PD from controls.')
+# mygg = grid.arrange( grobs=list(g1t1,g1), nrow=2, top='DTI + T1 features outperform T1 features alone in discriminating SAA confirmed PD from controls.')
+print( mygg )
 
 ```
 
@@ -400,7 +417,7 @@ Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dM
 The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD's progression and effects. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
 
-```{r pkgs,echo=FALSE,eval=TRUE,messages=FALSE,cache=TRUE}
+```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
 set.seed( 0 )
 library(plyr)
 library(ggplot2)
@@ -445,10 +462,10 @@ library(analyzer)
 library(forcats)
 options( ztable.type="latex" )
 tblcmd = ztable
-buildsci=FALSE
+buildsci=TRUE
 ```
 
-```{r functions,echo=FALSE,eval=TRUE,warnings=FALSE,messages=FALSE,cache=FALSE}
+```{r functions,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,cache=FALSE}
 
 normalizersfmri = function( dd, applyit='none' ) {
   nums=c(122,129,134)
@@ -483,7 +500,7 @@ normalizersfmri = function( dd, applyit='none' ) {
 }
 ```
 
-```{r readdata,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE,cache=FALSE}
+```{r readdata,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,cache=FALSE}
 if ( ! exists( "is_test" ) ) is_test = TRUE
 if ( ! exists( "ppmi" ) ) {
   ppmifn = "../data/latest_ppmi_plus.csv"; myrez='or'
@@ -508,7 +525,7 @@ if ( ! exists( "ppmi" ) ) {
 
 ### mixed effects diagnosis : T1
 
-```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
 ######################################################################
 num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
@@ -645,7 +662,7 @@ table(psel)
 ##########################################################
 ```
 
-```{r dxresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
+```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
 psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
 table(psel)
 if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
@@ -661,7 +678,7 @@ dxdfT1sel[, !(colnames(dxdfT1sel) %in% c("singular"))] %>%
 
 ### mixed effects diagnosis : DTI
 
-```{r quicklmdxDT,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warnings=FALSE,messages=FALSE}
+```{r quicklmdxDT,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
 if ( is_test ) nmstotest=sample( dtinamesasymlr, 20) else nmstotest=dtinamesasymlr
 dxdfDTI=data.frame()
 for ( voi in nmstotest ) {
@@ -707,7 +724,7 @@ for ( voi in nmstotest ) {
 ##########################################################
 ```
 
-```{r dxresultsDT,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
+```{r dxresultsDT,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
 ###########################################################
 psel = subtyper::fs( p.adjust( dxdfDTI$anv, 'BH' ) <= .05 )
 dxdfDTI[ multigrep(c('mean_fa',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_fornix'
@@ -733,7 +750,7 @@ dxdfDTIsel[, !(colnames(dxdfDTIsel) %in% c("singular"))] %>%
 
 ### mixed effects UPDRS changes over time: resting state
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warnings=FALSE,messages=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warning=FALSE,message=FALSE}
 ####################################################################
 signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
 mylevsx2=c( "CN", "ProdromalSporadic", "PDSporadic" )
@@ -833,7 +850,7 @@ for ( cog in cogs ) {
 ###########################################################################
 ```
 
-```{r cogresults,echo=FALSE,eval=buildsci,warnings=FALSE,messages=FALSE}
+```{r cogresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
 if ( "anv" %in% colnames(qdf) ) {
   qdf$anv = insight::format_p(  qdf$anv, digits=4  )
   qdf[,c("cog","voi","anv","res")] %>%
@@ -845,7 +862,7 @@ if ( "anv" %in% colnames(qdf) ) {
 ### mixed models
 
 
-```{r lmerextab,echo=FALSE,eval=FALSE,fig.width=12,fig.height=6,messages=FALSE,warnings=FALSE,cache=FALSE}
+```{r lmerextab,echo=FALSE,eval=FALSE,fig.width=12,fig.height=6,message=FALSE,warning=FALSE,cache=FALSE}
 knitr::opts_chunk$set(cache.path = odir )
 ###################################################
 pvaluedf = tvaluedf = data.frame()
