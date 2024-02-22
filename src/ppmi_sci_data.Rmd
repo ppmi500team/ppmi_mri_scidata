@@ -47,6 +47,8 @@ redomerge=TRUE
 
 
 ```{r ppmimerge, echo=FALSE,eval=redomerge}
+library(ztable)
+library(moonBook)
 library(plyr)
 library(subtyper)
 library(forcats)
@@ -462,7 +464,7 @@ library(analyzer)
 library(forcats)
 options( ztable.type="latex" )
 tblcmd = ztable
-buildsci=TRUE
+buildsci=FALSE
 ```
 
 ```{r functions,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,cache=FALSE}
