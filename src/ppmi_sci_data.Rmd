@@ -464,7 +464,7 @@ if ( ! exists("nrep") ) nrep = 50
 #########################
 mycx = mlr3classifiers()
 # mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost", "classif.ranger") ) ]
-mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.rpart") ) ]
+mycx = mycx[ !( mycx %in% c("classif.gbm",  "classif.fnn", "classif.rpart", "classif.ranger") ) ]
 mycx = c( mycx, "classif.featureless" )
 mybal = 'under'
 srate = 0.8
@@ -609,7 +609,7 @@ if ( FALSE  ) {
 ```
 
 
-```{r interpretit2,eval=TRUE,echo=FALSE,fig.width=12,fig.height=4,message=FALSE,warning=FALSE}
+```{r interpretit2,eval=TRUE,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE}
 library(ggpubr)
 library(randomForestSRC)
 datcol=c(idpst1, idpsdt, idpsrsfmri)
