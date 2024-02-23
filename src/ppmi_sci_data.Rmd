@@ -187,13 +187,13 @@ ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
 
 
 ```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
+ppmi = antspymm_predictors( ppmi, TRUE )
 ntokeep = 2950
 ppmitrim = ppmi[ ppmi$studyName == 'PPMI',]
 ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
 msnames = getNamesFromDataframe("pm_",ppmi,exclusions=c("BL","delta"))
 lrrk2names= getNamesFromDataframe("LRRK2_",ppmi,exclusions=c("BL","delta","LRRK2_MRIPROTOCOL"))
-ppmitrim = antspymm_predictors( ppmitrim, TRUE )
 t1namesctx = getNamesFromDataframe( c("T1Hier","LRAVG",'dktcortex','thk'), ppmitrim)
 t1namescit = getNamesFromDataframe( c("T1Hier","LRAVG",'deep','vol'), ppmitrim)
 t1namesnbm = getNamesFromDataframe( c("T1Hier","LRAVG",'nbm','vol'), ppmitrim)
