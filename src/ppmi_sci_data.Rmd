@@ -43,6 +43,7 @@ link-citations: true
 
 ```{r samplesizes,echo=FALSE,eval=TRUE}
 redomerge=TRUE
+if ( ! exists("buildsci"))buildsci=FALSE
 ```
 
 
@@ -55,6 +56,14 @@ library(forcats)
 library(lmerTest)
 library(lme4)
 library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(mclust)
+library(MASS)
+library(dCUR)
+library(mlr3learners)
+library(ANTsR)
+library(mlr3verse)
 if ( ! exists("clin2b") ) {
   rdir=path.expand('~/code/multidisorder/data/')
   rdir=path.expand('~/Downloads/ppmi_pym_data/')
@@ -203,7 +212,7 @@ MRI data collection occurred between 2010 and an August 2023 cutoff date for the
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
 ###
-toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore", 'imaging_protocol')
+toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'imaging_protocol')
 biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
 tblcols = unique( c( toadd, 'joinedDX' ))
 joinedem=ppmi[ppmi$yearsbl==0,tblcols]
@@ -211,6 +220,8 @@ joinedem$hasDTI=!is.na(ppmi[ppmi$yearsbl==0,'DTI_dti_FD_mean'])
 joinedem$hasfMRI=!is.na(ppmi[ppmi$yearsbl==0,'rsfMRI_fcnxpro129_FD_mean'])
 names(joinedem)[1]=tblcols[1]='age'
 names(joinedem)[2]=tblcols[2]='Sex'
+wsaa=which(names(joinedem)=='AsynStatus' )
+names(joinedem)[wsaa]=tblcols[wsaa]='CSFSAA'
 tblcols=colnames(joinedem)
 tblcols=gsub("_",".",tblcols)
 tblcols=gsub(".mean","",tblcols)
@@ -232,16 +243,24 @@ joinedem$joinedDX[
 mlevs = c( "CN", "GenAR", "SporadicAR","GenPD", "SporadicPD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
 mytbl = joinedem[,c(tblcols)]
-sttblPD=ztable(mytable(joinedDX~.,data=mytbl[,tblcols]))
+mycap="Table 1. Baseline cohort for subjects with T1w IDPs and non-missing diagnosis."
 ####
 ```
 
 ```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
+sttblPD=ztable(mytable(joinedDX~.,data=mytbl[,tblcols]))
 
 # Print the ztable object, ensuring it's treated as LaTeX code
-print(sttblPD, type = "latex",size=4,caption="Table 1. Baseline cohort for subjects with T1w IDPs.",sidewaystable=TRUE)
+print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
 
+```
+
+
+```{r tbl1instead,eval=FALSE,echo=FALSE,cache=FALSE,results='asis'}
+library(table1) # https://cran.r-project.org/web/packages/table1/vignettes/table1-latex.pdf
+x=table1(~ . | joinedDX, data=mytbl[!is.na(mytbl$joinedDX),], topclass="Rtable1-zebra",caption=mycap)
+t1kable(x)
 ```
 
 ### Semi-automated quality assessment
@@ -328,87 +347,184 @@ We find that ANTsPyMM IDPs derived from the same subjects imaged at different si
 
 We classify PD and control cases based on the available data using a standard machine learning (ML) paradigm available in the `mlr3verse` [@FIXME].  MLR3 allows systematic comparison of cross-validated performance between different ML models as well as feature sets.  As such, we compare performance between (a) T1w only versus (b) T1w plus DTI features as a function of either OR or SR calculations.  These results demonstrate that both joint modeling (DTI and T1 together) and SR improve classification accuracy over T1 alone or OR features.  Figure FIXME demonstrates a comparison of T1 only performance versus T1 plus DTI performance in terms of both raw and balanced accuracy using SR features.  Only better performing models are shown including: glmnet [@FIXME], imbalanced random forests [@FIXME], naive bayes classifier [@FIXME] and classic random forests [@FIXME].  The "featureless" model is the baseline classifier (no imaging features are used).
 
-```{r classified,echo=FALSE,eval=buildsci,fig.width=10,fig.height=16,message=FALSE,warning=FALSE}
-library(mlr3learners)
-library(ANTsR)
-library(mlr3verse)
+```{r classified,echo=FALSE,eval=buildsci,fig.width=10,fig.height=8,message=FALSE,warning=FALSE,cache=FALSE}
 ############################
+ysel = ppmitrim$yearsbl >= 0 & !is.na( ppmitrim$T1Hier_thk_r_i_iicerebellum) & !is.na(ppmitrim$T1Hier_volLRAVGi_iicerebellum)
+ysel = ppmitrim$yearsbl == 0 & !is.na( ppmitrim$T1Hier_thk_r_i_iicerebellum) & !is.na(ppmitrim$T1Hier_volLRAVGi_iicerebellum)
 dtvec = ppmitrim$DTI_mean_fa.body_of_corpus_callosum.jhu_icbm_labels_1mm
 seldti = subtyper::fs( dtvec >= quantile(dtvec,0.005, na.rm=TRUE) )
-selfmri=!is.na(  ppmitrim$rsfMRI_fcnxpro122_VisPeri_2_SalVentAttnA)
-cohortCCbl = ppmitrim[ 
-  ppmitrim$yearsbl == 0 & 
-  seldti & 
-  !is.na( ppmitrim$T1Hier_thk_r_i_iicerebellum) , ]
+selfl = !is.na( ppmitrim$T2Flair_flair_wmh_prior )
+selfmri=!is.na(  ppmitrim$rsfMRI_fcnxpro122_VisPeri_2_SalVentAttnA) & 
+  !is.na(ppmitrim$rsfMRI_fcnxpro122_ContA_2_ContA) & 
+  subtyper::fs(ppmitrim$rsfMRI_fcnxpro122_FD_mean <= 0.5)
+ppmitrim$DX = NA
+ppmitrim$DX[ grep("CN",ppmitrim$joinedDX)]='AR'
+ppmitrim$DX[ grep("Prodromal",ppmitrim$joinedDX)]='AR'
+ppmitrim$DX[ grep("PD",ppmitrim$joinedDX)]='PD'
+cohortCCbl = ppmitrim[ ysel, ]
+cohortCCbldt = ppmitrim[ ysel & seldti, ]
+cohortCCblrsf = ppmitrim[ ysel & seldti & selfmri , ]
+dxv='joinedDX'
+dxs = c("CN","PDSporadic")
+dxv='DXSubAsyn'
 dxs = c("PDSporadicNegative","PDSporadicPositive")
 dxs = c("CNNegative","PDSporadicPositive")
-cohortCCbl = cohortCCbl[ cohortCCbl$DXSubAsyn %in% dxs , ]
-cohortCCbl$DXbio = 0 #as.character( cohortCCbl$joinedDX )
-cohortCCbl$DXbio[  cohortCCbl$DXSubAsyn == dxs[2] ] = 1
+dxs = c("ProdromalSporadicNegative","ProdromalSporadicPositive")
+dxv='DX'
+dxs = c("AR","PD")
+dxv='AsynStatus'
+dxs = c("Negative","Positive")
+############################
+cohortCCbl = cohortCCbl[ cohortCCbl[,dxv] %in% dxs , ]
+cohortCCbl$DXbio = 0
+cohortCCbl$DXbio[  cohortCCbl[,dxv] == dxs[2] ] = 1
+cohortCCbldt = cohortCCbldt[ cohortCCbldt[,dxv] %in% dxs , ]
+cohortCCbldt$DXbio = 0
+cohortCCbldt$DXbio[  cohortCCbldt[,dxv] == dxs[2] ] = 1
+cohortCCblrsf = cohortCCblrsf[ cohortCCblrsf[,dxv] %in% dxs , ]
+cohortCCblrsf$DXbio = 0
+cohortCCblrsf$DXbio[  cohortCCblrsf[,dxv] == dxs[2] ] = 1
 idps = antspymm_predictors(cohortCCbl, TRUE, TRUE )
 idps = idps[ -grep("rsfMRI_fcnxpro129",idps)]
 idps = idps[ -grep("rsfMRI_fcnxpro134",idps)]
-idps = idps[ -grep("rsfMRI_fcnxpro122",idps)]
 idps = idps[ -grep("unclass",idps)]
 idps = idps[ -grep("T1Hier_RandBasis",idps)]
-# idps = idps[ -grep("DTI_mean_md",idps)]
+idps = idps[ -grep("die_hth",idps)]
 idps = idps[ multigrep( c("Asym","LRAVG"), idps ) ]
-idpst1 = idps[ multigrep( c("T1Hier",'vol','LRAVG'),idps,intersect=TRUE)]
+idpst1 = c( 
+  idps[ multigrep( c("T1Hier",'vol',"LRAVG"),idps,intersect=TRUE)],
+  getNamesFromDataframe( c("vol","brainste"), ppmi, exclusions=c("lobe","issu","cleanup")) )
 idpsdt = unique( c( 
     idps[ multigrep(c("DTI","mean_fa","LRAVG"),idps,intersect=TRUE)] ) )
-#    idps[ multigrep(c("DTI","mean_md","LRAVG"),idps,intersect=TRUE)] ) )
-cohortCCbl[,idps]=antsrimpute(cohortCCbl[,idps])
+idpsrsfmri = getNamesFromDataframe( c("rsfMRI_fcnxpro122","_2_"), ppmi )
+print(table( cohortCCbl[,dxv]))
 idpnas = rep(0,length(idps))
 for ( k in 1:length( idps ) ) idpnas[k]=sum(is.na(cohortCCbl[,idps[k]]))
 idpvars = apply( cohortCCbl[,idps], MARGIN=2, FUN=var )
 names(idpvars)=idps
 cohortCCbl$imaging_protocol = as.numeric( cohortCCbl$imaging_protocol )
+if ( ! exists("nrep") ) nrep = 50
+# idpst1 = dcurvarsel( cohortCCbl, idpst1, 0.5 )
+# idpsdt = dcurvarsel( cohortCCbldt, idpsdt, 0.5 )
+# idpsrsfmri = dcurvarsel( cohortCCblrsf, idpsrsfmri, 0.5 )
 #########################
 mycx = mlr3classifiers()
 mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost", "classif.ranger") ) ]
 mycx = c( mycx, "classif.featureless" )
-mybal = 'over'
-nrep = 40
-srate = 0.95
+mybal = 'under'
+srate = 0.8
 dxtbl=table( cohortCCbl[,'DXbio'] )
 mysamp = floor(  max(dxtbl)/min(dxtbl)) 
+cohortCCbl$sex=0
+cohortCCbl$sex[cohortCCbl$commonSex=='Male']=1
+cohortCCbldt$sex=0
+cohortCCbldt$sex[cohortCCbldt$commonSex=='Male']=1
+cohortCCblrsf$sex=0
+cohortCCblrsf$sex[cohortCCblrsf$commonSex=='Male']=1
+#######
+cohortCCbl=cohortCCbldt=cohortCCblrsf
+mycvbs = mlr3classifiercv(
+       cohortCCbl,
+       tcols = c("DXbio", 'sex','age' ),
+       nrepeats = nrep,
+       partrate = srate,
+       dup_size = mysamp,
+       balancing = mybal,
+       mylearners = mycx,
+       subjectIDs = cohortCCbl$subjectID,
+       verbose = FALSE
+     )
 mycvt1 = mlr3classifiercv(
        cohortCCbl,
-       tcols = c("DXbio", idpst1 ),
+       tcols = c("DXbio", 'sex','age', idpst1 ) ,
        nrepeats = nrep,
        partrate = srate,
        dup_size = mysamp,
        balancing = mybal,
        mylearners = mycx,
+       subjectIDs = cohortCCbl$subjectID,
        verbose = FALSE
      )
-mycv = mlr3classifiercv(
-       cohortCCbl,
-       tcols = c("DXbio", idpst1, idpsdt ),
+mycvdt = mlr3classifiercv(
+       cohortCCbldt,
+       tcols = c("DXbio", 'sex','age', idpst1,idpsdt ),
        nrepeats = nrep,
        partrate = srate,
        dup_size = mysamp,
        balancing = mybal,
        mylearners = mycx,
+       subjectIDs = cohortCCbldt$subjectID,
        verbose = FALSE
      )
-mycvagg = aggregate( bacc ~ mdl, mycvt1, mean )
-print( mycvagg )
-mycvagg = aggregate( bacc ~ mdl, mycv, mean )
-print( mycvagg )
-mycvagg = aggregate( acc ~ mdl, mycv, mean )
-print( mycvagg )
+mycvrs = mlr3classifiercv(
+       cohortCCblrsf,
+       tcols = c("DXbio",'sex','age', idpst1,idpsdt,idpsrsfmri  ),
+       nrepeats = nrep,
+       partrate = srate,
+       dup_size = mysamp,
+       balancing = mybal,
+       mylearners = mycx,
+       subjectIDs = cohortCCblrsf$subjectID,
+       verbose = FALSE
+     )
+aggbs = aggregate( bacc ~ mdl, mycvbs, mean )
+print( aggbs )
+aggt1 = aggregate( bacc ~ mdl, mycvt1, mean )
+print( aggt1 )
+aggdt = aggregate( bacc ~ mdl, mycvdt, mean )
+print( aggdt )
+aggrs = aggregate( bacc ~ mdl, mycvrs, mean )
+print( aggrs )
 #########################
-g1t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 alone: CN- vs sporadic PD+")))
-g2t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none') + ggtitle(paste("Raw Acc. T1 alone: CN- vs sporadic PD+")))
-g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI: CN- vs sporadic PD+")))
-g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI: CN- vs sporadic PD+")))
+dxs=gsub("Prodromal","AR",dxs)
+dxs=gsub("Positive","+",dxs)
+dxs=gsub("Negative","-",dxs)
+g1t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 alone:", dxs[1], "vs",  dxs[2])))
+g2t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none') + ggtitle(paste("Raw Acc. T1 alone:", dxs[1], "vs",  dxs[2])))
+g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
+g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
 
-mygg = grid.arrange( grobs=list(g1t1,g1,g2t1,g2), nrow=4, top='DTI + T1 features outperform T1 features alone in discriminating SAA confirmed PD from controls.')
-# mygg = grid.arrange( grobs=list(g1t1,g1), nrow=2, top='DTI + T1 features outperform T1 features alone in discriminating SAA confirmed PD from controls.')
+# mygg = grid.arrange( grobs=list(g1t1,g1,g2t1,g2), nrow=4, top=paste('DTI + T1 features outperform T1 features alone in discriminating SAA confirmed', dxs[1], "vs",  dxs[2]))
+# mygg = grid.arrange( grobs=list(g1t1,g1), nrow=2, top=paste('DTI + T1 features outperform T1 features alone in discriminating SAA confirmed', dxs[1], "vs",  dxs[2]))
 print( mygg )
 
 ```
+
+
+```{r interpretit,echo=FALSE,eval=TRUE,fig.width=9,fig.height=5}
+library(ggpubr)
+library(randomForestSRC)
+datcol=c(idpst1, idpsdt, idpsrsfmri)
+datcols=shorten_pymm_names( c(idpst1, idpsdt, idpsrsfmri) )
+myx=cohortCCblrsf
+colnames(myx)[  colnames(myx) %in% datcol ] = datcols
+myx=myx[,c("DXbio",'age','commonSex', 'imaging_protocol', datcols )]
+myx$commonSex=factor(myx$commonSex)
+rfobj <- rfsrc(DXbio ~ ., data = myx)
+newimp = data.frame( feature=names(vimp(rfobj)$importance), importance=as.numeric(vimp(rfobj)$importance ))
+newimp = newimp[ order(newimp$importance,decreasing=T),]
+newimp$type=substr(newimp$feature,0,3)
+print( ggbarplot( head(newimp,20), 'feature','importance', fill='type', palette='npg' ) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+ggtitle(paste("Feature importance ",paste(dxs,collapse=' vs '))) ) 
+
+if ( FALSE  ) {
+  tsk = as_task_classif( x = cohortCCbl[ , c("DXbio", datcols )], target='DXbio',  id='pd' )
+  lrn_gbm = lrn("classif.imbalanced_rfsrc", predict_type = "prob")
+  split = partition(tsk)
+  lrn_gbm$train( tsk, row_ids = split$train )
+  predictor = Predictor$new(lrn_gbm, data = cohortCCbl[,datcols], y = cohortCCbl[,'DXbio'])
+  importance = FeatureImp$new(predictor, loss = "ce", n.repetitions = 10 )
+  importance$resultsfull = importance$results
+  importance$results = importance$results[1:25,] 
+  importance$plot()
+  # newimp = data.frame( importance$results[1:25,]  )
+  # print( ggbarplot( newimp, 'feature','importance',  palette='npg', ylim=c(1,1.2) ) + 
+  #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+ggtitle(paste("Feature importance ",paste(dxs,collapse=' vs '))) + geom_errorbar(aes(ymin=importance.05, ymax=importance.95), width=.1,
+  #                    position=position_dodge(.5))  ) 
+}
+```
+
+
 
 ## PPMI case studies
 
@@ -417,6 +533,8 @@ Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individua
 Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dMRI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes beyond the substantia nigra [(Talai2018)](https://www.sciencedirect.com/science/article/pii/S2213158218303036). 
 
 The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD's progression and effects. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
+
+basal forebrain [in LRRK2](https://www.sciencedirect.com/science/article/pii/S0969996123001973)
 
 
 ```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
@@ -464,7 +582,6 @@ library(analyzer)
 library(forcats)
 options( ztable.type="latex" )
 tblcmd = ztable
-buildsci=FALSE
 ```
 
 ```{r functions,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,cache=FALSE}
