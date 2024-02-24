@@ -503,6 +503,7 @@ mycvbs = mlr3classifiercv(
        verbose = FALSE
      )
 aggbs = aggregate( bacc ~ mdl, mycvbs, mean )
+cohortCCbl[,idpst1] = antsrimpute( cohortCCbl[,idpst1])
 mycvt1 = mlr3classifiercv(
        cohortCCbl,
        tcols = c("DXbio", 'sex','age_BL', idpst1) ,
@@ -515,9 +516,11 @@ mycvt1 = mlr3classifiercv(
        verbose = FALSE
      )
 aggt1 = aggregate( bacc ~ mdl, mycvt1, mean )
+myadj = c(idpst1 , idpsdt )
+cohortCCbldt[,myadj] = antsrimpute( cohortCCbldt[,myadj])
 mycvdt = mlr3classifiercv(
        cohortCCbldt,
-       tcols = c("DXbio", 'sex','age_BL', idpst1, idpsdt ),
+       tcols = c("DXbio", 'sex','age_BL', myadj ),
        nrepeats = nrep,
        partrate = srate,
        dup_size = mysamp,
