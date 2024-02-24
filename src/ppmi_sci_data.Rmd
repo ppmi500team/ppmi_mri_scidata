@@ -609,7 +609,7 @@ if ( FALSE  ) {
 ```
 
 
-```{r interpretit2,eval=TRUE,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE}
+```{r interpretit2,eval=buildsci,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE}
 library(ggpubr)
 library(randomForestSRC)
 datcol=c(idpst1, idpsdt, idpsrsfmri)
@@ -674,7 +674,7 @@ qq = predict( myrf, newdata=myx[mypartition$test,], type='probabilities' )
 ##################################
 ```
 
-```{r interpretit2auc,eval=TRUE,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE,results='asis'}
+```{r interpretit2auc,eval=buildsci,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE,results='asis'}
 ## ggplot it
 library(pROC)
 # Create the ROC object
