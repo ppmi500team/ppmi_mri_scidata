@@ -839,14 +839,7 @@ if ( ! exists( "is_test" ) ) is_test = TRUE
 
 ## Diagnostic effects in pre-defined structural, white matter and resting functional measurements
 
-```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=7,warning=FALSE,message=FALSE}
-vartype <- function( x ) {
-  if ( length(grep("T1",x) > 0 ) ) return( "T1" )
-  if ( length(grep("rsfMRI",x) > 0 ) ) return( "rsfMRI" )
-  if ( length(grep("DTI",x) > 0 ) ) return( "DTI" )
-  if ( length(grep("NM2",x) > 0 ) ) return( "NM2DMT" )
-  return( NA )
-}
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
 ######################################################################
 num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
@@ -911,8 +904,9 @@ rsfnames = c(
   getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), mydog, exclusions=xcl ),
   getNamesFromDataframe( c("rsf","Asym",num,'_falff'), mydog, exclusions=xcl ) )
 rsfnamescnx = c( 
-  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
-  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
+  getNamesFromDataframe( c("rsfMRI_fcnxpro129","_2_","Vis","efaul"),  ppmi, exclusions=xcl ) )
+#  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
+#  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
 fdnames = getNamesFromDataframe( "_FD_", ppmi  )
 # idps = unique( c( rsfnames, dtinames ) ) 
@@ -981,11 +975,12 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ 1 + T1Hier_resnetGrade+spc0+spc2+", dxform )
   bform = paste( vois[2], " ~ " , vois[1], "+brainVolume_BL + T1Hier_resnetGrade+", dxform )
   othdxform=dxform
-  if ( vartype(voi) == "rsfMRI" ) othdxform=paste0(motname,"+",dxform)
-  if ( vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
+  if ( antspymm_vartype(voi) == "rsfMRI" ) othdxform=paste0(motname,"+",dxform)
+  if ( antspymm_vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
   bform = paste( voi, " ~ brainVolume_BL + T1Hier_resnetGrade+", othdxform )
   newform = paste( bform, " * ", dxvar  )
-  temp2 = mydog[ !is.na( mydog[,voi]) & mydog$age_BL < 70005, ]
+  temp2 = mydog[ !is.na( mydog[,voi]) & mydog$age_BL < 70005 & 
+    mydog$studyName %in% c('PPMI'), ]
   # for ( x in  all.vars( as.formula(newform)) ) { print(x) ; print(table( is.na( temp2[,x]))) }
   temp2 = scale_variables_in_equation( temp2, newform )
   mdl=lmer( newform, data=temp2 )
@@ -997,18 +992,23 @@ for ( voi in nmstotest ) {
   anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
   dxdfT1[n,'voi']=voi
   dxdfT1[n,'anv']=anvp
-  dxdfT1[n,'tyears']=mycoffs[ 'yearsbl', 4]
-  dxdfT1[n,'tcross']=mycoffs[ nrow(mycoffs)-1, 4]
-  dxdfT1[n,'tlong']=mycoffs[ nrow(mycoffs), 4]
+  othercols = rownames(mycoffs)
+  othercols=c( "yearsbl" , othercols[grep("TDX",othercols)] )
+  othercolsnm=gsub("TDX","",othercols)
+  othercolsnm=gsub(":",".",othercolsnm)
+  chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], mycoffs[ othercols, 'df']  )
+  dxdfT1[n,paste0("d.",othercolsnm)]=chnd[,1]
+#  dxdfT1[,paste0("p.",othercolsnm)]=mycoffs[ othercols, 5]
   dxdfT1[n,'res']=myrez
   dxdfT1[n,'singular']=isSingular(mdl)
 #  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
   if ( anvp < 1e-4 ) {
-    print( mycoffs )
-    print( dxdfT1[n,] )
+    # print( mycoffs )
+    # print( dxdfT1[n,] )
     anvp = insight::format_p( anvp, digits=4 )
-    ttl=( paste( shorten_pymm_names(voi), myrez, " + ", mydx,  " : ", anvp ) )
-    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
+    ttl=( paste( shorten_pymm_names(voi), "PD+ : ", anvp ) )
+    print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
+#    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
 }
 psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
@@ -1023,10 +1023,11 @@ psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
 table(psel)
 if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
 dxdfT1sel = dxdfT1[psel,]
-dxdfT1sel[,'dx']=mydx
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
-dxdfT1sel[, !(colnames(dxdfT1sel) %in% c("singular"))] %>%
+dxdfT1selcols = colnames(dxdfT1sel)[1:9]
+dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$anv ), ]
+dxdfT1sel[, dxdfT1selcols] %>%
   knitr::kable("latex", booktabs = TRUE, caption='Significant longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)') %>%
   kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
@@ -1036,10 +1037,11 @@ dxdfT1sel[, !(colnames(dxdfT1sel) %in% c("singular"))] %>%
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
 
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
-cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
+cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","tot") )
+# cogs = getNamesFromDataframe( c("updrs","score","tot"), mydog, exclusions=c(4,'_BL',"_delta") )[1]
 col2sbl = unique(c( idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
 mydogp = fillBaselineColumn( mydog,
         col2sbl,
@@ -1053,16 +1055,16 @@ for ( cog in  cogs  ) {
     n = nrow(stadfrsf)+1
     voi = paste0(voi,"_BL")
     maxy=5.0
-    if ( vartype( voi ) == "T1" ) motname=""
-    if ( vartype( voi ) == "rsfMRI" )  {
+    if ( antspymm_vartype( voi ) == "T1" ) motname=""
+    if ( antspymm_vartype( voi ) == "rsfMRI" )  {
       motname = paste( paste0( "rsfMRI_fcnxpro",num,"_n_outliers_BL"), " + ",
         paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL"))
       motname = paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL")
       maxy=2.5
       }
-    if ( vartype( voi ) == "DTI" )  {
+    if ( antspymm_vartype( voi ) == "DTI" )  {
       motname = "DTI_dti_FD_mean_BL"
-      maxy=5.0
+      maxy=3.0
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
@@ -1071,7 +1073,7 @@ for ( cog in  cogs  ) {
     temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
-    newform = paste(  cogformcommon, " * ", voi )
+    newform = paste(  cogformcommon, " * TDX* ", voi )
     if ( nrow(temp2) > 100 ) {    
     temp2 = scale_variables_in_equation( temp2, newform )
     bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
@@ -1084,18 +1086,24 @@ for ( cog in  cogs  ) {
     stadfrsf[n,'res']=myrez
     stadfrsf[n,'singular']=isSingular(mdl)
     if ( anvp < qth ) {
-      print( mycoffs[ , -c(1:3)] )
+#      print( mycoffs[ , -c(1:3)] )
   #    print( voi )
       anvp = insight::format_p( anvp, digits=4 )
       voix = shorten_pymm_names(voi)
       ttl=( paste( voix, myrez, " + ", cog,  " : ", anvp ) )
+      suppressMessages(
+      print( threewayinteraction(  temp2, 'yearsbl', cog, 'TDX', voi, anatshow=voi ) ))
+#      print( threewayinteraction( temp2, 'yearsbl', 'TDX', anat=voi ) )
  #     mygg = visreg::visreg( mdl, 'yearsbl', by=voi, gg=T )
  #     threewayinteraction( temp2, 'yearsbl', cog,  'AsynStatus', voi, showpoints=F )
 #      print(prplot( mdl,  voi, 'yearsbl',ttl, colorvar='commonSex', addpoints=1))
-      gg0=(prplot( mdl, 'yearsbl', voi, '', ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
-      gg1=(prplot( mdl, voi, 'yearsbl', '', ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
-      grid.arrange( grobs=list(gg0,gg1),nrow=2, top=ttl)
+#      gg0=(prplot( mdl, 'yearsbl', voi, '', ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
+#      gg1=(prplot( mdl, voi, 'yearsbl', '', ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
+#      grid.arrange( grobs=list(gg0,gg1),nrow=2, top=ttl)
 #      visreg::visreg( mdl, 'yearsbl', by=voi, main=ttl  )
+
+#    print( interactions::interact_plot( mdl, 'yearsbl', voi, main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
+
     }
   } }
 }
@@ -1104,13 +1112,32 @@ qdf=data.frame()
 for ( cog in cogs ) {
   mypvs = stadfrsf$anv
   mypvs[ stadfrsf$cog != cog  ] = NA
-  psel = subtyper::fs( p.adjust( mypvs, mycorr ) <= 0.05 )
-  siganat = stadfrsf$voi[ psel ]
-  if ( sum(psel) > 0 )
-    qdf = rbind( qdf, stadfrsf[psel,] )
+  psel = subtyper::fs( p.adjust( mypvs, 'BY' ) <= 0.05 )
+  psel2 = subtyper::fs( p.adjust( mypvs, 'BH' ) <= 0.05 )
+  stadfrsf[psel2,'sig']='fdr'
+  stadfrsf[psel,'sig']='fwe'
+  if ( sum(psel | psel2 ) > 0 )
+    temp=stadfrsf[psel | psel2,]
+    qdf = rbind( qdf, temp )
   }
+qdf = qdf[ order( qdf$anv ), ]
 qdf$voi = shorten_pymm_names( qdf$voi )
 ###########################################################################
+if ( FALSE ) {
+  stadfrsf$modality="T1w"
+  stadfrsf$modality[ grep("DTI", stadfrsf$voi)]="DTI"
+  stadfrsf$modality[ grep("rsfMRI", stadfrsf$voi)]="rsfMRI"
+  qdf2=data.frame()
+  for ( mod in c("T1w","DTI","rsfMRI") ) {
+    mypvs = stadfrsf$anv
+    mypvs[ stadfrsf$modality != mod  ] = NA
+    psel = subtyper::fs( p.adjust( mypvs, mycorr ) <= 0.05 )
+    siganat = stadfrsf$voi[ psel ]
+    if ( sum(psel) > 0 )
+      qdf2 = rbind( qdf2, stadfrsf[psel,] )
+    }
+  qdf2$voi = shorten_pymm_names( qdf2$voi )
+}
 ###########################################################################
 ###########################################################################
 ```
@@ -1120,7 +1147,10 @@ qdf$voi = shorten_pymm_names( qdf$voi )
 
 ```{r updrsresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
 qdf$anv = insight::format_p(  qdf$anv, digits=4  )
-knitr::kable(qdf, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w (n.s.), DTI and rsfMRI') %>%
+qdfcols =  c("cog", "voi" , "anv", "sig" )
+qdf = qdf[,qdfcols]
+qdf = qdf[duplicated(qdf),]
+knitr::kable(qdf, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
   kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
