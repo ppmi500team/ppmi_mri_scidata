@@ -800,7 +800,7 @@ tblcmd = ztable
 
 ```{r functions,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,cache=FALSE}
 
-normalizersfmri = function( dd, applyit='none' ) {
+normalizersfmri = function( dd, applyit='mean' ) {
   nums=c(122,129,134)
   t=c('_2_', "_falff", "_alff", "_peraf")
   tnm=c("fcnxmean" ,'falffmean', 'alffmean', 'perafmean')
@@ -837,9 +837,9 @@ normalizersfmri = function( dd, applyit='none' ) {
 if ( ! exists( "is_test" ) ) is_test = TRUE
 ```
 
-### mixed effects diagnosis : T1
+## Diagnostic effects in pre-defined structural, white matter and resting functional measurements
 
-```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=7,warning=FALSE,message=FALSE}
 vartype <- function( x ) {
   if ( length(grep("T1",x) > 0 ) ) return( "T1" )
   if ( length(grep("rsfMRI",x) > 0 ) ) return( "rsfMRI" )
@@ -910,7 +910,9 @@ xcl = antspymm_nuisance_names()
 rsfnames = c( 
   getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), mydog, exclusions=xcl ),
   getNamesFromDataframe( c("rsf","Asym",num,'_falff'), mydog, exclusions=xcl ) )
-rsfnamescnx = getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num),  ppmi, exclusions=xcl )
+rsfnamescnx = c( 
+  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
+  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
 fdnames = getNamesFromDataframe( "_FD_", ppmi  )
 # idps = unique( c( rsfnames, dtinames ) ) 
@@ -953,11 +955,12 @@ snc = c( "T1Hier_vol_mtg_sn_snc_Asymdeep_cit168",
   "T1Hier_vol_bn_str_pu_Asymdeep_cit168", 
   "T1Hier_vol_bn_gp_gpi_Asymdeep_cit168", 
   "T1Hier_vol_bn_gp_gpe_Asymdeep_cit168", 
-  getNamesFromDataframe( c("vol","Asym", "nbm"),mydog), 
-  getNamesFromDataframe( c("mtl", "LR"),mydog) )
+  getNamesFromDataframe( c("vol","Asym", "nbm"),mydog) )
+#  getNamesFromDataframe( c("mtl", "LR"),mydog) )
 dtivars = c( "superior_longitudinal_fasciculus", "_snc", 
   "superior_corona_radiata", "fornix", "_capsule", 
-  "parahippocampal", "str_pu")
+  # "parahippocampal", 
+  "str_pu")
 nmstotest = c( ctx, snc )
 nmstotest = unique( c( 
   nmstotest, 
@@ -965,7 +968,6 @@ nmstotest = unique( c(
   dtinamesasymlr[ multigrep( dtivars, dtinamesasymlr )],
   rsfnamescnx ) )
 dxdfT1=data.frame()
-derka
 for ( voi in nmstotest ) {
   n=nrow(dxdfT1)+1
   vois = paste0( voi, c("_BL", "_delta" ) )
@@ -1014,24 +1016,30 @@ table(psel)
 ##########################################################
 ```
 
+### Table of significant diagnostic group effects
+
 ```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
 psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
 table(psel)
 if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
 dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel[,'dx']=mydx
+dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
 dxdfT1sel[, !(colnames(dxdfT1sel) %in% c("singular"))] %>%
-  knitr::kable("latex", booktabs = TRUE) %>%
+  knitr::kable("latex", booktabs = TRUE, caption='Significant longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)') %>%
   kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
 
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.0,warning=FALSE,message=FALSE}
+## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
+
+
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
-cogs = getNamesFromDataframe( c("updrs","score"), mydogp, exclusions=c(4,'_BL',"_delta") )
+cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
 col2sbl = unique(c( idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
 mydogp = fillBaselineColumn( mydog,
         col2sbl,
@@ -1040,7 +1048,7 @@ mydogp = fillBaselineColumn( mydog,
 mydogp$hy_BL = factor( mydogp$hy_BL )
 stadfrsf=data.frame()
 qth=1e-4
-for ( cog in sort(cogs) ) {
+for ( cog in  cogs  ) {
   for ( voi in nmstotest ) {
     n = nrow(stadfrsf)+1
     voi = paste0(voi,"_BL")
@@ -1058,7 +1066,7 @@ for ( cog in sort(cogs) ) {
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + TDX + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + DTI_mean_fa_mtg_sn_snc_LRAVG_BL + T1Hier_vol_mtg_sn_snc_LRAVGdeep_cit168_BL + TDX + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
     temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
@@ -1096,7 +1104,7 @@ qdf=data.frame()
 for ( cog in cogs ) {
   mypvs = stadfrsf$anv
   mypvs[ stadfrsf$cog != cog  ] = NA
-  psel = subtyper::fs( p.adjust( mypvs, mycorr ) <= 0.005 )
+  psel = subtyper::fs( p.adjust( mypvs, mycorr ) <= 0.05 )
   siganat = stadfrsf$voi[ psel ]
   if ( sum(psel) > 0 )
     qdf = rbind( qdf, stadfrsf[psel,] )
@@ -1108,7 +1116,17 @@ qdf$voi = shorten_pymm_names( qdf$voi )
 ```
 
 
+### Table of significant clinical-IDP group effects
+
+```{r updrsresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
+qdf$anv = insight::format_p(  qdf$anv, digits=4  )
+knitr::kable(qdf, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w (n.s.), DTI and rsfMRI') %>%
+  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+<!--
 ### mixed effects diagnosis : DTI
+-->
 
 ```{r quicklmdxDT,echo=FALSE,eval=FALSE,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
 if ( is_test ) nmstotest=sample( dtinamesasymlr, 20) else nmstotest=dtinamesasymlr
