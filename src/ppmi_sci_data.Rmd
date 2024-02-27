@@ -1029,8 +1029,9 @@ dxdfT1selcols = colnames(dxdfT1sel)[1:9]
 
 
 # Print the ztable object, ensuring it's treated as LaTeX code
-dxdfT1selz=ztable(dxdfT1sel[, dxdfT1selcols])
-dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi)
+dxdfT1selz=dxdfT1sel[, dxdfT1selcols]
+dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi,fixed=TRUE)
+dxdfT1selz=ztable(dxdfT1selz)
 mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
 print(dxdfT1selz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
@@ -1144,6 +1145,12 @@ sigth=0.05/length(cogs)
   }
 qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
+qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
+qdfcols =  c("cog", "voi" , "anv"  )
+qdfsig = qdfsig[,qdfcols]
+qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
+qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
+qdfsig = qdfsig[!duplicated(qdfsig),]
 ###########################################################
 ###########################################################################
 ```
@@ -1152,14 +1159,9 @@ qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 ### Table of significant clinical-IDP group effects
 
 ```{r updrsresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
-qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
-qdfcols =  c("cog", "voi" , "anv"  )
-qdfsig = qdfsig[,qdfcols]
-qdfsig = qdfsig[!duplicated(qdfsig),]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(qdfsig)
-qdfsigz$voi=gsub("_",".",qdfsigz$voi)
 mycap='Significant (fwe) IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
