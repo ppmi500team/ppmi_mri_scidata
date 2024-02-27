@@ -846,7 +846,7 @@ num=c(122,129,134)[1] # resting state protocol numbers ###############
 dxform="~  (1|PATNO)+ (1|SITE) + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="~  (1|PATNO) + studyName + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="  (1|PATNO)  + commonEdu +  age_BL + commonSex + brainVolume_BL "
-dxform="  (1|subjectID) + imaging_protocol + age_BL + commonSex "
+dxform="  (1|subjectID) + (1|imaging_protocol) + age_BL + commonSex "
 dxform = paste( dxform, "  + yearsbl ")
 # dxform = paste( dxform, " + DTI_dti_FD_mean + yearsbl ")
 # dxform = paste( dxform, " + yearsbl ")
@@ -1078,7 +1078,7 @@ for ( cog in  cogs  ) {
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|imaging_protocol)+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
 #    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
     temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
