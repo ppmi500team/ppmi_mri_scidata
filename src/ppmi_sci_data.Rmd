@@ -1018,9 +1018,8 @@ table(psel)
 
 ### Table of significant diagnostic group effects
 
-```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
+```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
-table(psel)
 if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
 dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
@@ -1151,7 +1150,7 @@ qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 
 ### Table of significant clinical-IDP group effects
 
-```{r updrsresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE}
+```{r updrsresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
 qdfcols =  c("cog", "voi" , "anv"  )
 qdfsig = qdfsig[,qdfcols]
