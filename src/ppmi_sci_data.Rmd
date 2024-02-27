@@ -904,7 +904,7 @@ rsfnames = c(
   getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), mydog, exclusions=xcl ),
   getNamesFromDataframe( c("rsf","Asym",num,'_falff'), mydog, exclusions=xcl ) )
 rsfnamescnx = c( 
-  getNamesFromDataframe( c("rsfMRI_fcnxpro129","_2_","Vis","efaul"),  ppmi, exclusions=xcl ) )
+  getNamesFromDataframe( c("rsfMRI_fcnxpro122","_2_","Vis","efaul"),  ppmi, exclusions=xcl ) )
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
@@ -1027,9 +1027,16 @@ dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$anv ), ]
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
 dxdfT1selcols = colnames(dxdfT1sel)[1:9]
-dxdfT1sel[, dxdfT1selcols] %>%
-  knitr::kable("latex", booktabs = TRUE, caption='Significant longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)') %>%
-  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
+
+
+# Print the ztable object, ensuring it's treated as LaTeX code
+dxdfT1selz=ztable(dxdfT1sel[, dxdfT1selcols])
+mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
+print(dxdfT1selz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+
+# dxdfT1sel[, dxdfT1selcols] %>%
+#  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
+#  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
 
@@ -1037,7 +1044,7 @@ dxdfT1sel[, dxdfT1selcols] %>%
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
 
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=13.5,fig.height=12,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","tot") )
@@ -1073,7 +1080,10 @@ for ( cog in  cogs  ) {
     temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
-    newform = paste(  cogformcommon, " * TDX* ", voi )
+    voix = shorten_pymm_names( voi )
+    voix = gsub("_fcnxpro129", "",voix)
+    temp2[,voix]=temp2[,voi]
+    newform = paste(  cogformcommon, " * TDX * ", voix )
     if ( nrow(temp2) > 100 ) {    
     temp2 = scale_variables_in_equation( temp2, newform )
     bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
@@ -1081,25 +1091,28 @@ for ( cog in  cogs  ) {
     mycoffs = coefficients( summary( mdl ) )
     anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
     stadfrsf[n,'cog']=cog
-    stadfrsf[n,'voi']=voi
+    stadfrsf[n,'voi']=voix
     stadfrsf[n,'anv']=anvp
     stadfrsf[n,'res']=myrez
     stadfrsf[n,'singular']=isSingular(mdl)
     if ( anvp < qth ) {
       cogdel = paste0(cog,"_delta")
-      print( mycoffs[ , -c(1:3)] )
+#      print( mycoffs[ , -c(1:3)] )
   #    print( voi )
       anvp = insight::format_p( anvp, digits=4 )
-      voix = shorten_pymm_names(voi)
       ttl=( paste(  voix, myrez, " + ", cog,  " : ", anvp ) )
       ttl3=c(voix,'higher strat.','lower strat.')
       temp2$TDX=as.character( temp2$TDX )
       temp2$TDX[ temp2$TDX == 'PDGBA+']='GB+'
       temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
       temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
-#      print( interactions::interact_plot( mdl, 'yearsbl', modx='TDX',  main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=F, int.type = c("confidence", "prediction")[1], partial.residuals=F,mod2=!!sym(voi)  ) )
-       print( interactions::interact_plot( mdl, 'yearsbl', mod2='TDX',  main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=F, int.type = c("confidence", "prediction")[1], partial.residuals=F,modx=!!sym(voi)  ) )
-#      suppressMessages( threewayinteraction(  temp2, 'yearsbl', cogdel, 'TDX', voi, anatshow=ttl3 ) )
+      print( interactions::interact_plot( mdl, 
+        'yearsbl', mod2='TDX',  
+        main.title=ttl, interval=TRUE, 
+        plot.points = F, facet.modx=T, 
+        int.type = c("confidence", "prediction")[1], 
+        partial.residuals=F,modx=!!sym(voix)  ) + theme(legend.position = "top")  )
+#      suppressMessages( threewayinteraction(  temp2, 'yearsbl', cogdel, 'TDX', voix, anatshow=ttl3 ) )
 #      print( threewayinteraction( temp2, 'yearsbl', 'TDX', anat=voi ) )
  #     mygg = visreg::visreg( mdl, 'yearsbl', by=voi, gg=T )
  #     threewayinteraction( temp2, 'yearsbl', cog,  'AsynStatus', voi, showpoints=F )
@@ -1143,8 +1156,14 @@ qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
 qdfcols =  c("cog", "voi" , "anv"  )
 qdfsig = qdfsig[,qdfcols]
 qdfsig = qdfsig[!duplicated(qdfsig),]
-knitr::kable(qdfsig, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
-  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
+
+# Print the ztable object, ensuring it's treated as LaTeX code
+qdfsigz=ztable(qdfsig)
+mycap='Significant (fwe) IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI'
+print(qdfsigz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+
+# knitr::kable(qdfsig, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
+#  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
 <!--
