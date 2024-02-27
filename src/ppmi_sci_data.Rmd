@@ -1030,6 +1030,8 @@ dxdfT1selcols = colnames(dxdfT1sel)[1:9]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 dxdfT1selz=dxdfT1sel[, dxdfT1selcols]
+colnames(dxdfT1selz)=gsub("yearsbl","y",colnames(dxdfT1selz))
+colnames(dxdfT1selz)=gsub("PD","",colnames(dxdfT1selz))
 dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi,fixed=TRUE)
 dxdfT1selz=ztable(dxdfT1selz)
 mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
@@ -1045,7 +1047,7 @@ print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
 
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=13.5,fig.height=12,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=12,fig.height=4,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","tot") )
@@ -1076,15 +1078,17 @@ for ( cog in  cogs  ) {
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + TDX + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
-    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
+#    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
+    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
     voix = shorten_pymm_names( voi )
     voix = gsub("_fcnxpro129", "",voix)
     temp2[,voix]=temp2[,voi]
     newform = paste(  cogformcommon, " * TDX * ", voix )
+    newform = paste(  cogformcommon, " * ", voix )
     if ( nrow(temp2) > 100 ) {    
     temp2 = scale_variables_in_equation( temp2, newform )
     bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
@@ -1108,7 +1112,7 @@ for ( cog in  cogs  ) {
       temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
       temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
       print( interactions::interact_plot( mdl, 
-        'yearsbl', mod2='TDX',  
+        'yearsbl', # mod2='TDX',  
         main.title=ttl, interval=TRUE, 
         plot.points = F, facet.modx=T, 
         int.type = c("confidence", "prediction")[1], 
@@ -1129,7 +1133,7 @@ for ( cog in  cogs  ) {
   } }
 }
 #####################
-sigth=0.05/length(cogs)
+sigth=0.05
 # for ( cog in cogs ) 
 {
   mypvs = stadfrsf$anv
@@ -1139,14 +1143,14 @@ sigth=0.05/length(cogs)
   stadfrsf[psel2,'sig']='fdr'
   stadfrsf[psel,'sig']='fwe'
   if ( sum(psel ) > 0 )
-    temp=stadfrsf[psel,]
+    temp=stadfrsf[psel|psel2,]
     qdfsig=temp
 #    qdf = rbind( qdf, temp )
   }
 qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
-qdfcols =  c("cog", "voi" , "anv"  )
+qdfcols =  c("cog", "voi" , "anv" ,'sig')
 qdfsig = qdfsig[,qdfcols]
 qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
 qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
@@ -1162,7 +1166,7 @@ qdfsig = qdfsig[!duplicated(qdfsig),]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(qdfsig)
-mycap='Significant (fwe) IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI'
+mycap='Significant (fwe,fdr) IDP-UPDRS longitudinal effects for PDSp+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 
 # knitr::kable(qdfsig, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
