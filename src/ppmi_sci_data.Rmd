@@ -1033,7 +1033,7 @@ dxdfT1selz=dxdfT1sel[, dxdfT1selcols]
 dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi,fixed=TRUE)
 dxdfT1selz=ztable(dxdfT1selz)
 mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
-print(dxdfT1selz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 
 # dxdfT1sel[, dxdfT1selcols] %>%
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
@@ -1163,7 +1163,7 @@ qdfsig = qdfsig[!duplicated(qdfsig),]
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(qdfsig)
 mycap='Significant (fwe) IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI'
-print(qdfsigz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 
 # knitr::kable(qdfsig, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
 #  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
