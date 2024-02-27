@@ -1034,7 +1034,7 @@ colnames(dxdfT1selz)=gsub("yearsbl","y",colnames(dxdfT1selz))
 colnames(dxdfT1selz)=gsub("PD","",colnames(dxdfT1selz))
 dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi,fixed=TRUE)
 dxdfT1selz=ztable(dxdfT1selz)
-mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
+mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 
 # dxdfT1sel[, dxdfT1selcols] %>%
