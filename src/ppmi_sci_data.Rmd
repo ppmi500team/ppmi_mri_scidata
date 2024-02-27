@@ -1030,6 +1030,7 @@ dxdfT1selcols = colnames(dxdfT1sel)[1:9]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 dxdfT1selz=ztable(dxdfT1sel[, dxdfT1selcols])
+dxdfT1selz$voi=gsub("_",".",dxdfT1selz$voi)
 mycap='Significant (fwe) longitudinal diagnostic group effects: T1w, DTI and rsfMRI (n.s.)'
 print(dxdfT1selz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
@@ -1158,6 +1159,7 @@ qdfsig = qdfsig[!duplicated(qdfsig),]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(qdfsig)
+qdfsigz$voi=gsub("_",".",qdfsigz$voi)
 mycap='Significant (fwe) IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
