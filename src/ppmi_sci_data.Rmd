@@ -373,6 +373,8 @@ Due to the relatively diverse needs of researchers and the variety of rsfMRI tha
 
 # Data Records
 
+Describe how we meet FAIR principles
+
 The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.
 
 We attach the neuroimaging data to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) available on the LONI IDA.  Code for this merging process is available via the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are available in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are available at [this location](FIXME).  We also provide a "trim" version [here](FIXME) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables.  We base demonstrations below on the trim version of these PPMI IDPs.
@@ -839,7 +841,7 @@ if ( ! exists( "is_test" ) ) is_test = TRUE
 
 ## Diagnostic effects in pre-defined structural, white matter and resting functional measurements
 
-```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
+```{r quicklmdxsetup,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
 ######################################################################
 num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
@@ -904,7 +906,10 @@ rsfnames = c(
   getNamesFromDataframe( c("rsf","LRAVG",num,'_falff'), mydog, exclusions=xcl ),
   getNamesFromDataframe( c("rsf","Asym",num,'_falff'), mydog, exclusions=xcl ) )
 rsfnamescnx = c( 
-  getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","Vis","efaul"),  ppmi, exclusions=xcl ) )
+  getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","Vis","efaul"),  ppmi, exclusions=xcl ), 
+  getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","Vis","imbi"),  ppmi, exclusions=xcl ),   
+  getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","efaul","imbi"),  ppmi, exclusions=xcl )
+  )
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
@@ -961,6 +966,26 @@ nmstotest = unique( c(
   gsub("Asym","LRAVG",nmstotest), 
   dtinamesasymlr[ multigrep( dtivars, dtinamesasymlr )],
   rsfnamescnx ) )
+```
+
+### Table of pre-defined regions tested
+
+```{r predefregions,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
+# derka
+myregions = data.frame( IDP=nmstotest, IDPcln=shorten_pymm_names(nmstotest))
+myregions = data.frame( IDP=shorten_pymm_names(nmstotest))
+myregions$modality[ grep("rsf", myregions$IDP)]='rsfMRI'
+myregions$modality[ grep("dti", myregions$IDP)]='DTI'
+myregions$modality[ grep("t1", myregions$IDP)]='T1w'
+#myregionsz=ztable(myregions)
+mycap='Pre-defined PD regions in ANTsPyMM.'
+# print(myregionsz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
+myregions %>%
+  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
+  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=6,warning=FALSE,message=FALSE}
 dxdfT1=data.frame()
 for ( voi in nmstotest ) {
   n=nrow(dxdfT1)+1
@@ -1173,445 +1198,7 @@ print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 #  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 ```
 
-<!--
-### mixed effects diagnosis : DTI
--->
 
-```{r quicklmdxDT,echo=FALSE,eval=FALSE,fig.width=9,fig.height=3.5,warning=FALSE,message=FALSE}
-if ( is_test ) nmstotest=sample( dtinamesasymlr, 20) else nmstotest=dtinamesasymlr
-dxdfDTI=data.frame()
-for ( voi in nmstotest ) {
-  n=nrow(dxdfDTI)+1
-  vois = paste0( voi, c("_BL", "_delta" ) )
-  bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+", dxform )
-  bform = paste( voi, " ~ ", dxform )
-  bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ (1|PATNO) + age_BL + commonSex    + yearsbl " )
-  bform = paste( voi, " ~DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ imaging_protocol + (1|PATNO) + age_BL + commonSex    + yearsbl " )
-  newform = paste( bform, " * ", dxvar  )
-  qcclow = quantile( mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm, 0.01,na.rm=T )
-  qcorlow = quantile( mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm, 0.01,na.rm=T )
-  qcorhi = quantile( mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm, 0.99,na.rm=T )
-  temp2 = mydog[ !is.na( mydog[,voi]) & 
-    subtyper::fs(mydog$DTI_dti_FD_mean < 5.0) &
-    subtyper::fs(mydog$DTI_mean_fa.splenium_of_corpus_callosum.jhu_icbm_labels_1mm > qcclow )&
-    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm > qcorlow)&
-    subtyper::fs(mydog$DTI_mean_fa.superior_corona_radiata.LRAVG.jhu_icbm_labels_1mm < qcorhi), ]
-  temp2 = scale_variables_in_equation( temp2, newform )
-  mdl=lmer( newform, data=temp2 )
-  temp3 = temp2[ names(predict(mdl)),]
-  temp3 = scale_variables_in_equation( temp3, newform )
-  mdl=lmer( newform, data=temp3 )
-  bmdl=lmer( bform, data=temp3 )
-  mycoffs = coefficients( summary( mdl ) )
-  anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
-  dxdfDTI[n,'voi']=voi
-  dxdfDTI[n,'anv']=anvp
-  dxdfDTI[n,'tyears']=mycoffs[ 'yearsbl', 4]
-  dxdfDTI[n,'tcross']=mycoffs[ nrow(mycoffs)-1, 4]
-  dxdfDTI[n,'tlong']=mycoffs[ nrow(mycoffs), 4]
-  dxdfDTI[n,'res']=myrez
-  dxdfDTI[n,'singular']=isSingular(mdl)
-#  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
-  if ( anvp < 0.001 ) {
-    print( mycoffs )
-    print( dxdfDTI[n,] )
-    anvp = insight::format_p( anvp, digits=4 )
-    ttl=( paste( voi, myrez, " + ", mydx,  " : ", anvp ) )
-    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
-  }
-}
-##########################################################
-```
-
-```{r dxresultsDT,echo=FALSE,eval=FALSE,warning=FALSE,message=FALSE}
-###########################################################
-psel = subtyper::fs( p.adjust( dxdfDTI$anv, 'BH' ) <= .05 )
-dxdfDTI[ multigrep(c('mean_fa',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_fornix'
-dxdfDTI[ multigrep(c('mean_md',"fornix"),dxdfDTI$voi,intersect=TRUE),'voi']='md_fornix'
-dxdfDTI[ multigrep(c('mean_md',"anterior_limb_of_internal_capsule"),dxdfDTI$voi,intersect=TRUE),'voi']='md_al_int_cap'
-dxdfDTI[ multigrep(c('mean_fa',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_post_thal_rad'
-dxdfDTI[  multigrep(c('mean_md',"posterior_thalamic_radiation_"),dxdfDTI$voi,intersect=TRUE),'voi']='md_post_thal_rad'
-dxdfDTI[  multigrep(c('mean_fa',"occipital_fasciculus_"),dxdfDTI$voi,intersect=TRUE),'voi']='fa_superior_fronto_occipital_fasciculus'
-dxdfDTI[  multigrep(c('mean_md',"occipital_fasciculus_"),dxdfDTI$voi,intersect=TRUE),'voi']='md_superior_fronto_occipital_fasciculus'
-dxdfDTI$voi=gsub(".jhu_icbm_labels_1mm","",dxdfDTI$voi,fixed=TRUE)
-dxdfDTI$voi=gsub("DTI_","",dxdfDTI$voi,fixed=TRUE)
-dxdfDTI$voi=gsub("dti_","",dxdfDTI$voi,fixed=TRUE)
-dxdfDTI$voi=gsub("mean_","",dxdfDTI$voi,fixed=TRUE)
-if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfDTI))
-dxdfDTIsel = dxdfDTI[psel,]
-dxdfDTIsel[,'dx']=mydx
-dxdfDTIsel$anv = insight::format_p(  dxdfDTIsel$anv, digits=4  )
-dxdfDTIsel[, !(colnames(dxdfDTIsel) %in% c("singular"))] %>%
-  knitr::kable("latex", booktabs = TRUE) %>%
-  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
-```
-
-
-### mixed effects UPDRS changes over time: resting state
-
-```{r quicklmcogset,echo=FALSE,eval=FALSE,fig.width=9,fig.height=4.0,warning=FALSE,message=FALSE}
-####################################################################
-mydogp = mydog[ mydog$studyName == 'PPMI', ]
-signas = c( "SIGNA_Architect", "SIGNA_EXCITE" ,   "GENESIS_SIGNA"  )
-mylevsx2=c( "CN", "ProdromalSporadic", "PDSporadic" )
-mylevsx2=c(  "ProdromalSporadic", "PDSporadic" )
-mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
-mylevsx2=c(  "PDSporadic" )
-mylevsx2=c(   "PDLRRK2", "PDGBA", "PDSporadic" )
-mylevsx2=c(  "CN", "ProdromalSporadic", "PDLRRK2", "PDGBA", "PDSporadic" )
-nmidps = getNamesFromDataframe( c("NM2DMT"), mydogp, 
-  exclusions=c(xcl,"_q","min","sd","pt","count","_BL","_delta","coordinate"))
-xcl = c( "evr", "snr", "dvars","FD","motion","file","wide","SNR","_nc_",'paramset','u_hier_','censor', 'bandpass',"_BL", "outlier_threshold")
-```
-
-```{r quicklmcogfill,echo=FALSE,eval=FALSE,fig.width=9,fig.height=4.0,warning=FALSE,message=FALSE}
-dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
-fdnames = getNamesFromDataframe( "_FD_", ppmi  )
-# dxvar = 'joinedDX'
-dtinamesasymlr = c( 
-  getNamesFromDataframe( c("DTI","LRAVG"), mydogp, exclusions=c('_BL',"_delta" )),
-  getNamesFromDataframe( c("DTI","Asym"), mydogp, exclusions=c('_BL',"_delta") ) )
-#######################################################
-rsfnames = c( 
-  idps[  multigrep(c("rsf","LRAVG",num,'_falff'), idps, intersect=TRUE ) ],
-  idps[  multigrep(c("rsf","Asym",num,'_falff'), idps, intersect=TRUE ) ]
-)
-rsfnamescnx = getNamesFromDataframe( c(paste0(c("rsfMRI_fcnxpro"),num),"_2_"),  ppmi, exclusions=xcl )
-#######
-fdnames = getNamesFromDataframe( "_FD_", mydogp  )
-cogs = getNamesFromDataframe( c("updrs","score"), mydogp, exclusions=c(4,'_BL',"_delta") )
-col2sbl = unique(c( idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs ))
-mydogp = fillBaselineColumn( mydogp,
-        col2sbl,
-        'subjectID', 'yearsbl', 0, 
-        fast=T, verbose=F )[[1]]
-mydogp$hy_BL = factor( mydogp$hy_BL )
-#########################################################
-```
-
-```{r quicklmcogrsf,echo=FALSE,eval=FALSE,fig.width=9,fig.height=4.0,warning=FALSE,message=FALSE}
-#########################################################
-# for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
-stadfrsf=data.frame()
-nmstotest = sort( rsfnamescnx )
-nmstotest = sort( rsfnames )
-qth=1e-4
-if ( is_test ) {
-  nmstotest = sample( rsfnames, 25 )
-  nmstotest = nmstotest[ -grep("Occ",nmstotest)]
-  qth=0.01
-}
-for ( cog in sort(cogs) ) {
-  for ( voi in nmstotest ) {
-    n = nrow(stadfrsf)+1
-    voi = paste0(voi,"_BL")
-    motname = paste( 
-      paste0( "rsfMRI_fcnxpro",num,"_n_outliers_BL"), " + ",
-      paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL") )
-    cogformcommon=paste( cog, "  ~ (1|PATNO) + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
-#    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
-    temp2 = mydogp[ !is.na( mydogp[,voi]) , ]
-    temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
-    temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
-    newform = paste(  cogformcommon, " * ", voi )
-    if ( nrow(temp2) > 100 ) {    
-    temp2 = scale_variables_in_equation( temp2, newform )
-    bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
-    mdl=suppressMessages(lmer( newform, data=temp2 ))
-    mycoffs = coefficients( summary( mdl ) )
-    anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
-    stadfrsf[n,'cog']=cog
-    stadfrsf[n,'voi']=voi
-    stadfrsf[n,'anv']=anvp
-    stadfrsf[n,'res']=myrez
-    stadfrsf[n,'singular']=isSingular(mdl)
-    if ( anvp < qth ) {
-#      print( mycoffs[ , -c(1:3)] )
-  #    print( voi )
-      anvp = insight::format_p( anvp, digits=4 )
-      ttl=( paste( voi, myrez, " + ", cog,  " : ", anvp ) )
- #     mygg = visreg::visreg( mdl, 'yearsbl', by=voi, gg=T )
- #     threewayinteraction( temp2, 'yearsbl', cog,  'AsynStatus', voi, showpoints=F )
-#      print(prplot( mdl,  voi, 'yearsbl',ttl, colorvar='commonSex', addpoints=1))
-      print(prplot( mdl, 'yearsbl', voi, ttl, ystring=paste('change in',cog), colorvar='commonSex', addpoints=1))
-#      visreg::visreg( mdl, 'yearsbl', by=voi, main=ttl  )
-    }
-  } }
-}
-#####################
-for ( cog in cogs ) {
-  mypvs = stadfrsf$anv
-  mypvs[ stadfrsf$cog != cog  ] = NA
-  psel = subtyper::fs( p.adjust( mypvs, mycorr ) <= 0.05 )
-  siganat = stadfrsf$voi[ psel ]
-  if ( sum(psel) > 0 )
-    qdf = rbind( qdf, stadfrsf[psel,] )
-  }
-###########################################################################
-###########################################################################
-###########################################################################
-```
-
-```{r cogresults,echo=FALSE,eval=FALSE,warning=FALSE,message=FALSE}
-if ( "anv" %in% colnames(qdf) ) {
-  qdf$anv = insight::format_p(  qdf$anv, digits=4  )
-  qdf[,c("cog","voi","anv","res")] %>%
-    knitr::kable("latex", booktabs = TRUE) %>%
-    kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
-}
-```
-
-### mixed models
-
-
-```{r lmerextab,echo=FALSE,eval=FALSE,fig.width=12,fig.height=6,message=FALSE,warning=FALSE,cache=FALSE}
-knitr::opts_chunk$set(cache.path = odir )
-###################################################
-pvaluedf = tvaluedf = data.frame()
-meffdall = data.frame()
-ct = 0
-subtypes = c( 'LRRK2', 'Sporadic' ) # GBA
-# subtypes = c('LRRK2' ) # GBA
-for (  subtype in subtypes ) {
-    dxs = c("CNNegative", paste0("PD",subtype,c("Negative","Positive") ) )
-    ssel = subtyper::fs( clin$DXSubAsyn %in% dxs ) & commonsel
-    studydata = clin[ssel,]
-    print( table(round(studydata$yearsbl), studydata$DXSubAsyn) )
-    sage=data.frame( stats::poly( studydata$age_BL , 2 ) )
-    colnames(sage)=c("Age1","Age2")
-    studydata=cbind(studydata,sage)
-    studydata$SEX = factor( studydata$SEX )
-    if ( FALSE ) {
-        studydata$DXSubAsyn = paste0( studydata$DXSubAsyn, studydata$SEX )
-        dxs2=c()
-        for ( dx in dxs ) dxs2=c(dxs2,paste0(dx,levels(studydata$SEX)))
-        dxs=dxs2
-        }
-    studydata[,'DXSubAsyn']=factor(studydata[,'DXSubAsyn'],levels=dxs)
-    studydata$duration_yrs = as.numeric( studydata$duration_yrs )
-    studydata$cnxtot = rowSums( studydata[,cnxnames] )
-    studydata[,cnxnames]=studydata[,cnxnames]/studydata$cnxtot
-    normalizeit=FALSE
-    if ( normalizeit ) {
-        studydata[,mdnames]=studydata[,mdnames]/studydata$meanmd
-        studydata[,thknames]=studydata[,thknames]/studydata$meanthick
-        }
-    testnames = unique( c( t1names, dtinames, rsfnames ) )
-    if ( winsval == 0.0 ) {
-        isna=is.na( studydata[,testnames] )
-        temp = ANTsR::robustMatrixTransform(studydata[,testnames])
-        temp[ isna ]=NA
-        studydata[,testnames]=temp
-        }
-    ####################################
-    studydata=mapAsymVar( studydata, 
-        testnames[ grep("_l_", testnames) ], '_l_', "_r_" )
-    studydata=mapLRAverageVar( studydata, 
-        testnames[ grep("_l_", testnames) ], '_l_', "_r_" )
-    studydata=mapAsymVar( studydata, 
-        testnames[ grep("_left", testnames) ] )
-    studydata=mapLRAverageVar( studydata, 
-        testnames[ grep("_left", testnames) ] )
-    testnames = c( 
-        getNamesFromDataframe( "Asym" , studydata ),
-        getNamesFromDataframe( "LRAVG" , studydata ) )
-    countdtinz=rep(NA,length(testnames))
-    for ( x in 1:length(testnames) ) {
-        countdtinz[x]=sum( !is.na(studydata[,testnames[x]]) & studydata[,testnames[x]] > 0)
-    }
-    testnames=testnames[ countdtinz > 100 ]
-#    testnames = testnames[ -grep("Asym",testnames)]
-    studydata$meanthick = rowMeans( studydata[,thknames])
-    studydata$meanmd = rowMeans( studydata[,mdnames])
-    testnames = c( testnames, midnames )
-    studydata = fillBaselineColumn( studydata,
-        c('meanthick','meanmd','brainVolume',testnames,'hy','MOCA'), 
-        'PATNO', 'imaging_EVENT_ID', 'V0', 
-        fast=T, verbose=F )[[1]]
-    for ( x in  c('meanthick','meanmd','brainVolume',testnames) ) {
-#        studydata=baseimpute( studydata, x )
-#        studydata=visitimpute( studydata, x, 2 )
-        }
-    if ( FALSE )
-        testnames = c( 
-            "T1Hier_vol_bn_gp_gpe_LRAVGdeep_cit168",
-            'T1Hier_vol_bn_str_pu_LRAVGdeep_cit168','DTI_mean_md_Asym_rostral_middle_frontal')
-    for ( testvols in testnames ) {
-        ct = ct + 1
-        studydata$testvol = studydata[ ,testvols]
-        studydata$testvol_BL = studydata[ ,paste0(testvols,"_BL")]
-        studydata$testvol_delta = studydata[ ,paste0(testvols,"_delta")]
-        studydata$testvol_delta = psych::winsor(studydata$testvol_delta,tr=winsval)
-        studydata$SEX = factor( studydata$SEX )
-        toscale = c('snr','psnr','EVR','age_BL','DTI_dti_FD_mean','T1Hier_resnetGrade','DTI_dti_tsnr_b0_mean','testvol_BL','brainVolume_BL','EDUCYRS', 'MOCA_BL', 'hy_BL' )
-        studydata$EDUCYRS=as.numeric(studydata$EDUCYRS)
-        studydata[,toscale]=scale(studydata[,toscale])
-        studydata$EDUCYRS = scale(ANTsRCore::antsrimpute(as.numeric( studydata$EDUCYRS )))
-        covars=covars0
-        covarsx=covars0x
-        if ( length(grep("DTI_",testvols)>1 ) ) {
-            covars=paste(covars0,dticovars)
-            covarsx=paste(covars0x,dticovars)
-        }
-        bform=paste( covars, " + yearsbl ")
-        myform=paste( covars, " + yearsbl * ( DXSubAsyn )")
-        # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3281513/
-        # section: Advantages and Disadvantages of Fixed Main Effect for Site
-        bformx=paste( "testvol~",covarsx, " + yearsbl ")
-        myformx=paste( "testvol~",covarsx, " + yearsbl * ( DXSubAsyn )")
-        isblsub = studydata$PATNO[ studydata$imaging_EVENT_ID=='V0' ]
-        isfsub = studydata$PATNO[ studydata$imaging_EVENT_ID !='V0' ]
-        isboth = intersect( isblsub, isfsub )
-        studydatasub = studydata[ studydata$PATNO %in% isboth,]
-        bmdl = try( lmer( bform,data=studydata ) )
-        mdl = try( lmer( myform,data=studydata ) )
-        bmdlx = lmer( bformx,data=studydata )
-        mdlx = lmer( myformx,data=studydata )
-        if ( FALSE ) {
-            # simple regression for BL vs follow
-            lmdata = data.frame( )
-            fillvars = all.vars( as.formula( myform ) )
-            rmers = multigrep( c("testvol_delta","testvol","PATNO",#"yearsbl",
-                "DTI_dti_tsnr_b0_mean","mrimfg"), fillvars, intersect=FALSE )
-            lmform = paste( fillvars[1], "~(1|PATNO)+testvol_BL+",paste(fillvars[-rmers],collapse="+"))
-            mdlLM = lmer( lmform,data=studydatasub)
-#            mycoffsX = coefficients(summary( mdlLM ))
-#            if ( any(tail(mycoffsX[,"Pr(>|t|)"],2) < 0.005 )) {
-#                print( visreg::visreg(mdlLM,'DXSubAsyn',gg=TRUE)+ggtitle(testvols))
-#                print( mycoffsX )
-#                print( testvols )
-#                }
-            }
-        if ( !is( mdl, "try-error" ) ) {
-            mycoffx = coefficients(summary(mdlx))[-c(1:2),-c(1:2)]
-            mycoffx = mycoffx[ grep(subtype,rownames(mycoffx)), ]
-            mycoffx = mycoffx[ -grep("yearsbl",rownames(mycoffx)),]
-            mycoff = coefficients(summary(mdl))[-c(1:2),-c(1:2)]
-#            mycoff = mycoff[ grep(subtype,rownames(mycoff)), ]
-            mycoff = rbind(
-                mycoffx[grep(subtype,rownames(mycoffx)),],
-                mycoff[multigrep(c("yearsbl",subtype),rownames(mycoff),intersect=T),])
-            if ( nrow( pvaluedf ) == 0 ) {
-                myoc = rownames(mycoff)
-                myoc = gsub("yearsbl:","y.",myoc)
-                myoc = gsub("Negative","Neg",myoc)
-                myoc = gsub("Positive","Pos",myoc)
-                myoc = gsub("DXSubAsyn","",myoc)
-                myoc = gsub(paste0("PD",subtypes[1]),"",myoc)
-                outcomes = c("subtype",  myoc )
-                noutcomes = length(outcomes)
-                pvaluedf = data.frame( matrix(ncol=noutcomes) )
-                colnames(pvaluedf )=outcomes
-                tvaluedf=pvaluedf
-            }
-            tvaluedf[ct, outcomes] = c(subtype,mycoff[,"t value"])
-            pvaluedf[ct, outcomes] = c(subtype,mycoff[,"Pr(>|t|)"])
-            anvx = anova(bmdlx,mdlx)$Pr[2]
-            anv = anova(bmdl,mdl)$Pr[2]
-            pvaluedf[ct,'anova'] = anv
-            pvaluedf[ct,'anovax'] = anvx
-            tvaluedf[ct,'anat'] = pvaluedf[ct,'anat']=testvols
-            if (  pvaluedf[ct,'anova'] < qthresh | pvaluedf[ct,'anovax'] < qthresh  )
-                {
-                nstring = getnstring( 'DXSubAsyn')
-                pvformattedx=insight::format_p( anvx, stars=TRUE, digits=4 )
-                pvformatted=insight::format_p( pvaluedf[ct,'anova'], stars=TRUE, digits=4 )
-                cat( paste0( "\n\n****************************************************************\n\n" ) )
-                cat( paste0( testvols," anv ", pvaluedf[ct,'anova'], " ****************\n\n" ) )
-                print( mycoff[,-1] )
-                mydegfree = round( (mycoff[,'df']) )
-                meff = effectsize::t_to_d( mycoff[,'t value'], mydegfree )
-                rownames(meff) = rownames(mycoff)
-                myrownames = rownames(mycoff)
-                myrownames = gsub("yearsbl","years",myrownames)
-                myrownames = gsub("DXSubAsynPD","",myrownames)
-                meffd = data.frame(meff)
-                meffd$eff=myrownames
-                meffd$anat = testvols
-                meffd$dx = "Pos"
-                meffd$dx[ grep("Neg",myrownames)]='Neg'
-                if ( nrow(meffdall) == 0 ) meffdall=meffd else meffdall = rbind(meffdall,meffd)
-                print( ggbarplot( meffd, 'eff','d', color='dx', fill='dx', 
-                    palette='npg' ) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+ggtitle(paste("Long and cross effect sizes (d):",testvols)) + geom_errorbar(aes(ymin=CI_low, ymax=CI_high), width=.1,
-                    position=position_dodge(.5))  )
-                mypal = 'lancet'
-                (prplot( mdlx,'yearsbl',  'DXSubAsyn',color='DXSubAsyn', addpoints=1, palette=mypal )+ ggtitle(paste(testvols,pvformattedx,"\n",nstring))) %>% print()
-#                (prplot( mdl,  'yearsbl', 'DXSubAsyn', color='DXSubAsyn', addpoints=1, palette=mypal )+ ggtitle(paste(testvols,pvformatted,"\n",unlist(strsplit(nstring,"\n"))[2]))) %>% print()
-                studydatasub$yearr=round( studydatasub$yearsbl )
-                temp = table( studydatasub[,'PATNO'] )
-                tsel = ( studydatasub$yearr %in% c(0,1,2,4) ) & 
-                    studydatasub$PATNO %in% names(temp)[temp>=2]
-                yername=gsub("T1Hier_","",testvols)
-                yername=gsub("DTI_","",yername)
-                yername=gsub("dktregions","",yername)
-                yername=gsub("jhu","",yername)
-                if ( TRUE ) {
-                    nlevs = length( levels( studydatasub[,'DXSubAsyn'] ))
-                    manualColors = pal_lancet("lanonc", alpha = 0.9)(nlevs)
-                    print( plotSubtypeChange( studydatasub[tsel,],
-                        idvar='PATNO', 'DXSubAsyn',
-                        measurement="testvol_delta",
-                        vizname='yearr', 'se', xlab='yr from v0' ) + 
-                        ggtitle(paste(yername," : change")) +
-                        scale_colour_manual(values = manualColors ) )
-                    print( plotSubtypeChange( studydatasub[tsel,],
-                        idvar='PATNO', 'DXSubAsyn',
-                        measurement="testvol",
-                        vizname='yearr', 'se', xlab='yr from v0' ) + 
-                        ggtitle(paste(yername," : raw")) +
-                        scale_colour_manual(values = manualColors ) )
-#                    ggscatter( studydata, 'yearsbl', "brainVolume", facet.by='DXSubAsyn', color='DXSubAsyn', add='reg.line', conf.int=T, cor.coef=T, parse=T, palette=manualColors ) %>% print()
-
-                    # now test the TPL hypotheses
-                    testcog=TRUE
-                    if ( testcog ) {
-                        subcohort = studydatasub[ studydatasub$DXSubAsyn != 'CNNegative',]
-                        subcohortbl = studydatasub[ studydatasub$DXSubAsyn !=     
-                            'CNNegative' &
-                            studydatasub$imaging_EVENT_ID == 'V0', ]
-                        myst = trainSubtypeUni( subcohortbl, "testvol",
-                            c("Alow","Amid","Ahigh"), quantiles = c(0.33,0.66) )
-                        subcohort = predictSubtypeUni( subcohort, myst, 'PATNO', 
-                            'imaging_EVENT_ID', 'V0')
-                        for ( cog in coggers ) {
-                            cogform=paste( cog , "~", commcov, "+AsynStatus+subtype*yearsbl" )
-                            cogmdl = try( lmer( cogform, data=subcohort ) )
-                            cogcoff=coefficients(summary(cogmdl))
-                            cogcoff=cogcoff[grep("subtype",rownames(cogcoff)),]
-                            if ( any( cogcoff[,"Pr(>|t|)"] < 0.001 ) ) {
-                                message(paste(testvols,cog))
-                                print(paste("COGGER",cog))
-                                print( cogcoff[,-c(1:2)] )
-                                cogpvform = insight::format_p( 
-                                    min(cogcoff[,"Pr(>|t|)"]),
-                                    stars=TRUE, digits=4 )
-                                (prplot( cogmdl,'yearsbl',  'subtype',color='subtype', addpoints=1, palette=mypal )+ ggtitle(paste(testvols,"COGGER",cog,"\n",cogpvform))) %>% print()
-                                pvaluedf[ct,cog]=min(cogcoff[,"Pr(>|t|)"])
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-    cat("****************\n\n")
-} # subtype loop
-##########################################################
-##########################################################
-if ( FALSE )
-for ( subtype in subtypes[1:2] ) {
-    print(subtype)
-    pvaluedfsub = pvaluedf[ pvaluedf$subtype == subtype, ]
-    sel=p.adjust( pvaluedfsub[,'anova'], corrmet ) <= 0.05
-    print( pvaluedfsub[ sel, c("Neg","Pos","Y.Neg","Y.Pos","anat")] )
-    cat(">>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<\n\n")
-}
-##########################################################
-##########################################################
-```
 
 
 # Usage Notes
