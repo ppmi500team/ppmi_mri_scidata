@@ -947,7 +947,7 @@ if ( is_test ) {
   mycorr='none'
 }
 # decide on some really good regions to test/show
-ctx = c( "T1Hier_vol_Asym_middle_temporaldktcortex", "T1Hier_vol_Asym_inferior_parietaldktcortex", 
+ctx = c( "T1Hier_vol_Asym_superior_parietaldktcortex", "T1Hier_vol_Asym_inferior_parietaldktcortex", 
 getNamesFromDataframe( c("vol","Asym", "dktcortex","entral"),mydog)
  ) # need ref
 snc = c( "T1Hier_vol_mtg_sn_snc_Asymdeep_cit168",   
@@ -1060,7 +1060,6 @@ dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$anv ), ]
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
 dxdfT1selcols = colnames(dxdfT1sel)[1:9]
-
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 dxdfT1selz=dxdfT1sel[, dxdfT1selcols]
