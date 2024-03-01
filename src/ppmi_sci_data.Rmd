@@ -910,6 +910,8 @@ rsfnamescnx = c(
   getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","Vis","imbi"),  ppmi, exclusions=xcl ),   
   getNamesFromDataframe( c(paste0("rsfMRI_fcnxpro",num),"_2_","efaul","imbi"),  ppmi, exclusions=xcl )
   )
+rsfnamescnx = getNamesFromDataframe( c("pro122", "_2_" , "SomMot" ), ppmi, exclusions=c(xcl,'efaul','Dors','SalVe','imbi')  )
+rsfnamescnx = rsfnamescnx[ grep("rsfMRI_fcnxpro122_SomMot", rsfnamescnx) ]
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','Limbic'),  ppmi, exclusions=xcl ),
 #  getNamesFromDataframe( c("rsfMRI_fcnxpro","_2_",num,'SomMot','SalVent'),  ppmi, exclusions=xcl ) )
 dtinames = getNamesFromDataframe( c("DTI_"), ppmi, exclusions=c( xcl, 'cnx','volume') )
