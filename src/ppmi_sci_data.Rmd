@@ -1170,7 +1170,7 @@ print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
 
 
-```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=12,fig.height=8,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=12,fig.height=4,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","tot") )
@@ -1233,15 +1233,25 @@ for ( cog in  cogs  ) {
     stadfrsf[n,othercolsnm]=chnd[,1]
     stadfrsf[n,'res']=myrez
     stadfrsf[n,'singular']=isSingular(mdl)
-#     if (  anvp < 3e-4 ) {
-    if (  voix %in% c(
+    pairstovisB = c(
       "t1.vol.bn.str.pu.asym.bl", # updrs1 
       # "t1.vol.inf.parietal.ctx.bl",  # updrs1 
       "dti.mean.md.ant.int.cap.asym.bl",# updrs2 
       "rsf.sommotb.2.visperi.bl", # updrs3on 
       # "t1.vol.dg.ca3mtl.bl", 
       "t1.vol.pons.bst.bl" # # updrs3
-      ) ) {
+      )
+    pairstovisC = c(
+      "updrs1_score", # updrs1 
+      # "updrs1_score",  # updrs1 
+      "updrs2_score",# updrs2 
+      "updrs3_score_on", # updrs3on 
+      # "t1.vol.dg.ca3mtl.bl", 
+      "updrs3_score" #  updrs3
+      )
+    ptv = paste0(pairstovisB,"_",pairstovisC)
+#     if (  anvp < 3e-4 ) {
+    if (  paste0(voix,"_",cog) %in% ptv  ) {
       cogdel = paste0(cog,"_delta")
   #    print( mycoffs[ , -c(1:3)] )
   #    print( voi )
