@@ -181,6 +181,7 @@ if ( ! exists("clin2b") ) {
   clin2b$commonEdu[ clin2b$commonEdu == 3] = 20
 }
 ppmi = clin2b
+ppmi$SITE = factor( ppmi$SITE )
 ppmi$brainVolume = ppmi$T1Hier_vol_hemisphere_lefthemispheres + ppmi$T1Hier_vol_hemisphere_righthemispheres
 ppmi$brainVolume = ppmi$brainVolume / mean(ppmi$brainVolume)
 ppmi$imaging_protocol[ ppmi$studyName=='ADNI']=3
@@ -373,7 +374,9 @@ Due to the relatively diverse needs of researchers and the variety of rsfMRI tha
 
 # Data Records
 
-Describe how we meet FAIR principles
+* Describe how we meet FAIR principles
+
+* reference biomedical data organization
 
 The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular .csv format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.
 
@@ -394,9 +397,13 @@ In this study, we employ traveling cohort data to assess the agreement of imagin
 
 We find that ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall good to high reliability with a few exceptions within resting state correlations.  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level.
 
+
+<!--
 ## Multi-view prediction 
 
 We classify PD and control cases based on the available data using a standard machine learning (ML) paradigm available in the `mlr3verse` [@FIXME].  MLR3 allows systematic comparison of cross-validated performance between different ML models as well as feature sets.  As such, we compare performance between (a) T1w only versus (b) T1w plus DTI features as a function of either OR or SR calculations.  These results demonstrate that both joint modeling (DTI and T1 together) and SR improve classification accuracy over T1 alone or OR features.  Figure FIXME demonstrates a comparison of T1 only performance versus T1 plus DTI performance in terms of both raw and balanced accuracy using SR features.  Only better performing models are shown including: glmnet [@FIXME], imbalanced random forests [@FIXME], naive bayes classifier [@FIXME] and classic random forests [@FIXME].  The "featureless" model is the baseline classifier (no imaging features are used).
+
+-->
 
 ```{r classified,echo=FALSE,eval=FALSE,fig.width=6,fig.height=9,message=FALSE,warning=FALSE,cache=FALSE}
 ############################
@@ -845,10 +852,10 @@ if ( ! exists( "is_test" ) ) is_test = TRUE
 ######################################################################
 num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
-dxform="~  (1|PATNO)+ (1|SITE) + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="~  (1|PATNO) + studyName + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="  (1|PATNO)  + commonEdu +  age_BL + commonSex + brainVolume_BL "
-dxform="  (1|subjectID) + (1|imaging_protocol) + age_BL + commonSex "
+dxform="  (1|commonID)+ (1|imaging_protocol) + commonEdu +  age_BL + commonSex + brainVolume_BL "
+dxform="  (1|commonID) + (1|imaging_protocol) + age_BL + commonSex "
 dxform = paste( dxform, "  + yearsbl ")
 # dxform = paste( dxform, " + DTI_dti_FD_mean + yearsbl ")
 # dxform = paste( dxform, " + yearsbl ")
@@ -868,7 +875,8 @@ mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 # mydog = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 mydog = ppmi[ ppmi$T1Hier_resnetGrade > 1.02 ,  ]
 ysel = mydog$yearsbl <= 4.5 
-mydog = mydog[ mydog$studyName %in% c('PPMI','ADNI') & ysel &
+mydog = mydog[ mydog$studyName %in% c('PPMI') & ysel &
+# mydog = mydog[ mydog$studyName %in% c('PPMI','ADNI') & ysel &
 #  ppmi$DXSubAsyn %in%  mylevsx0[c(1,2,3)]&  
 #  ppmi$joinedDX %in%  mylevsx1[c(1,2,3)] &  
 #  subtyper::fs( ppmi$joinedDX %in% c( "CN","PDLRRK2" ) ) &
@@ -954,13 +962,16 @@ getNamesFromDataframe( c("vol","Asym", "dktcortex","entral"),mydog)
  ) # need ref
 snc = c( "T1Hier_vol_mtg_sn_snc_Asymdeep_cit168",   
   "T1Hier_vol_bn_str_pu_Asymdeep_cit168", 
-  "T1Hier_vol_bn_gp_gpi_Asymdeep_cit168", 
-  "T1Hier_vol_bn_gp_gpe_Asymdeep_cit168", 
-  getNamesFromDataframe( c("vol","Asym", "nbm"),mydog) )
-#  getNamesFromDataframe( c("mtl", "LR"),mydog) )
+#  "T1Hier_vol_bn_str_ca_Asymdeep_cit168", 
+#  "T1Hier_vol_bn_gp_gpi_Asymdeep_cit168", 
+#  "T1Hier_vol_bn_gp_gpe_Asymdeep_cit168", 
+  t1namesbst,
+  getNamesFromDataframe( c("vol","Asym", "nbm"),mydog),
+  getNamesFromDataframe( c("vol","Asym", "mtl",'ca3'),mydog) )
+
 dtivars = c( "superior_longitudinal_fasciculus", "_snc", 
   "superior_corona_radiata", "fornix", "_capsule", 
-  # "parahippocampal", 
+#  "parahippocampal", 
   "str_pu")
 nmstotest = c( ctx, snc )
 nmstotest = unique( c( 
@@ -972,25 +983,97 @@ nmstotest = unique( c(
 
 ### Table of pre-defined regions tested
 
+see [agostas paper](https://www.sciencedirect.com/science/article/pii/S2213158220302114) for support for atrophy and progression
+
+* add references to table for each predefined region
+
+* add long names to predefined regions
+
 ```{r predefregions,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
-idpids = nmstotest[ multigrep( c("LRAVG","rsfM"),nmstotest)]
+idpids = nmstotest[ multigrep( c("LRAVG",'brainstem',"rsfM"),nmstotest)]
 myregions = data.frame( IDP=shorten_pymm_names(idpids))
 myregions$modality[ grep("rsf", myregions$IDP)]='rsfMRI'
 myregions$modality[ grep("dti", myregions$IDP)]='DTI'
 myregions$modality[ grep("t1", myregions$IDP)]='T1w'
 myregions2=myregions
+rownames(myregions2)=NULL
 myregions2$IDP=gsub('_','.',myregions$IDP)
 myregions2T1 = myregions2[ myregions2$modality == 'T1w', ]
+rownames(myregions2T1)=NULL
 myregions2DTI = myregions2[ myregions2$modality == 'DTI', ]
+rownames(myregions2DTI)=NULL
 myregions2RSF = myregions2[ myregions2$modality == 'rsfMRI', ]
-myregionszT1z=ztable(myregions2T1)
-myregionszRSFz=ztable(myregions2RSF)
-myregionszDTIz=ztable(myregions2DTI)
-mycap='Pre-defined PD regions in ANTsPyMM: T1w (L/R average and asym)'
+rownames(myregions2RSF)=NULL
+myregions2T1$anat= c(
+  "Superior Parietal Cortex",
+  "Inferior Parietal Cortex",
+  "Paracentral Cortex",
+  "Postcentral Cortex",
+  "Precentral Cortex",
+  "Substantia Nigra Compacta",
+  "Basal Nucleus Striatum, Putamen",
+  "Nucleus Basalis Meynert, Anterior Basal Forebrain",
+  "Nucleus Basalis Meynert, Middle Basal Forebrain",
+  "Nucleus Basalis Meynert, Posterior Basal Forebrain",
+  "Dentate Gyrus, CA3 Region of Medial Temporal Lobe",
+  "Medulla Brainstem",
+  "Midbrain Brainstem",
+  "Pons Brainstem"
+)
+myregions2RSF$connectivity <- c(
+  "Temporal Parietal Region",
+  "Control Network Component C",
+  "Control Network Component B",
+  "Control Network Component A",
+  "Somatomotor Area B",
+  "Somatomotor Area A",
+  "Peripheral Visual Area",
+  "Central Visual Area",
+  "Temporal Parietal Region",
+  "Control Network Component C",
+  "Control Network Component B",
+  "Control Network Component A",
+  "Somatomotor Area B",
+  "Somatomotor Area A",
+  "Peripheral Visual Area",
+  "Central Visual Area"
+)
+myregions2DTI$anat =  c(
+  "Superior Longitudinal Fasciculus FA",
+  "Superior Longitudinal Fasciculus Mean MD",
+  "Deep Substantia Nigra Compacta FA",
+  "Substantia Nigra Compacta FA",
+  "Deep Substantia Nigra Compacta Mean MD",
+  "Substantia Nigra Compacta Mean MD",
+  "Superior Coronal Radiata FA",
+  "Superior Coronal Radiata Mean MD",
+  "Fornix FA",
+  "Fornix Mean MD",
+  "Anterior Internal Capsule FA",
+  "External Capsule FA",
+  "Posterior Internal Capsule FA",
+  "Retrolenticular Part of Internal Capsule FA",
+  "Superior Frontal-Occipital Fasciculus FA",
+  "Anterior Internal Capsule Mean MD",
+  "External Capsule Mean MD",
+  "Posterior Internal Capsule Mean MD",
+  "Retrolenticular Part of Internal Capsule Mean MD",
+  "Superior Frontal-Occipital Fasciculus Mean MD",
+  "Deep Basal Nucleus Striatum, Putamen FA",
+  "Basal Nucleus Striatum, Putamen FA",
+  "Deep Basal Nucleus Striatum, Putamen Mean MD",
+  "Basal Nucleus Striatum, Putamen Mean MD"
+)
+
+
+myregionszT1z=ztable(myregions2T1[,c('IDP','anat')])
+myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')])
+myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')])
+mycap='Pre-defined PD regions in ANTsPyMM: T1w L/R average and asym'
 print(myregionszT1z, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
-mycap='Pre-defined PD regions in ANTsPyMM: DTI (L/R average and asym)'
+mycap='Pre-defined PD regions in ANTsPyMM: DTI L/R average and asym for both FA and MD (notshown)'
 print(myregionszDTIz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
-mycap='Pre-defined PD regions in ANTsPyMM: rsfMRI (bilateral connectivity)'
+mycap='Pre-defined PD regions in ANTsPyMM: rsfMRI bilateral connectivity'
 print(myregionszRSFz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
 # myregions %>%
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
@@ -1010,15 +1093,17 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ LRRK2_MRIPROTOCOL+DTI_dti_tsnr_b0_mean + DTI_dti_tsnr_dwi_mean+", dxform )
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ spc0 +spc1+", dxform )
   bform = paste( voi, " ~ 1 + T1Hier_resnetGrade+spc0+spc2+", dxform )
-  bform = paste( vois[2], " ~ " , vois[1], "+brainVolume_BL + T1Hier_resnetGrade+", dxform )
+  bform = paste( vois[2], " ~ " , vois[1], "+brainVolume_BL + T1Hier_resnetGrade+duration_yrs+", dxform )
   othdxform=dxform
   if ( antspymm_vartype(voi) == "rsfMRI" ) othdxform=paste0(motname,"+",dxform)
   if ( antspymm_vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
-  bform = paste( voi, " ~ brainVolume_BL + T1Hier_resnetGrade+", othdxform )
+  bform = paste( voi, " ~ brainVolume_BL+duration_yrs+ T1Hier_resnetGrade+", othdxform )
   newform = paste( bform, " * ", dxvar  )
   temp2 = mydog[ !is.na( mydog[,voi]) & mydog$age_BL < 70005 & 
-    mydog$studyName %in% c('PPMI'), ]
-  # for ( x in  all.vars( as.formula(newform)) ) { print(x) ; print(table( is.na( temp2[,x]))) }
+    mydog$studyName %in% c('PPMI','ADNI'), ]
+  temp2$duration_yrs[ is.na( temp2$duration_yrs ) ] = 0
+#  for ( x in  all.vars( as.formula(newform)) ) { 
+#    print(x) ; print(table( is.na( temp2$duration_yrs ), temp2$studyName )) }
   temp2 = scale_variables_in_equation( temp2, newform )
   mdl=lmer( newform, data=temp2 )
   temp3 = temp2[ names(predict(mdl)),]
@@ -1028,22 +1113,25 @@ for ( voi in nmstotest ) {
   mycoffs = coefficients( summary( mdl ) )
   anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
   dxdfT1[n,'voi']=voi
+  dxdfT1[n,'n.base']=length(unique(temp3$commonID))
+#  dxdfT1[n,'n.long']=poptbl[2]
   dxdfT1[n,'anv']=anvp
   othercols = rownames(mycoffs)
   othercols=c( "yearsbl" , othercols[grep("TDX",othercols)] )
   othercolsnm=gsub("TDX","",othercols)
   othercolsnm=gsub(":",".",othercolsnm)
-  chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], mycoffs[ othercols, 'df']  )
+  ndf = length(unique(temp3$commonID))
+  chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], rep(ndf,length(othercols))  )
   dxdfT1[n,paste0("d.",othercolsnm)]=chnd[,1]
 #  dxdfT1[,paste0("p.",othercolsnm)]=mycoffs[ othercols, 5]
   dxdfT1[n,'res']=myrez
   dxdfT1[n,'singular']=isSingular(mdl)
 #  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
-  if ( gsub("_",".",shorten_pymm_names(voi)) %in% c("t1.vol.mtg.sn.sncdeep.cit168","dti.mean.md.sup.longitudinal.fasciculus.","dti.fa.sup.corona.radiata.asym","t1.vol.nbm.antbf","rsf.defaulta.2.visperi") ) {
-    # print( mycoffs )
-    # print( dxdfT1[n,] )
+  if ( gsub("_",".",shorten_pymm_names(voi)) %in% c("t1.vol.mtg.sn.sncdeep.cit168","dti.mean.md.sup.longitudinal.fasciculus.","dti.fa.sup.corona.radiata.asym","t1.vol.nbm.antbf","rsf.defaulta.2.visperi") | anvp < 1e-6 ) {
+    print( mycoffs )
+    print( dxdfT1[n,] )
     anvp = insight::format_p( anvp, digits=4 )
-    ttl=( paste( shorten_pymm_names(voi), "PD+ : ", anvp ) )
+    ttl=( paste( shorten_pymm_names(voi), "omnibus : ", anvp ) )
     print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
 #    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
@@ -1061,7 +1149,7 @@ dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$anv ), ]
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
-dxdfT1selcols = colnames(dxdfT1sel)[1:9]
+dxdfT1selcols = colnames(dxdfT1sel)[1:10]
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 dxdfT1selz=dxdfT1sel[, dxdfT1selcols]
@@ -1112,7 +1200,7 @@ for ( cog in  cogs  ) {
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motname, " + age_BL + commonSex + AsynStatus + yearsbl" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|imaging_protocol)+ (1|PATNO) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|imaging_protocol)+ (1|commonID) + T1Hier_resnetGrade  + duration_yrs + ",motname," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
     temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
 #    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
@@ -1120,6 +1208,8 @@ for ( cog in  cogs  ) {
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
     voix = shorten_pymm_names( voi )
     voix = gsub("_fcnxpro129", "",voix)
+    voix = gsub("_fcnxpro122", "",voix)
+    voix = gsub("_fcnxpro134", "",voix)
     temp2[,voix]=temp2[,voi]
     newform = paste(  cogformcommon, " * TDX * ", voix )
     newform = paste(  cogformcommon, " * ", voix )
@@ -1129,9 +1219,18 @@ for ( cog in  cogs  ) {
     mdl=suppressMessages(lmer( newform, data=temp2 ))
     mycoffs = coefficients( summary( mdl ) )
     anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
+    othercols=c(voix,paste0("yearsbl:",voix))
+    ndf = length(unique(temp2$commonID))
+    chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], c(ndf,ndf) )
+#    if ( max( abs( chnd[,1] ) ) > 2 ) derka
     stadfrsf[n,'cog']=cog
     stadfrsf[n,'voi']=voix
+    poptbl = table( table( temp2$commonID ) )
+    stadfrsf[n,'n.base']=ndf
+#    stadfrsf[n,'n.long']=poptbl[2]
     stadfrsf[n,'anv']=anvp
+    othercolsnm=c("d.b","d.y")
+    stadfrsf[n,othercolsnm]=chnd[,1]
     stadfrsf[n,'res']=myrez
     stadfrsf[n,'singular']=isSingular(mdl)
     if (  anvp < 3e-4 ) {
@@ -1195,7 +1294,7 @@ sigth=0.05
 qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
-qdfcols =  c("cog", "voi" , "anv" ,'sig')
+qdfcols =  c("cog", "voi" , "anv" ,'sig',othercolsnm)
 qdfsig = qdfsig[,qdfcols]
 qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
 qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
@@ -1219,7 +1318,67 @@ print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 ```
 
 
+### multiview example
 
+```{r multiview,echo=FALSE,fig.width=16,fig.height=8}
+cog='updrs1_score'
+maxy=2.5
+vois = c("t1.vol.bn.str.pu.asym.bl","dti.mean.md.fornix.asym.bl","rsf.sommota.2.contc.bl")
+vois = c("T1Hier_vol_bn_str_pu_Asymdeep_cit168_BL",
+  "rsfMRI_fcnxpro122_SomMotA_2_ContC_BL",
+  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm",
+  "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm" )
+voisx=vois
+for ( x in 1:length(vois) ) {
+  voisx[x]= shorten_pymm_names(voisx[x])
+}
+voisx[2]=paste0(voisx[2],'.avg')
+voisx[3]=paste0(voisx[3],'.asym')
+bform =paste( " updrs1_score_delta ~  updrs1_score_BL + (1|SITE)+ (1|commonID) + T1Hier_resnetGrade  + duration_yrs + DTI_dti_FD_mean_BL+ rsfMRI_fcnxpro122_FD_mean_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )  *  ( ", voisx[1] , ")" )
+mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
+temp2 = mydogp[ !is.na( mydogp[,vois[3]]) & !is.na( mydogp[,vois[2]]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
+for ( x in 1:length(vois) ) {
+  temp2[,voisx[x]]=temp2[,vois[x]]
+}
+temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
+temp2 = scale_variables_in_equation( temp2, mvform )
+bmdl=suppressMessages(lmer( bform, data=temp2 ))
+mdl=suppressMessages(lmer( mvform, data=temp2 ))
+mycoffs = coefficients( summary( mdl ) )
+mvanv = anova(bmdl,mdl)
+gglist = list() 
+gglist2 = list() 
+for ( x in 1:length(vois) ) {
+  gglist[[x]] = ( jtools::effect_plot( mdl, 
+        !!sym(voisx[x]), # mod2='TDX',  
+        # main.title=paste('mv base', voisx[x]), 
+        interval=TRUE, 
+        plot.points = F, facet.modx=T, 
+        int.type = c("confidence", "prediction")[1], 
+        partial.residuals=F  ) + theme(legend.position = "top")  )
+  gglist2[[x]] = interactions::interact_plot( mdl, 
+        'yearsbl',
+        modx=!!sym(voisx[x]),
+        # main.title=paste('mv time', voisx[x]), 
+        interval=TRUE, 
+        plot.points = F, facet.modx=T, 
+        int.type = c("confidence", "prediction")[1], 
+        partial.residuals=F  ) + theme(legend.position = "top")
+  }
+grid.arrange( grobs=gglist, nrow=2, top='MV base 3 modality')
+grid.arrange( grobs=gglist2, nrow=2, top='MV long 3 modality')
+
+if ( FALSE ) {
+  gglist=list()
+  for ( x in 1:length(vois) ) {
+    gglist[[length(gglist)+1]]=visreg::visreg(  mdl, 'yearsbl' , voisx[x], gg=TRUE)
+  }
+  vtoadd=all.vars(as.formula(mvform))[ -c(1) ]
+  visglm( temp2, mdl, 'yearsbl', paste0(cog,"_delta"), group='all', 'hey', groupvar='TDX' , varstoadd=vtoadd, verbose=TRUE )
+}
+
+# 0.00039
+```
 
 # Usage Notes
 
