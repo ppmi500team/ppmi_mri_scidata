@@ -181,6 +181,7 @@ if ( ! exists("clin2b") ) {
   clin2b$commonEdu[ clin2b$commonEdu == 3] = 20
 }
 ppmi = clin2b
+ppmi$T1Hier_midbrain_pons_ratio = ppmi$T1Hier_vol_midbrainbrainstem / ppmi$T1Hier_vol_ponsbrainstem
 ppmi$SITE = factor( ppmi$SITE )
 ppmi$brainVolume = ppmi$T1Hier_vol_hemisphere_lefthemispheres + ppmi$T1Hier_vol_hemisphere_righthemispheres
 ppmi$brainVolume = ppmi$brainVolume / mean(ppmi$brainVolume)
@@ -262,12 +263,14 @@ MRI data collection occurred between 2010 and an August 2023 cutoff date for the
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
 ###
-toadd = c(  "age_BL", "commonSex", 'race',  'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'imaging_protocol')
+toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'imaging_protocol')
 biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
-tblcols = unique( c( toadd, 'joinedDX' ))
-joinedem=ppmi[ppmi$yearsbl==0,tblcols]
-joinedem$hasDTI=!is.na(ppmi[ppmi$yearsbl==0,'DTI_dti_FD_mean'])
-joinedem$hasfMRI=!is.na(ppmi[ppmi$yearsbl==0,'rsfMRI_fcnxpro129_FD_mean'])
+tblcols = unique( c( toadd, 'joinedDX'  ) )
+bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
+joinedem=ppmitrim[bsel,tblcols]
+joinedem$imaging_protocol=as.character(joinedem$imaging_protocol)
+joinedem$hasDTI=!is.na(ppmitrim[bsel,'DTI_dti_FD_mean'])
+joinedem$hasfMRI=!is.na(ppmitrim[bsel,'rsfMRI_fcnxpro129_FD_mean'])
 names(joinedem)[1]=tblcols[1]='age'
 names(joinedem)[2]=tblcols[2]='Sex'
 wsaa=which(names(joinedem)=='AsynStatus' )
@@ -292,7 +295,8 @@ joinedem$joinedDX[
   multigrep( c("PDSporadic"), joinedem$joinedDX )]='SporadicPD'
 mlevs = c( "CN", "GenAR", "SporadicAR","GenPD", "SporadicPD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
-mytbl = joinedem[,c(tblcols)]
+mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols)]
+rownames(mytbl)=1:nrow(mytbl)
 mycap="Table 1. Baseline cohort for subjects with T1w IDPs and non-missing diagnosis."
 ####
 ```
@@ -965,7 +969,7 @@ snc = c( "T1Hier_vol_mtg_sn_snc_Asymdeep_cit168",
 #  "T1Hier_vol_bn_str_ca_Asymdeep_cit168", 
 #  "T1Hier_vol_bn_gp_gpi_Asymdeep_cit168", 
 #  "T1Hier_vol_bn_gp_gpe_Asymdeep_cit168", 
-  t1namesbst,
+  'T1Hier_midbrain_pons_ratio',
   getNamesFromDataframe( c("vol","Asym", "nbm"),mydog),
   getNamesFromDataframe( c("vol","Asym", "mtl",'ca3'),mydog) )
 
@@ -985,12 +989,14 @@ nmstotest = unique( c(
 
 see [agostas paper](https://www.sciencedirect.com/science/article/pii/S2213158220302114) for support for atrophy and progression
 
+[fmri connex](https://link.springer.com/article/10.1007/s00234-021-02731-w)
+
 * add references to table for each predefined region
 
 * add long names to predefined regions
 
 ```{r predefregions,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
-idpids = nmstotest[ multigrep( c("LRAVG",'brainstem',"rsfM"),nmstotest)]
+idpids = nmstotest[ multigrep( c("LRAVG",'ratio',"rsfM"),nmstotest)]
 myregions = data.frame( IDP=shorten_pymm_names(idpids))
 myregions$modality[ grep("rsf", myregions$IDP)]='rsfMRI'
 myregions$modality[ grep("dti", myregions$IDP)]='DTI'
@@ -1016,9 +1022,9 @@ myregions2T1$anat= c(
   "Nucleus Basalis Meynert, Middle Basal Forebrain",
   "Nucleus Basalis Meynert, Posterior Basal Forebrain",
   "Dentate Gyrus, CA3 Region of Medial Temporal Lobe",
-  "Medulla Brainstem",
-  "Midbrain Brainstem",
-  "Pons Brainstem"
+  "Midbrain Pons ratio"
+#  "Medulla Brainstem",
+#  "Pons Brainstem"
 )
 myregions2RSF$connectivity <- c(
   "Temporal Parietal Region",
@@ -1069,11 +1075,11 @@ myregions2DTI$anat =  c(
 myregionszT1z=ztable(myregions2T1[,c('IDP','anat')])
 myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')])
 myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')])
-mycap='Pre-defined PD regions in ANTsPyMM: T1w L/R average and asym'
+mycap='PD IDPs in ANTsPyMM: T1w L/R average and asym'
 print(myregionszT1z, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
-mycap='Pre-defined PD regions in ANTsPyMM: DTI L/R average and asym for both FA and MD (notshown)'
+mycap='PD IDPs in ANTsPyMM: DTI L/R average and asym for both fractional anisotropy (FA) and mean diffusion (MD) (not shown)'
 print(myregionszDTIz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
-mycap='Pre-defined PD regions in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature)'
+mycap='PD IDPs in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature)'
 print(myregionszRSFz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
 # myregions %>%
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
@@ -1238,15 +1244,15 @@ for ( cog in  cogs  ) {
       # "t1.vol.inf.parietal.ctx.bl",  # updrs1 
       "dti.mean.md.ant.int.cap.asym.bl",# updrs2 
       "rsf.sommotb.2.visperi.bl", # updrs3on 
-      # "t1.vol.dg.ca3mtl.bl", 
-      "t1.vol.pons.bst.bl" # # updrs3
+       "t1.vol.dg.ca3mtl.bl", #
+      "t1.vol.snc.bl" # # updrs3
       )
     pairstovisC = c(
       "updrs1_score", # updrs1 
       # "updrs1_score",  # updrs1 
       "updrs2_score",# updrs2 
       "updrs3_score_on", # updrs3on 
-      # "t1.vol.dg.ca3mtl.bl", 
+      "updrs2_score", # updrs2_score
       "updrs3_score" #  updrs3
       )
     ptv = paste0(pairstovisB,"_",pairstovisC)
@@ -1313,7 +1319,7 @@ qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
 qdfcols =  c("cog", "voi" , "anv" ,'sig',othercolsnm)
-qdfcols =  c("cog", "voi" , "anv" , othercolsnm)
+qdfcols =  c("cog", "voi" , 'n.base', "anv", othercolsnm)
 qdfsig = qdfsig[,qdfcols]
 qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
 qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
