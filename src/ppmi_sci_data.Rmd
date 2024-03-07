@@ -335,7 +335,7 @@ Raw DICOM data was downloaded from LONI and converted to nifti format via [`dcm2
 
 ### ANTsPyMM processing
 
-ANTsPyMM collects and documents best ANTsX practices for both data inspection and IDP generation for the modalities of interest in a single python package.  While ANTsPyMM supports BIDS format, it behaves most predictably and safely with NRG format.  Each "run" of the integrated multiple modality processing encoded by ANTsPyMM is driven by a data frame that defines a multiple modality "collection" of images for a given subject at a given date.  There are two key functions that aid users in defining the appropriate input data structure and sending that data to processing.  The first is `antspymm.generate_mm_dataframe` which generates the appropriate multiple modality subject dataframe that documents the available images and their on disk locations.  The output of this function should be written to disk as it defines the expected input as well as output.  The second key function runs the multiple modality processing (`antspymm.mm_csv`) based on the multiple modality subject dataframe.  The "Usage Notes" section provides more details on this system with an accompanying reproducible example based on freely accessible multiple modality neuroimaging.
+ANTsPyMM collects and documents best ANTsX practices for both data inspection and IDP generation for the modalities of interest in a single python package.  While ANTsPyMM supports BIDS format, it behaves most predictably and safely with NRG format.  Each "run" of the integrated multiple modality processing encoded by ANTsPyMM is driven by a data frame that defines a multiple modality "collection" of images for a given subject at a given date.  There are two key functions that aid users in defining the appropriate input data structure and sending that data to processing.  The first is `antspymm.generate_mm_dataframe` which generates the appropriate multiple modality subject dataframe that documents images on disk locations.  The output of this function should be written to disk as it defines the expected input as well as output.  The second key function runs the multiple modality processing (`antspymm.mm_csv`) based on the multiple modality subject dataframe.  The "Usage Notes" section provides more details on this system with an accompanying reproducible example based on freely accessible multiple modality neuroimaging.
 
 ### Semi-automated quality assessment
 
@@ -372,7 +372,7 @@ Diffusion tensor image (DTI) processing leverages best practices from both ANTsX
 
 IDPs derived from the DWI processing are denoted by prefixes `DTI_`.
 
-![Example SR processing for DTI highligting the multiple coordinate systems that are available to aid interpretation.](../figs/dti_SR.jpg)
+![Example SR processing for DTI highligting the multiple coordinate systems to aid interpretation.](../figs/dti_SR.jpg)
 
 
 ### Resting state functional MRI processing 
@@ -389,7 +389,7 @@ Resting state functional MRI (rsfMRI) processing builds on prior multi-view tech
 
 4. **Band-pass Filtering and activity calculation**: The application of a specific frequency range for filtering aligns with recommendations from Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.  The default frequency bands are based on empirical evaluation studies described below.
 
-5. **Censoring**: Select volumes are censored based on both motion-based and intensity-based outlier detection.  The parameters for this stage derive from empirical evaluation studies on publicly available data as discussed below.  Both *censored* and *imputed* versions of the time series are created.  A summary of censoring results is recorded in several ways but perhaps most relevant are the variables `*minutes_original_data` and `*minutes_censored_data` which provides the length in minutes of the original versus processed data.
+5. **Censoring**: Select volumes are censored based on both motion-based and intensity-based outlier detection.  The parameters for this stage derive from empirical evaluation studies on public data as discussed below.  Both *censored* and *imputed* versions of the time series are created.  A summary of censoring results is recorded in several ways but perhaps most relevant are the variables `*minutes_original_data` and `*minutes_censored_data` which provides the length in minutes of the original versus processed data.
 
 6. **Network Correlation Analysis**: This step involves calculating correlation matrices for identified resting-state networks, utilizing labels described above.  Both inter and intra-network correlation values are computed for each of the sub-networks provided by the homotopic parcellation.  
 
@@ -401,7 +401,7 @@ Due to the relatively diverse needs of researchers and the variety of rsfMRI tha
 
 The PPMI IDPs for T1w, rsfMRI and DTI are located at FIXME. The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular `csv` format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.  
 
-We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) available on the LONI IDA.  Code for this merging process is available via the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are available in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are available at [this location](FIXME).  We also provide a "trim" version [here](FIXME) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables (many thousand in raw form).  We base demonstrations below on the trim version of these PPMI IDPs and justify their choice based on extant results in the literature.
+We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) from the LONI IDA.  Code for this merging process is within the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are at [this location](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071).  We also provide a "trim" version [here](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables (many thousand in raw form).  We base demonstrations below on the trim version of these PPMI IDPs and justify their choice based on extant results in the literature.
 
 # Technical Validation
 
@@ -1188,9 +1188,7 @@ for ( voi in nmstotest ) {
   if ( ! dxdfT1[n,'singular'] )
   if ( shorten_pymm_names(voi) %in% c("t1.vol.snc", "t1.vol.bn.str.pu.asym", "t1.vol.inf.parietal.ctx", "dti.mean.md.sup.l.fasc.asym","dti.mean.md.fornix.asym","t1.vol.nbm.antbf","rsf.defaulta.2.visperi",'t1.vol.bn.gp.gpe') | anvp < 1e-6 ) {
     coffcols = c("Estimate" ,  "t value"  ,  "Pr(>|t|)" )
-    print(  knitr::kable( data.frame(mycoffs[-1,coffcols]), "latex", booktabs = TRUE, 
-      caption=shorten_pymm_names(voi)) %>%
-      kableExtra::kable_styling(latex_options = c("striped", "scale_down")) )
+#    print(  knitr::kable( data.frame(mycoffs[-1,coffcols]), "latex", booktabs = TRUE,       caption=shorten_pymm_names(voi)) %>%      kableExtra::kable_styling(latex_options = c("striped", "scale_down")) )
 
     anvp = insight::format_p( anvp, digits=4 )
     ttl=( paste( shorten_pymm_names(voi), "omnibus : ", anvp ) )
