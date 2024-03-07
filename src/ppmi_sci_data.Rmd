@@ -395,27 +395,29 @@ We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2023-06-
 
 # Technical Validation
 
-Components of technical validity that are critical for quantitative methodology in neuroimaging include: (a) generally robust performance across domains; (b) multi-site reproducibility; (c) disease-specific discrimination from controls in particular over time in the clinical trial setting; (d) sensitivity to or relationship with changes in clinically relevant symptoms at baseline and/or over time.  
+Components of technical validity that are critical for quantitative methodology in neuroimaging include: (a) generally robust performance across modalities; (b) multi-site reproducibility; (c) disease-specific discrimination from controls in particular over time in the clinical trial setting; (d) sensitivity to or relationship with changes in clinically relevant symptoms at baseline and/or over time.  We provide evidence that the current IDPs satisfy these properties in the following sections.  
 
-We further this by demonstrating ANTsX reproducibility and reliability through analysis of three traveling subject cohorts which provide evidence of reliability for multisite trials. By aggregating data from the traveling subject cohorts, we offer precise, reproducible reliability estimates (via intra-class correlation) manifested across different scanner types and imaging modalities.  These studies are followed by demonstrations (or examples) of statistical models that test established hypotheses comparing genetic and sporadic PD versus control subjects.  We finalize the technical validity section with examples of how scientists may relate baseline brain health to rate of symptom change in PD in an interpretable and modality-specific manner.  The scale of the current data supports control for a subset of important PD relevant covariates including disease duration, educational level, sex, age and levodopa dose equivalent daily dose.  These variables are included in reference models with additional details below.
+* We quantify reproducibility and reliability in each modality through analysis of three traveling subject cohorts (addressing (a) and (b) above). These cohorts collect imaging data at different sites from the same individuals.  Reliability data based on such cohorts are highly relevant for multisite trials which are always impacted by site-specific variation.  By aggregating data from the traveling subject cohorts, we offer precise, reproducible reliability estimates (via intra-class correlation) manifested across different scanner types and imaging modalities.  
 
-The following sections address these primary domains of validity.
+* We derive effect sizes from statistical models that test established hypotheses comparing SAA positive PD subjects versus control subjects.  These show expected effects of PD are detectable in these data.  This addresses (c) above.
+
+* We finalize the technical validity section with examples of how scientists may relate baseline brain health to rate of symptom change in PD in an interpretable and modality-specific manner as well as a multiple modality (integrative) context.  This addresses (d) above.
+
+The scale of the current data supports control for a subset of important PD relevant covariates including disease duration, educational level, sex, age and levodopa dose equivalent daily dose (LEDD).  These variables are included in reference models with additional details below.
 
 ## Robust performance
 
-The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges FIXME. 
-
-
+The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges [@FIXME] that span modalities and organ systems.  The foundational methods also support applications to non-human data [@FIXME].  Furthermore, the consistency of the methodology naturally enables multivariate statistical inference and/or prediction [@BLAST] even within the multi-study context [@FARAZ].
 
 ## Multi-site reproducibility
 
 Traveling subject studies involve scanning the same subjects on multiple MRI scanners at different locations. These studies help in assessing consistency and/or agreement of image quantification where the only variables are the machines themselves. This is crucial for understanding power in multi-site studies of natural history or intervention and for ensuring that the observed changes in brain structure or function are due to actual physiological changes rather than variations in the imaging process itself. 
 
-In this study, we employ traveling cohort data to assess the agreement of imaging derived phentoypes (IDPs) pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX upon which scientific studies, machine learning platforms and other methodological comparisons are based. These cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  Results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
+In this study, we employ traveling cohort data to assess the agreement of IDPs pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX/ANTsPyMM upon which scientific studies, machine learning platforms and other methodological comparisons are based. These cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  Results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
 
 ![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state connectivity shows good to excellent reproducibility; PerAF, fALFF and ALFF are relatively less reproducible -- on average -- though variability is also high.](../figs/antspymm_repro.png)
 
-We find that ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall good to high reliability with a few exceptions within resting state derivatives (fALFF specifically).  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level.
+We find that ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall good to high reliability with a few exceptions within resting state derivatives (fALFF specifically).  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level using, for example, random effects.  The data and code for reproducing these results is available in [this location](https://github.com/stnava/antspymm_reproducibility).
 
 <!--
 ## Multi-view prediction 
@@ -770,13 +772,30 @@ if ( FALSE ) {
 
 ## Sensitivity to differences from controls
 
-Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  Magnetic resonance imaging (MRI) is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. 
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes in T1w, DTI and rsfMRI IDPs that are pre-defined for PD relevance.
 
 Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), dMRI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes beyond the substantia nigra [(Talai2018)](https://www.sciencedirect.com/science/article/pii/S2213158218303036). 
 
 The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD's progression and effects. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
 basal forebrain [in LRRK2](https://www.sciencedirect.com/science/article/pii/S0969996123001973)
+
+
+In the current investigation, we sought to elucidate the complex relationships between neuroimaging biomarkers and the progression of Parkinson's Disease (PD) through the employment of linear mixed-effects models (LMMs). The analytical framework was constructed using the R programming environment, leveraging particularly the capabilities of the `lme4` package to fit LMMs. This methodology allows for the nuanced exploration of hierarchical data structures commonly encountered in longitudinal neuroimaging studies, where multiple observations per subject are standard.
+
+
+Our approach commenced with the initialization of the variables of interest (VOIs), encompassing baseline measurements ("_BL") and their temporal changes ("_delta"), to capture both static and dynamic aspects of the neuroimaging markers. Subsequent model formulations (`bform`) were iteratively developed to explore a variety of predictive variables and their interactions. These models were designed to investigate the predictive power of baseline characteristics, imaging protocol variances (notably LRRK2_MRIPROTOCOL), and specific neuroimaging features (e.g., DTI_dti_tsnr_b0_mean, DTI_dti_ssnr_b0_mean) on the progression indicators of PD.
+
+
+The analytical strategy incorporated flexibility to adjust predictor variables based on the specific type of neuroimaging data under consideration (e.g., rsfMRI or DTI), thereby tailoring the model to the nuanced differences inherent to each imaging modality. This was achieved through dynamic modification of the `othdxform` variable, ensuring the inclusion of motion-related predictors where pertinent, reflecting our commitment to methodological rigor and the pursuit of accurate, context-sensitive insights.
+
+
+Employing the `lmer` function, linear mixed-effects models were constructed and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Post model construction, we engaged in a predictive accuracy refinement process through the re-scaling of variables and recalibration of the model based on a curated subset of the data, thereby enhancing the robustness of our findings.
+
+Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without specific variables. This methodological step was crucial for discerning the impact of individual predictors on disease progression, thereby offering insights into the potential mechanisms underlying PD pathophysiology.
+
+
+In summary, our study employs advanced statistical modeling techniques to investigate the relationship between neuroimaging biomarkers and Parkinson's Disease progression. Through the careful construction and refinement of linear mixed-effects models, we aim to uncover significant predictors of disease trajectory, contributing valuable knowledge to the field of neurodegenerative disease research. This analytical endeavor not only highlights the complexity of PD but also underscores the potential of sophisticated statistical methods to unravel it.
 
 
 ```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
@@ -1149,8 +1168,8 @@ for ( voi in nmstotest ) {
   dxdfT1[n,'singular']=isSingular(mdl)
 #  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
   if ( gsub("_",".",shorten_pymm_names(voi)) %in% c("t1.vol.mtg.sn.sncdeep.cit168","dti.mean.md.sup.longitudinal.fasciculus.","dti.fa.sup.corona.radiata.asym","t1.vol.nbm.antbf","rsf.defaulta.2.visperi") | anvp < 1e-6 ) {
-    print( mycoffs )
-    print( dxdfT1[n,] )
+#    print( mycoffs )
+#    print( dxdfT1[n,] )
     anvp = insight::format_p( anvp, digits=4 )
     ttl=( paste( shorten_pymm_names(voi), "omnibus : ", anvp ) )
     print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
@@ -1189,6 +1208,29 @@ print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 
 
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
+
+In our investigation into the determinants of cognitive decline within Parkinson's Disease (PD) cohorts, we employed a refined statistical methodology utilizing linear mixed-effects models to analyze neuroimaging data. This analytical approach, crafted within the R programming environment, was specifically tailored to accommodate the complexities of longitudinal neuroimaging datasets.
+
+### Methodological Overview
+
+The preprocessing phase involved adjusting the dataset to reflect baseline neuroimaging measurements, a critical step for the longitudinal analysis. We dynamically adapted our models based on the neuroimaging modality—T1-weighted images, resting-state fMRI (rsfMRI), or Diffusion Tensor Imaging (DTI)—incorporating modality-specific motion metrics and setting appropriate thresholds for data inclusion to mitigate the effects of data variability.
+
+### Cognitive Function Model Construction
+
+Our models were meticulously formulated to explore cognitive function changes over time, integrating a broad spectrum of predictors including patient-specific random effects, motion metrics, biomarker statuses, diagnostic categories, and demographic variables. This multi-dimensional approach allowed for a comprehensive examination of cognitive trajectories in PD.
+
+### Data Refinement
+
+The dataset underwent a rigorous refinement process, including the application of Winsorization to control for outliers, thereby enhancing the integrity of our analysis. The inclusion criteria were stringently applied, focusing on participants with a confirmed diagnosis and within a specified follow-up duration to ensure data relevance and reliability.
+
+### Analytical Execution
+
+Subsequent to the variable standardization process, we fitted our models using the `lmer` function. Through comparative model analysis via ANOVA, we assessed the significance of model predictors and their interactions. This step was fundamental in elucidating the intricate relationships between neuroimaging biomarkers and cognitive outcomes in PD.
+
+### Conclusion
+
+Our investigation represents a sophisticated application of statistical models to understand cognitive decline in Parkinson's Disease. By integrating comprehensive predictor variables and applying rigorous data refinement techniques, we offer insightful contributions to the neurodegenerative disease research domain, highlighting the utility of tailored statistical analyses in uncovering the nuanced dynamics of PD progression.
+
 
 ```{r quicklmcog,echo=FALSE,eval=buildsci,fig.width=12,fig.height=4,warning=FALSE,message=FALSE}
 #########################################################
@@ -1357,7 +1399,27 @@ print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 ```
 
 
-### multiview example
+### multi-view example
+
+In our study, we aimed to dissect the influence of neuroimaging biomarkers on the progression of motor symptoms in Parkinson's Disease (PD), as measured by changes in the Unified Parkinson's Disease Rating Scale (UPDRS) Part I scores. This endeavor involved the construction and analysis of linear mixed-effects models to assess the longitudinal impact of specific neuroimaging features on motor symptomatology.
+
+
+The analysis focused on three neuroimaging biomarkers indicative of structural and functional brain integrity: the volume of the substantia nigra derived from T1-weighted images, connectivity metrics from resting-state fMRI, and mean diffusivity measures from Diffusion Tensor Imaging (DTI) of the anterior limb of the internal capsule. Initial preprocessing steps included the normalization of variable names to facilitate easier manipulation and analysis.
+
+
+We constructed two principal models: a base model and a multivariate (MV) model. The base model predicted UPDRS Part I score changes based on a single neuroimaging biomarker, adjusted for patient-specific effects, demographic variables, and disease characteristics. The MV model extended this approach by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their combined effect on motor symptom progression. Both models included random effects to account for intra-site and intra-patient variability, as well as other covariates such as disease duration, baseline motor function, and demographic information.
+
+
+The dataset was curated to include only participants with relevant neuroimaging data, non-control diagnoses, and a maximum follow-up duration, ensuring the focus on PD progression. Outlier effects were mitigated through Winsorization, and variables were scaled appropriately to ensure model validity.
+
+
+The models were fitted using the `lmer` function, with coefficients and comparative analyses elucidated through ANOVA. The significance of individual and combined neuroimaging biomarkers on motor symptom progression was quantitatively assessed.
+
+
+The effects of neuroimaging biomarkers on UPDRS Part I score changes were visualized through effect plots and interaction plots, generated for each biomarker individually and in combination over time. These visualizations facilitated a nuanced understanding of the biomarkers' impacts across the disease trajectory.
+
+
+Our analysis underscores the complex interplay between neuroimaging biomarkers and the progression of motor symptoms in PD. By leveraging a sophisticated statistical framework and meticulous data preprocessing, we offer novel insights into the neurobiological underpinnings of PD symptomatology. This study exemplifies the potential of multimodal neuroimaging analyses to inform our understanding of PD progression, highlighting the importance of comprehensive statistical approaches in neurodegenerative disease research.
 
 ```{r multiview,echo=FALSE,fig.width=16,fig.height=8}
 cog='updrs1_score'
@@ -1365,14 +1427,17 @@ maxy=2.5
 vois = c("t1.vol.bn.str.pu.asym.bl","dti.mean.md.fornix.asym.bl","rsf.sommota.2.contc.bl")
 vois = c("T1Hier_vol_bn_str_pu_Asymdeep_cit168_BL",
   "rsfMRI_fcnxpro122_SomMotA_2_ContC_BL",
-  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm",
-  "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm" )
+  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm" )
+vois = c("T1Hier_vol_bn_str_pu_Asymdeep_cit168_BL",
+  "rsfMRI_fcnxpro122_SomMotA_2_ContC_BL",
+  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm" )
+  #  "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm" )
 voisx=vois
 for ( x in 1:length(vois) ) {
   voisx[x]= shorten_pymm_names(voisx[x])
 }
-voisx[2]=paste0(voisx[2],'.avg')
-voisx[3]=paste0(voisx[3],'.asym')
+# voisx[2]=paste0(voisx[2],'.avg')
+# voisx[3]=paste0(voisx[3],'.asym')
 bform =paste( " updrs1_score_delta ~  updrs1_score_BL + (1|SITE)+ (1|commonID) + T1Hier_resnetGrade  + duration_yrs + DTI_dti_FD_mean_BL+ rsfMRI_fcnxpro122_FD_mean_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )  *  ( ", voisx[1] , ")" )
 mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
 temp2 = mydogp[ !is.na( mydogp[,vois[3]]) & !is.na( mydogp[,vois[2]]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
