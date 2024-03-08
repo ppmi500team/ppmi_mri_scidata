@@ -271,7 +271,7 @@ The present study extends previous foundations by providing standardized imaging
 
 ## MRI data collection 
 
-MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at [@avantsPPMIMRIDPs2024] and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  Table FIXME summarizes the cohort characteristics.
+MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at [@avantsPPMIMRIDPs2024] and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  The PPMI data includes control subjects, idiopathic (sporadic) PD subjects and genetic PD subjects characterized by GBA, LRRK2, SNCA and PNK mutations.  Additionally, presymptomatic subjects comprise a substantial and growing portion of the cohort; these are also characterized by genetic mutations and/or early risk factors for PD (hyposmia or RBD ) [@siderowf_assessment_2023].  Table FIXME summarizes the cohort characteristics.  In the following sections, we focus on the PD cohort with SAA measurements as the presymptomatic cohort is undergoing significant additional data collection.
 
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
@@ -1158,6 +1158,7 @@ print(myregionszRSFz)
 ```
 
 ```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=4.5,warning=FALSE,message=FALSE,results='asis'}
+###################
 dxdfT1=data.frame()
 for ( voi in nmstotest ) {
   n=nrow(dxdfT1)+1
@@ -1169,7 +1170,7 @@ for ( voi in nmstotest ) {
   if ( antspymm_vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
   bform = paste( voi, " ~ brainVolume_BL+duration_yrs+ T1Hier_resnetGrade+", othdxform )
   bform = paste( voi, " ~ studyName + brainVolume_BL+commonEdu+duration_yrs+", othdxform )
-  bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+", othdxform )
+  bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+LEDD+", othdxform )
   newform = paste( bform, " * ", dxvar  )
   temp2 = mydog[ !is.na( mydog[,voi]) &  mydog$studyName %in% c('PPMI','ADNI'), ]
 #  temp2 = mydog[ !is.na( mydog[,voi]) &  mydog$studyName %in% c('PPMI'), ]
@@ -1218,7 +1219,8 @@ for ( voi in nmstotest ) {
 
     anvp = insight::format_p( anvp, digits=4 )
     ttl=( paste( shorten_pymm_names(voi), "omnibus : ", anvp ) )
-    print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
+    print( interactions::probe_interaction(mdl, pred = 'yearsbl', modx = 'TDX',confint=F, interval = F)$interactplot + ggtitle( ttl ) + ylab( shorten_pymm_names(voi) ) ) 
+#    print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
 #    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
   }
 }
@@ -1234,7 +1236,7 @@ if ( TRUE ) {
 #    print( x )
     psel = p.adjust( dxdfT1[,x], 'none' ) <= 0.05
     dname = dnames[ct]
-#    dxdfT1[!psel,dname]=NA
+    dxdfT1[!psel,dname]=NA
 #    print( dxdfT1$voi[psel] )
   }
 }
@@ -1305,7 +1307,7 @@ mycap='Significant (fwe based on omnibus model p-value) longitudinal diagnostic 
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=12,fig.height=4,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=5,warning=FALSE,message=FALSE}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","tot") )
@@ -1403,6 +1405,7 @@ for ( cog in  cogs  ) {
       temp2$TDX[ temp2$TDX == 'PDGBA+']='GB+'
       temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
       temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
+      if ( FALSE ) {
       gg1=( jtools::effect_plot( mdl, 
         !!sym(voix), # mod2='TDX',  
         main.title=ttl1, interval=TRUE, 
@@ -1412,9 +1415,14 @@ for ( cog in  cogs  ) {
       gg2=( interactions::interact_plot( mdl, 
         'yearsbl', # mod2='TDX',  
         main.title=ttl2, interval=TRUE, 
-        plot.points = F, facet.modx=T, 
+        plot.points = F, facet.modx=F, 
         int.type = c("confidence", "prediction")[1], 
         partial.residuals=F,modx=!!sym(voix)  ) + theme(legend.position = "top")  )
+      }
+
+
+      gg2 =interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voix) ,confint=F, interval = F)$interactplot +ylab( shorten_pymm_names(voi) )
+  
       grid.arrange( grobs=list(gg2), nrow=1, top=ttl)
 #      suppressMessages( threewayinteraction(  temp2, 'yearsbl', cogdel, 'TDX', voix, anatshow=ttl3 ) )
 #      print( threewayinteraction( temp2, 'yearsbl', 'TDX', anat=voi ) )
@@ -1541,8 +1549,8 @@ for ( x in 1:length(vois) ) {
         int.type = c("confidence", "prediction")[1], 
         partial.residuals=F  ) + theme(legend.position = "top")
   }
-grid.arrange( grobs=gglist, nrow=1, top='MV base 3 modality')
-grid.arrange( grobs=gglist2, nrow=3, top='MV long 3 modality')
+# grid.arrange( grobs=gglist, nrow=1, top='MV base 3 modality')
+# grid.arrange( grobs=gglist2, nrow=3, top='MV long 3 modality')
 
 if ( FALSE ) {
   gglist=list()
@@ -1553,9 +1561,11 @@ if ( FALSE ) {
   visglm( temp2, mdl, 'yearsbl', paste0(cog,"_delta"), group='all', 'hey', groupvar='TDX' , varstoadd=vtoadd, verbose=TRUE )
 }
 
-interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[1]), jnplot = TRUE,confint=T)
-interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[2]), jnplot = TRUE,confint=T)
-interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[3]), jnplot = TRUE,confint=T)
+iplot1=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[1]),, interval = F)$interactplot
+iplot2=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[2]),, interval = F)$interactplot
+iplot3=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[3]),confint=F, interval = F)$interactplot
+ii=list(iplot1,iplot2,iplot3)
+grid.arrange( grobs=ii, nrow=3, top='MV long 3 modality: Johnson Neyman plots.')
 
 
 ```
