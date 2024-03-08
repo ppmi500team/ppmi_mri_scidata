@@ -1553,6 +1553,11 @@ if ( FALSE ) {
   visglm( temp2, mdl, 'yearsbl', paste0(cog,"_delta"), group='all', 'hey', groupvar='TDX' , varstoadd=vtoadd, verbose=TRUE )
 }
 
+interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[1]), jnplot = TRUE,confint=T)
+interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[2]), jnplot = TRUE,confint=T)
+interactions::sim_slopes(mdl, pred = 'yearsbl', modx = !!sym(voisx[3]), jnplot = TRUE,confint=T)
+
+
 ```
 
 The effects of neuroimaging biomarkers on UPDRS Part I score changes are predictive both independently and even more so in combination. This can be quantified in several ways;  here, we report the omnibus model 2 compared to model 1 where these are defined as (model 1, including only asymmetry in baseline putamen volume as in IDP):
