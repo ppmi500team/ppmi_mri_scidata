@@ -1137,9 +1137,9 @@ myregions2DTI$anat =  c(
 )
 
 
-myregionszT1z=ztable(myregions2T1[,c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: T1w L/R average and asym')
-myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: DTI L/R average and asym for both fractional anisotropy (FA) and mean diffusion (MD) (not shown)')
-myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature)')
+myregionszT1z=ztable(myregions2T1[,c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: T1w L/R average and asym.')
+myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature).')
+myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: DTI L/R average and asym for both fractional anisotropy (FA) and mean diffusion (MD) (not shown).')
 print(myregionszT1z)
 # print(myregionszRSFz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
 # myregions %>%
@@ -1264,7 +1264,7 @@ We provide exemplar linear mixed-effects models (LMMs) that seek to elucidate th
 
 $$
 \begin{split}
-\text{IDP } \approx (1|ID) + (1|SITE) + \text{BV}_\text{bl} + Edu + duration_\text{yrs} + \\
+\text{IDP } \approx (1|ID) + (1|SITE) + \text{BV}_\text{bl} + Edu + LEDD + duration_\text{yrs} + \\
   modality\_specific\_covariates  + age_\text{bl} + \\ 
   Sex_\text{bio}  + years_\text{bl}   *  \text{DX}
 \end{split}
