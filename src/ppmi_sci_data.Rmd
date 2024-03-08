@@ -6,21 +6,24 @@ author:
   - Leon Fonville^3,†^
   - Olivia Hampton^1,†^
   - Alex Reardon^1,†^
+  - Andy Stenger
   - Nicholas J. Tustison^2
   - Philip A. Cook^4
   - Xue Wang^1,†^
-  - Linda
+  - Linda Polfus
   - Zahra
-  - Adam
-  - Barbara?
+  - Adam Chamberlin
+  - Barbara Marebwa^5
   - Roger Gunn?
-  - Kathleen L Poston?
+  - Kathleen L Poston^6
   - Ken?
 affiliation:
   - "1: Invicro, Boston, MA, FIMXE, USA"
   - "2: University of Virginia, Department of Radiology and Medical Imaging, Charlottesville, VA, FIXME, USE"
   - "3: Invicro, FIMXE, UK"
   - "4: UPENN, FIMXE, Philly"
+  - "5: MJFF, FIMXE, NYC"
+  - "6: Stanford, FIMXE, CA"
 corresponding_author: "Brian B. Avants (stnava@gmail.com)"
 contributed_equally: "† these authors contributed equally to this work"
 output: 
@@ -1237,7 +1240,7 @@ $$
 \end{split}
 $$
 
-where IDP is the imaging outcome, $ID$ and $SITE$ and random effects for subject ID and data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment, $duration_\text{yrs}$ is the estimate of disease duration in years and $modality\_specific\_covariates$ covaries for motion and quality in rsfMRI or DTI.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time and the diagnostic group which includes SAA positive and negative PD groups with $>$ 6 subjects.  The sample sizes for each group within the $DX$ variable are $CN-=$ `r dxcts['CNNegative','n']`, $GBA+=$ `r dxcts['PDGBAPositive','n']`, $LRRK2+=$ `r dxcts['PDLRRK2Positive','n']`, $LRRK2-=$ `r dxcts['PDLRRK2Negative','n']`, $Sporadic+=$ `r dxcts['PDSporadicPositive','n']`, $Sporadic-=$ `r dxcts['PDSporadicNegative','n']` where $-/+$ indicate SAA (alpha-synuclein pathology) status.  
+where IDP is the imaging outcome, $ID$ and $SITE$ and random effects for subject ID and data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment, $duration_\text{yrs}$ is the estimate of disease duration in years and $modality\_specific\_covariates$ covaries for motion and quality in rsfMRI or DTI.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD groups with $>$ 6 subjects.  The sample sizes for each group within the $DX$ variable are $CN-=$ `r dxcts['CNNegative','n']`, $GBA+=$ `r dxcts['PDGBAPositive','n']`, $LRRK2+=$ `r dxcts['PDLRRK2Positive','n']`, $LRRK2-=$ `r dxcts['PDLRRK2Negative','n']`, $Sporadic+=$ `r dxcts['PDSporadicPositive','n']`, $Sporadic-=$ `r dxcts['PDSporadicNegative','n']` where $-/+$ indicate SAA (alpha-synuclein pathology) status.  
 
 Employing the `lmer` function, linear mixed-effects models were constructed and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table FIXME (for the $DX$ term) and Table FIXME (for the longitudinal term).  Effect sizes for each term are estimated from the $t-$value and degrees of freedom for each model.  The effects of $DX$ on these IDPs are visualized through partial residual plots of diagnosis by time generated for each diagnostic category as in Figures FIXME.
 
@@ -1460,9 +1463,8 @@ The majority of these variables are as defined previously.  However, we introduc
 
 Here, we dissect the influence of M3RI neuroimaging biomarkers on the progression of Unified Parkinson's Disease Rating Scale (UPDRS) Part I scores. The analysis focused on three neuroimaging biomarkers indicative of structural and functional brain integrity: the volume of the substantia nigra pars compacta derived from T1-weighted images, motor cortex connectivity metrics from resting-state fMRI, and mean diffusivity measures from Diffusion Tensor Imaging (DTI) of the anterior limb of the internal capsule. We constructed two principal models: a base model and a multivariate (MV) model, as in prior sections. The base model predicted UPDRS Part I score changes based on a single neuroimaging biomarker, adjusted for patient-specific effects, demographic variables, and disease characteristics. The MV model extended this approach by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their combined effect on motor symptom progression. Both models included random effects to account for intra-site and intra-patient variability, as well as other covariates such as disease duration, baseline motor function, and demographic information.
 
-The effects of neuroimaging biomarkers on UPDRS Part I score changes were visualized through partial residual plots and interaction plots, generated for each biomarker individually and in combination over time. These visualizations facilitated a nuanced understanding of the biomarkers' impacts across the disease trajectory. See Figure FIXME.  This analysis underscores the complementary natures of these neuroimaging biomarkers as they relate to progression in PD. This examples demonstrates the potential of multimodal neuroimaging analyses to inform our understanding of PD progression and highlights the potential of comprehensive statistical approaches in neurodegenerative disease research.
 
-```{r multiview,echo=FALSE,eval=buildsci2,fig.width=16,fig.height=8}
+```{r multiview,echo=FALSE,eval=buildsci2,fig.width=16,fig.height=8,message=FALSE,warning=FALSE}
 cog='updrs1_score'
 maxy=2.5
 vois = c("t1.vol.bn.str.pu.asym.bl","dti.mean.md.fornix.asym.bl","rsf.sommota.2.contc.bl")
@@ -1525,9 +1527,27 @@ if ( FALSE ) {
 # 0.00039
 ```
 
+The effects of neuroimaging biomarkers on UPDRS Part I score changes are predictive both independently and even more so in combination. This can be quantified in several ways;  here, we report the omnibus model 2 compared to model 1 where these are defind as (model 1, including only asymmetry in baseline putamen volume as in IDP):
+
+$$
+\begin{split}
+updrs1_text{change} ~  updrs1_\text{bl} + (1|SITE)+ (1|commonID) + duration_\text{yrs} + DTI_\text{FD} + rsfMRI_\text{FD}  + LEDD + Edu + age_\text{bl} + Sex + \text{BV}_\text{bl} + years_\text{bl}~*~DX + years_\text{bl}  * t1.vol.bn.str.pu.asym.bl  + years_\text{bl}  *  (  t1.vol.bn.str.pu.asym.bl+rsf.sommota.2.contc.bl+dti.mean.md.ant.int.cap )
+\end{split}
+$$
+
+and (model 2, also including rsfMRI connectivity between motor and cognitive control regions and mean diffusion in the anterior limb of the internal capsule):
+
+$$
+\begin{split}
+updrs1_text{change} ~   \cdots + years_\text{bl}  *  (  t1.vol.bn.str.pu.asym.bl+rsf.sommota.2.contc.bl+dti.mean.md.ant.int.cap )
+\end{split}
+$$
+
+Analysis of variance determines that model 2 improves the data fit significantly (`r insight::format_p(mvanv$Pr[2],digits=4)`). These models are visualized through partial residual plots and interaction plots (Figures FIXME and FIXME). These visualizations facilitate a nuanced understanding of the biomarkers' impacts across the disease trajectory within the context of their joint effect. This analysis underscores the complementary natures of these neuroimaging biomarkers as they relate to progression in PD. This examples demonstrates the potential of multimodal neuroimaging analyses to inform our understanding of PD progression and highlights the potential of comprehensive statistical approaches in neurodegenerative disease research.
 
 
-The tabulated multi-modality MRI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
+
+In summary, this tabulated multi-modality MRI PPMI dataset derived from deeply validated open source methods represents a significant leap forward in PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerating the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
 
 # Usage Notes
