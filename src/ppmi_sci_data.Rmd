@@ -2,28 +2,28 @@
 title: "Magnetic Resonance Imaging Data Phenotypes for the Parkinson's Progression Markers Initiative"
 author:
   - Brian B. Avants^1,2^
-  - Lino Becerra^1
+  - Lino Becerra^1^
   - Leon Fonville^3,†^
-  - Olivia Hampton^1,†^
-  - Alex Reardon^1,†^
-  - Andy Stenger
-  - Nicholas J. Tustison^2
-  - Philip A. Cook^4
-  - Xue Wang^1,†^
-  - Linda Polfus
-  - Zahra
-  - Adam Chamberlin
-  - Barbara Marebwa^5
-  - Roger Gunn?
-  - Kathleen L Poston^6
+  - Olivia Hampton^1^
+  - Alex Reardon^1^
+  - Andy Stenger^1^
+  - Nicholas J. Tustison^2^
+  - Philip A. Cook^4^
+  - Xue Wang^1^
+  - Linda Polfus^5^
+  - Adam Chamberlin^5^
+  - Barbara Marebwa^6^
+  - Roger Gunn^6^
+  - Kathleen L Poston^7^
   - Ken?
 affiliation:
   - "1: Invicro, Boston, MA, FIMXE, USA"
   - "2: University of Virginia, Department of Radiology and Medical Imaging, Charlottesville, VA, FIXME, USE"
   - "3: Invicro, FIMXE, UK"
   - "4: UPENN, FIMXE, Philly"
-  - "5: MJFF, FIMXE, NYC"
-  - "6: Stanford, FIMXE, CA"
+  - "5: Ambry, FIMXE, CA"
+  - "6: MJFF, FIMXE, NYC"
+  - "7: Stanford, FIMXE, CA"
 corresponding_author: "Brian B. Avants (stnava@gmail.com)"
 contributed_equally: "† these authors contributed equally to this work"
 output: 
@@ -1451,13 +1451,13 @@ As in the prior section, we employ LMMs to measure the relationship of baseline 
 
 $$
 \begin{split}
-\text{UPDRS}_{delta} \approx (1|ID) + (1|SITE) + \text{UPDRS}_{bl} + \text{BV}_\text{bl} + Edu + duration_\text{yrs} + \\
+\text{UPDRSX}_{delta} \approx (1|ID) + (1|SITE) + \text{UPDRS}_{bl} + \text{BV}_\text{bl} + Edu + duration_\text{yrs} + \\
   modality\_specific\_covariates  + age_\text{bl} + \\ 
   Sex_\text{bio}  + years_\text{bl}   *  \text{DX} + years_\text{bl}  *  IDP_\text{bl}
 \end{split}
 $$
 
-The majority of these variables are as defined previously.  However, we introduce control for treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for modality-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to baseline IDP values (i.e. $IDP_\text{bl}$).  The predictor of interest, here, is $ years_\text{bl}  *  IDP_\text{bl}$ which allows assessment of the impact of baseline brain health on the change in given UPDRS score.  These models are assessed in the range of baseline to 2.5 years change.  The effects of interest are visualized through partial residual plots for select IDPs of interest as in Figures FIXME.
+The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for modality-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to baseline IDP values (i.e. $IDP_\text{bl}$).  The predictor of interest, here, is $ years_\text{bl}  *  IDP_\text{bl}$ which allows assessment of the impact of baseline brain health on the change in given UPDRS score.  These models are assessed in the range of baseline to 2.5 years change.  The effects of interest are visualized through partial residual plots for select IDPs of interest as in Figures FIXME.
 
 ### Multi-view example
 
@@ -1531,7 +1531,9 @@ The effects of neuroimaging biomarkers on UPDRS Part I score changes are predict
 
 $$
 \begin{split}
-updrs1_text{change} ~  updrs1_\text{bl} + (1|SITE)+ (1|commonID) + duration_\text{yrs} + DTI_\text{FD} + rsfMRI_\text{FD}  + LEDD + Edu + age_\text{bl} + Sex + \text{BV}_\text{bl} + years_\text{bl}~*~DX + years_\text{bl}  * t1.vol.bn.str.pu.asym.bl  + years_\text{bl}  *  (  t1.vol.bn.str.pu.asym.bl+rsf.sommota.2.contc.bl+dti.mean.md.ant.int.cap )
+\text{UPDRS1}_{delta} \approx  \text{UPDRS1}_\text{bl} + (1|SITE)+ (1|commonID) + duration_\text{yrs} \\
++ DTI_\text{FD} + rsfMRI_\text{FD}  + LEDD + Edu + age_\text{bl} + Sex + \text{BV}_\text{bl} \\ 
++ years_\text{bl}~*~DX + years_\text{bl}  * t1.vol.bn.str.pu.asym.bl
 \end{split}
 $$
 
@@ -1539,7 +1541,8 @@ and (model 2, also including rsfMRI connectivity between motor and cognitive con
 
 $$
 \begin{split}
-updrs1_text{change} ~   \cdots + years_\text{bl}  *  (  t1.vol.bn.str.pu.asym.bl+rsf.sommota.2.contc.bl+dti.mean.md.ant.int.cap )
+\text{UPDRS1}_{delta} \approx  \cdots + years_\text{bl}  * \\
+ (  t1.vol.bn.str.pu.asym.bl+rsf.sommota.2.contc.bl+dti.mean.md.ant.int.cap )
 \end{split}
 $$
 
