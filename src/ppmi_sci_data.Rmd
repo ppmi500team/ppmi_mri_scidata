@@ -88,7 +88,8 @@ if ( ! exists("clin2b") ) {
     pymf[ is.na(pymf$mrimodel), 'mrimodel' ]='Unk'
     rm(pym)
     }
-  adni = read.csv( path.expand("~/code/multidisorder/data/adni_gwas/ADNIMERGE_10Feb2024_antspymm_v1.2.7.csv") )
+  if ( ! exists("adni") ) 
+    adni = read.csv( path.expand("~/code/multidisorder/data/adni_gwas/ADNIMERGE_10Feb2024_antspymm_v1.2.7.csv") )
   studynames=c("ADNI", "NIFD4RTNI", "PPMI","UKBB","A4")
   dxnames= c("DX_bl", "DX", "DXSub", "DX", "DX" )
   sexnames=c("PTGENDER","SEX","SEX","sex_f31_0_0","PTGENDER")
@@ -107,7 +108,7 @@ if ( ! exists("clin2b") ) {
   adni$studyName='ADNI'
   adniasynfn = path.expand( "~/code/multidisorder/data/adni_gwas/AMPRION_ASYN_SAA_13Nov2023.csv")
   adniasyn = read.csv( adniasynfn )
-  names( adniasyn )[ names(adniasyn) == 'Result']='AsynStatus'
+  names( adniasyn )[ names(adniasyn) == 'Result' ]='AsynStatus'
   adniasyn[ subtyper::fs(adniasyn$AsynStatus %in% c('Detected-1','Detected-2')) , 'AsynStatus'] = 'Positive'
   adniasyn[ subtyper::fs(adniasyn$AsynStatus %in% c('Not_Detected','Indeterminate')), 'AsynStatus' ] = 'Negative'
   # map 
@@ -267,7 +268,7 @@ The present study extends previous foundations by providing standardized imaging
 
 ## MRI data collection 
 
-MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at FIXMEDATARECORD and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  Table FIXME summarizes the cohort characteristics.
+MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at [@avantsPPMIMRIDPs2024] and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  Table FIXME summarizes the cohort characteristics.
 
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
@@ -332,7 +333,7 @@ t1kable(x)
 
 ### Data Organization
 
-Raw DICOM data was downloaded from LONI and converted to nifti format via [`dcm2niix`](https://pubmed.ncbi.nlm.nih.gov/26945974/). These data were then organized into a directory tree following the [NRG format](https://github.com/stnava/biomedicalDataOrganization) illustrated in Figure FIXME. This BIDS-like structure [@BIDSREFERENCE] is defined to aid in longitudinal analyses of multiple modality data and intends to support: (a) sortable and specific dates associated with imaging sessions; (b) links between the data on disk and its origin (LONI) through the "Image ID"; (c) easy maintenance of multiple modality data collections; and (d) predictable input/output structure.  Critically, the unique ID allows the original data associated with an IDP to be easily found in LONI.  In brief, this system assigns each image -- and categories of derivative data -- a directory and individual file name that assist in making data findable, accessible, interpretable and reproducible (FAIR) for both early and downstream processing.
+Raw DICOM data was downloaded from LONI and converted to nifti format via `dcm2niix` [@li_first_2016]. These data were then organized into a directory tree following the [NRG format](https://github.com/stnava/biomedicalDataOrganization) illustrated in Figure FIXME. This BIDS-like structure [@gorgolewski_brain_2016] is defined to aid in longitudinal analyses of multiple modality data and intends to support: (a) sortable and specific dates associated with imaging sessions; (b) links between the data on disk and its origin (LONI) through the "Image ID"; (c) easy maintenance of multiple modality data collections; and (d) predictable input/output structure.  Critically, the unique ID allows the original data associated with an IDP to be easily found in LONI.  In brief, this system assigns each image -- and categories of derivative data -- a directory and individual file name that assist in making data findable, accessible, interpretable and reproducible (FAIR) for both early and downstream processing.
 
 ![The NRG format supports predictable and interpretable data storage and processing that can easily be tied back to the LONI source dicom.  The filename proceeds from less specific information(Project ID at reader's left) to the most specific (unique image ID at reader's right).  A specific character -- here the dash -- is reserved exclusively as a separator between the stages of information.](../figs/nrg_format.jpg)
 
@@ -342,22 +343,22 @@ ANTsPyMM collects and documents best ANTsX practices for both data inspection an
 
 ### Semi-automated quality assessment
 
-ANTsPyMM's primary goal is reliable M3RI IDP generation but necessarily addresses quality control (QC) with particular focus on the T1w modality i.e. the core anatomical image that represents the most consistently collected MRI in PPMI. T1w is also the focus of QC because ancillary modality processing depends heavily on anatomical labels (e.g. tissue segmentation, cortical parcellation) derived from these images.  As such, we developed an automated (deep learning based) T1w reviewer that is trained on human (BA) QC reviews.  Each T1w image is therefore reviewed internally in the first stage of ANTsPyMM processing by this `resnetGrader` (a deep learning model trained to predict image quality) [@avants2022]. The grader will abort processing if the T1w does not achieve a given baseline level of quality.  Human visual inspection was performed on images that pass the grader by BA and serves as a sanity check to the automated method.  The `resnetGrader` successfully filtered unusable data and we selected a quality cutoff at `r min(ppmitrim$T1Hier_resnetGrade)` to filter out low quality images.  Similarly, the rsfMRI and DTI were reviewed in `post hoc` fashion.  This process involved visually inspecting each estimated FA image and each estimated default mode network connectivity map and its associated mean BOLD image.  Particular focus was paid to cases with high motion and/or low SNR.
+ANTsPyMM's primary goal is reliable M3RI IDP generation but necessarily addresses quality control (QC) with particular focus on the T1w modality i.e. the core anatomical image that represents the most consistently collected MRI in PPMI. T1w is also the focus of QC because ancillary modality processing depends heavily on anatomical labels (e.g. tissue segmentation, cortical parcellation) derived from these images.  As such, we developed an automated (deep learning based) T1w reviewer that is trained on human (BA) QC reviews.  Each T1w image is therefore reviewed internally in the first stage of ANTsPyMM processing by this `resnetGrader` (a deep learning model trained to predict image quality) [@avants2023.02.02.23285376]. The grader will abort processing if the T1w does not achieve a given baseline level of quality.  Human visual inspection was performed on images that pass the grader by BA and serves as a sanity check to the automated method.  The `resnetGrader` successfully filtered unusable data and we selected a quality cutoff at `r min(ppmitrim$T1Hier_resnetGrade)` to filter out low quality images.  Similarly, the rsfMRI and DTI were reviewed in `post hoc` fashion.  This process involved visually inspecting each estimated FA image and each estimated default mode network connectivity map and its associated mean BOLD image.  Particular focus was paid to cases with high motion and/or low SNR.
 
 ## Neuroanatomical coordinate systems
 
-The statistical interpretation of processed images is aided by automatic anatomic labeling with pre-specified coodinate systems or maps overlaid on each subject's neuroimage. We leverage a recent homotopic parcellation [@FIXME], the Desikan-Killiany-Tourville (DKT) system [@FIXME], the CIT168 atlas [@FIXME], the Johns Hopkins University (JHU) white matter labels [@FIXME], the Schmahmann cerebellar parcellation [@FIXME], brain stem labels [@FIXME], a medial temporal lobe schema [@FIXME] and labels derived from probabilistic maps of the basal forebrain [@FIXME].  These systems are described in detail in online [data dictionary and associated documentation](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) for this project. These coordinate system enable PD researchers to interrogate a variety of hypotheses related to, for example, known functional networks, association hubs, cholinergic networks, the striatum or dopaminergic systems.
+The statistical interpretation of processed images is aided by automatic anatomic labeling with pre-specified coodinate systems or maps overlaid on each subject's neuroimage. We leverage a recent homotopic parcellation [@yanHomotopicLocalglobalParcellation2023], the Desikan-Killiany-Tourville (DKT) system [@klein101LabeledBrain2012], the CIT168 atlas [@pauliHighresolutionProbabilisticVivo2018], the Johns Hopkins University (JHU) white matter labels [@moriWhiteMatterAtlases2009], the Schmahmann cerebellar parcellation [@lyu_multimodal_2024;@carass_comparing_2018], brain stem labels [@iglesias_bayesian_2015], a medial temporal lobe schema [@rizviPosteriorWhiteMatter2023] and labels derived from probabilistic maps of the basal forebrain [@liu_nucleus_2015;@zaborszky_stereotaxic_2008].  These systems are described in detail in online [data dictionary and associated documentation](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) for this project. These coordinate system enable PD researchers to interrogate a variety of hypotheses related to, for example, known functional networks, association hubs, cholinergic networks, the striatum or dopaminergic systems.
 
 ### T1-weighted MRI processing
 
-T1-weighted MRI processing is described in detail in @tustison_antsx_2021. This open-source software ecosystem includes tools for image registration, segmentation, and super-resolution (SR) as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and SR results as part of this effort.  For SR processing of T1w, the network is applied -- first -- over the whole head T1w image to double resolution along all axes within the brain parenchyma. Otherwise, SR and OR processing are identical. SR training with 3D perceptual losses is documented in the `python` package [siq](https://pypi.org/project/siq/) and is based on `tensorflow` implementations of a volumetric deep back projection network (DBPN) [@FIXME;@FIXME] .  See Figure FIXME for examples of these outputs.  IDPs derived from the T1 processing are denoted by prefixes `T1w` and `T1Hier`.
+T1-weighted MRI processing is described in detail in [@tustison_antsx_2023;@tustisonANTsXEcosystemQuantitative2021b]. This open-source software ecosystem includes tools for image registration, segmentation, and super-resolution (SR) as customized for the human brain.  The derived measurements are tabulated by the neuroanatomical coordinates defined above and include cortical and subcortical measurements and morphological measurements of the hippocampus, basal forebrain and cerebellum.  The results of this stage are key to consistent processing of concomitant rsfMRI and DWI. We provide both original resolution (OR) and SR results as part of this effort.  For SR processing of T1w, the network is applied -- first -- over the whole head T1w image to double resolution along all axes within the brain parenchyma. Otherwise, SR and OR processing are identical. SR training with 3D perceptual losses is documented in the `python` package [siq](https://pypi.org/project/siq/) and is based on `tensorflow` implementations of a volumetric deep back projection network (DBPN) [@avants2023.02.02.23285376;@tustisonANTsXEcosystemQuantitative2021b;@haris_deep_2021] .  See Figure FIXME for examples of these outputs.  IDPs derived from the T1 processing are denoted by prefixes `T1w` and `T1Hier`.
 
 
 ![Example ANTsPyMM SR outputs applied to T1-weighted MRI (upper left) and diffusion MRI. T1w is super resolved to 0.5mm isotropic and DTI to 1mm.](../figs/sr_comparison.jpg)
 
 ### Diffusion weighted MRI processing
 
-Diffusion tensor image (DTI) processing leverages best practices from both ANTsX [@FIXMEPTBP] and the collaborative DTI-focused project [DiPy](https://www.frontiersin.org/articles/10.3389/fninf.2014.00008/full). This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through SR techniques, culminating in an optimized DTI reconstruction. The SR stream applies to each volume in the DWI timeseries after motion correction and distortion correction but before tensor fitting i.e. in a relatively minimally invasive fashion.  After reconstruction, the pipeline integrates atlas-based labeling and template-based normalization processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure FIXME summarizes the pipeline which follows these steps:
+Diffusion tensor image (DTI) processing leverages best practices from both ANTsX [@avants_pediatric_2015;@stone_neurological_2023;@stone_functional_2020] and the collaborative DTI-focused project [DiPy](https://dipy.org) [@garyfallidis_dipy_2014]. This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through SR techniques, culminating in an optimized DTI reconstruction. The SR stream applies to each volume in the DWI timeseries after motion correction and distortion correction but before tensor fitting i.e. in a relatively minimally invasive fashion.  After reconstruction, the pipeline integrates atlas-based labeling and template-based normalization processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure FIXME summarizes the pipeline which follows these steps:
 
 ![Overview of the DTI processing pipeline based on ANTsX and DiPy.](../figs/dti_pipe.jpg)
 
@@ -369,7 +370,7 @@ Diffusion tensor image (DTI) processing leverages best practices from both ANTsX
 
 4. **Reconstruction of DTI Metrics**: The function employs weighted least squares to reconstruct DTI metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD) from the preprocessed DWI data. This step is pivotal in quantifying the diffusion properties of brain tissue. 
 
-5. **Atlas-Based Labeling and Registration**: Utilizing the Johns Hopkins University (JHU) atlas and corresponding labels, the pipeline performs spatial registration of the DTI to the atlas space. This process facilitates anatomical localization and quantification of DTI metrics within predefined brain regions. 
+5. **Atlas-Based Labeling and Registration**: Utilizing the Johns Hopkins University (JHU) atlas and corresponding labels [@moriWhiteMatterAtlases2009], the pipeline performs spatial registration of the DTI to the atlas space. This process facilitates anatomical localization and quantification of DTI metrics within predefined brain regions. 
 
 6. **Output Generation**: The pipeline yields a comprehensive output including the reconstructed DTI metrics, summary statistics of these metrics within atlas-defined regions, the spatial registration information, and additional diagnostic metrics such as framewise displacement and signal-to-noise ratio (SNR) assessments spatially and temporally for both B0 and DWI. An example output volumetric tensor image with labels is in Figure FIXME.
 
@@ -380,29 +381,29 @@ IDPs derived from the DWI processing are denoted by prefixes `DTI_`.
 
 ### Resting state functional MRI processing 
 
-Resting state functional MRI (rsfMRI) processing builds on prior multi-view techniques performed in this same ecosystem [(avants2015)](https://www.nature.com/articles/sdata20153) [avants2016](https://doi.org/10.1016/j.neurobiolaging.2018.10.002).  The procedure is based on the findings described in three comprehensive evaluation studies [@FIXME] and is designed to compute both functional activity and correlation maps utilizing the recently proposed homotopic labels to delineate major network systems [@FIXME]. The methodology described below is grounded in contemporary understanding of resting-state fMRI analysis and incorporates recommendations from seminal works regarding optimal preprocessing for minimizing motion artifacts and other sources of noise (Ciric et al., 2017; Parkes et al., 2018). As such, our processing reflects a comprehensive approach to resting-state fMRI IDP extraction for real-world multi-site studies of neurodegenerative disease.  Overall, the methods aim to facilitate the reliable extraction of functional connectivity patterns that are consistent with underlying neural mechanisms.  Similar to the DWI processing, the procedure accepts either a single image or a pair of images with reversed phase encoding direction.  The steps are outlined in Figure FIXME:
+Resting state functional MRI (rsfMRI) processing builds on prior multi-view M3RI analyses performed in this same ecosystem [@avants_pediatric_2015;@avants_amyloid_2019;@avants_interpretable_2020].  The procedure is based on the findings described in three comprehensive evaluation studies [@shirer_optimization_2015;@parkes_evaluation_2018;@noble_decade_2019] and is designed to compute both functional activity and correlation maps utilizing the recently proposed homotopic labels to delineate major network systems [@yanHomotopicLocalglobalParcellation2023]. The methodology described below is grounded in contemporary understanding of resting-state fMRI analysis and incorporates recommendations from seminal works regarding optimal preprocessing for minimizing motion artifacts and other sources of noise [@shirer_optimization_2015;@parkes_evaluation_2018]. As such, our processing reflects a comprehensive approach to resting-state fMRI IDP extraction for real-world multi-site studies of neurodegenerative disease.  Overall, the methods aim to facilitate the reliable extraction of functional connectivity patterns that are consistent with underlying neural mechanisms in PD [@tahmasian_systematic_2015;@esposito_rhythm-specific_2013].  Similar to the DWI processing, the procedure accepts either a single image or a pair of images with reversed phase encoding direction.  The steps are outlined in Figure FIXME:
 
 ![Overview of the rsfMRI processing pipeline based on ANTsX.](../figs/fmri_pipe.jpg)
 
 1. **Input Preparation**: Inputs include the raw BOLD fMRI time-series data, a reference volumetric subject-specific fMRI template (automatically generated), and T1-weighted anatomical images all from the same subject. These inputs are foundational for aligning functional data with anatomical landmarks and for ensuring that subsequent analyses are anatomically informed.  By default, the input fMRI is upsampled to 3mm isotropic resolution and 8 initial volumes are discarded to allow for both signal and subject stabilization.
 
-2. **Preprocessing**: Initial steps include motion correction, application of a despiking algorithm (a `python` implementation of AFNI's 3dDespike [@FIMXE]), and anatomical registration to align the fMRI data with the T1-weighted image.  If a pair of images is passed, these same preprocessing steps are applied and results are concatenated along the time axis.
+2. **Preprocessing**: Initial steps include motion correction, application of a despiking algorithm (a `python` implementation of AFNI's 3dDespike [@cox_afni_2012]), and anatomical registration to align the fMRI data with the T1-weighted image.  If a pair of images is passed, these same preprocessing steps are applied and results are concatenated along the time axis.
 
-3. **Noise Reduction**: Anatomical CompCor (aCompCor) is used to mitigate physiological and other noise sources. This is based on recommendations from studies examining the impact of preprocessing strategies on functional connectivity (Ciric et al., 2017; Parkes et al., 2018).
+3. **Noise Reduction**: Anatomical CompCor (aCompCor) is used to mitigate physiological and other noise sources. This is based on recommendations from studies examining the impact of preprocessing strategies on functional connectivity [@shirer_optimization_2015;@parkes_evaluation_2018].
 
-4. **Band-pass Filtering and activity calculation**: The application of a specific frequency range for filtering aligns with recommendations from Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.  The default frequency bands are based on empirical evaluation studies described below.
+4. **Band-pass Filtering and activity calculation**: The application of a specific frequency range for filtering aligns with recommendations from both Shirer et al. (2015) and Parkes et al. (2018), emphasizing the importance of selecting appropriate frequency bands for resting-state analysis.  The default frequency bands are based on empirical evaluation studies described below.
 
 5. **Censoring**: Select volumes are censored based on both motion-based and intensity-based outlier detection.  The parameters for this stage derive from empirical evaluation studies on public data as discussed below.  Both *censored* and *imputed* versions of the time series are created.  A summary of censoring results is recorded in several ways but perhaps most relevant are the variables `*minutes_original_data` and `*minutes_censored_data` which provides the length in minutes of the original versus processed data.
 
 6. **Network Correlation Analysis**: This step involves calculating correlation matrices for identified resting-state networks, utilizing labels described above.  Both inter and intra-network correlation values are computed for each of the sub-networks provided by the homotopic parcellation.  
 
-7. **Functional activity**: is computed with three models: mfALFF, mALFF and mPerAf as described in [@FIXME].  These are versions of fALFF, ALFF and PerAf where each is divided by the global mean in the brain.  Summary values are averaged within each of 500 labels in the homotopic label set which facilitates left/right asymmetry and mean values which are critical to studying diseases with laterality effects.
+7. **Functional activity**: is computed with three models: mfALFF, mALFF and mPerAf as described in [@jia_percent_2020].  These are versions of fALFF, ALFF and PerAf where each is divided by the global mean in the brain.  Summary values are averaged within each of 500 labels in the homotopic label set which facilitates left/right asymmetry and mean values which are critical to studying diseases with laterality effects.
 
 Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters (sets [122, 134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/4d10c3a7c4a962c00a3c198ba0e00f35da25776d/antspymm/mm.py#L6496-L6506)) for censoring based on motion and intensity outlierness.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. IDPs from the rsfMRI processing are denoted by prefixes `rsfMRI_fcnxpro122` for 122 and similarly for 129 and 134.
 
 # Data Records
 
-The PPMI IDPs for T1w, rsfMRI and DTI are located at FIXME. The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular `csv` format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.  
+The PPMI IDPs for T1w, rsfMRI and DTI are located at [@avantsPPMIMRIDPs2024]. The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular `csv` format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.  
 
 We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2023-06-12 `PPMI_Curated_Data_Cut_Public_20230612_rev`) from the LONI IDA.  Code for this merging process is within the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are at [this location](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071).  We also provide a "trim" version [here](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables (many thousand in raw form).  We base demonstrations below on the trim version of these PPMI IDPs and justify their choice based on extant results in the literature.
 
@@ -412,7 +413,7 @@ Components of technical validity that are critical for quantitative methodology 
 
 * We quantify reproducibility and reliability in each modality through analysis of three traveling subject cohorts (addressing (a) and (b) above). These cohorts collect imaging data at different sites from the same individuals.  Reliability data based on such cohorts are highly relevant for multisite trials which are always impacted by site-specific variation.  By aggregating data from the traveling subject cohorts, we offer precise, reproducible reliability estimates (via intra-class correlation) manifested across different scanner types and imaging modalities.  
 
-* We derive effect sizes from statistical models that test established hypotheses comparing SAA positive PD subjects versus control subjects.  These show expected effects of PD are detectable in these data.  This addresses (c) above.
+* We derive effect sizes from statistical models that test established hypotheses comparing biomarker classified PD subjects versus control subjects.  These show expected effects of PD are detectable in these data.  This addresses (c) above.
 
 * We finalize the technical validity section with examples of how scientists may relate baseline brain health to rate of symptom change in PD in an interpretable and modality-specific manner as well as a multiple modality (integrative) context.  This addresses (d) above.
 
@@ -420,15 +421,45 @@ The scale of the current data supports control for a subset of important PD rele
 
 ## Robust performance
 
-The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges [@FIXME] that span modalities and organ systems.  The foundational methods also support applications to non-human data [@FIXME].  Furthermore, the consistency of the methodology naturally enables multivariate statistical inference and/or prediction [@BLAST] even within the multi-study context [@FARAZ].
+The technical validity of these methods is supported by previous work, including various open quantitative MRI analysis challenges [@menze_multimodal_2015;@murphy_evaluation_2011;@baheti_brain_2021] that span modalities and organ systems.  The foundational methods also support applications to non-human data [@allan_johnson_whole_2019;@hopkins_regional_2013].  Furthermore, the consistency of the methodology naturally enables multivariate statistical inference and/or prediction [@stone_neurological_2023] even within the multi-study context [@dadu_prediction_2024].
 
 ## Multi-site reproducibility
 
 Traveling subject studies involve scanning the same subjects on multiple MRI scanners at different locations. These studies help in assessing consistency and/or agreement of image quantification where the only variables are the machines themselves. This is crucial for understanding power in multi-site studies of natural history or intervention and for ensuring that the observed changes in brain structure or function are due to actual physiological changes rather than variations in the imaging process itself. 
 
-In this study, we employ traveling cohort data to assess the agreement of IDPs pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing.  Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX/ANTsPyMM upon which scientific studies, machine learning platforms and other methodological comparisons are based. These cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  Results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
+In this study, we employ traveling cohort data [@hawco_longitudinal_2022; @tanaka_multi-site_2021; @tong_reproducibility_2019] to assess the agreement of IDPs pooled across multiple sites for the purposes of statistical inference. These data will establish expectations of repeatability for T1w, DTI and rsfMRI as measured by ANTsPyMM processing and are described briefly here:  
+
+1. the SRPBS Traveling Subject MRI Dataset [@tanaka_multi-site_2021]:
+
+  * 9 healthy subjects travel to 12 sites to be imaged;
+
+  * of the 12 sites, 9 have consistently available T1w and rsfMRI in 6 subjects.
+
+2. traveling subject DTI cohort [@tong_reproducibility_2019]:
+
+  * 3 healthy subjects travel to 4 sites to be imaged;
+
+  * T1w and multi-shell DWI/DTI are available.
+
+3. Hawco's traveling subject MRI dataset [@hawco_longitudinal_2022] is available [here](https://openneuro.org/datasets/ds003011):
+
+  * 4 healthy male subjects travel to 6 sites to be imaged with T1w, rsfMRI and DTI.
+
+Thus, we use these data to characterize the consistency and reliability of these tools when applied to data that has known systematic biases due to site and scanner differences.  The results confirm that findings and conclusions drawn from ANTsPyMM are reliable and not overwhelmed by scanner-specific differences or inconsistencies.  This knowledge is critical for a foundational framework such as ANTsX/ANTsPyMM upon which scientific studies, machine learning platforms and other methodological comparisons are based. These cohorts represent variability in both MRI manufacturer and MRI model (high variability) that would exceed standard (within-scanner, within-site) test-retest analysis.  Results therefore provide a lower-bound on reliability; i.e. within-site (e.g. longitudinal) studies would be expected to have higher reliability in general.
 
 ![Summary reproducibility results from aggregated traveling subject data. T1 IDPs represent high reproducibility in all categories (cerebellum, CIT168, cortical volume, cortical thickness, basal forebrain and medial temporal lobe).  DTI IDPs are also highly reproducible with FA in the cortical gray matter (gm) nearly equaling that of major white matter regions in the JHU atlas. Resting state connectivity shows good to excellent reproducibility; PerAF, fALFF and ALFF are relatively less reproducible -- on average -- though variability across regions is also high.](../figs/antspymm_repro.png)
+
+
+
+We employ the intra-class correlation to assess results.  ICC ranges may be interpreted as [@koo_guideline_2016]:
+
+* below 0.50: poor
+
+* between 0.50 and 0.75: moderate
+
+* between 0.75 and 0.90: good
+
+* above 0.90: excellent
 
 We find that ANTsPyMM IDPs derived from the same subjects imaged at different sites with MRI from various manufacturers show overall good to high reliability with a few exceptions within resting state derivatives (fALFF specifically).  This provides empirical evidence that multiple modality MRI may be used to derive quantitative phenotypes on which predictive models may be based.  Statistical control for site effects should still be applied at the population level using, for example, random effects.  The data and code for reproducing these results is available in [this location](https://github.com/stnava/antspymm_reproducibility).
 
@@ -1021,19 +1052,6 @@ nmstotest = unique( c(
   rsfnamescnx ) )
 ```
 
-### Table of pre-defined regions tested
-
-see [agostas paper](https://www.sciencedirect.com/science/article/pii/S2213158220302114) for support for atrophy and progression
-
-[fmri connex](https://link.springer.com/article/10.1007/s00234-021-02731-w)
-
-* DTI ENIGMA https://www.medrxiv.org/content/10.1101/2024.01.16.24301235v1.supplementary-material
-
-* Diffusion basis spectrum imaging detects pathological alterations in substantia nigra and white matter tracts with early-stage Parkinson disease https://link.springer.com/article/10.1007/s00330-023-09780-0
-
-* add references to table for each predefined region
-
-* add long names to predefined regions
 
 ```{r predefregions,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 idpids = nmstotest[ multigrep( c("LRAVG",'ratio',"rsfM"),nmstotest)]
@@ -1222,7 +1240,12 @@ if ( TRUE ) {
 
 ## Sensitivity to differences from controls
 
-Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes in T1w, DTI and rsfMRI IDPs that are pre-defined for PD relevance.  These regions are listed in Tables FIXME (T1w), FIXME (DTI) and FIXME (rsfMRI).
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes in T1w, DTI and rsfMRI IDPs that are pre-defined for PD relevance.  These regions are listed in Tables FIXME (T1w), FIXME (DTI) and FIXME (rsfMRI).  These regions are selected for PD relevance and include motor and parietal cortex [@filippi_progressive_2020;@sokolowskiLongitudinalBrainStructure2024], midbrain and striatal regions and basal forebrain [@batzu_increased_2023] from T1w.  Relatedly, we select mean diffusion and FA derived from DTI in the striatum and substantia nigra [@hu_diffusion_2023] as well as major white matter tracts such as the fornix, external and internal capsule; a recent large-scale study demonstrated sensitivity of these measures to PD [@owens-walton_worldwide_2024].  In rsfMRI, we focus on connectivity between sensorimotor regions and other networks, in particular visual and cognitive control [@caspers_within_2021;@wang_investigation_2021;@tahmasian_systematic_2015].  In total, this leads to `r length(nmstotest)` different measurements which includes a left-right averaged as well as asymmetry metric:
+$$
+avg(x_l,x_r)=\frac{1}{2}(x_l+x_r);~~~asym(x_l,x_r)=|x_l-x_r|
+$$
+derived from those regions which are bilateral.  This strategy is a generalizable way of testing laterality effects across all groups, including those without an established dominant side of disease (controls and pre-symptomatic PD subjects).
+
 
 <!--
 Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), DTI has provided evidence of altered white matter connectivity in PD, supporting the hypothesis of widespread neurodegenerative processes including and beyond the substantia nigra [(Talai2018)](https://www.sciencedirect.com/science/article/pii/S2213158218303036). 
@@ -1230,7 +1253,7 @@ Through metrics such as Fractional Anisotropy (FA) and Mean Diffusivity (MD), DT
 basal forebrain [in LRRK2](https://www.sciencedirect.com/science/article/pii/S0969996123001973)
 -->
 
-We provide exemplar linear mixed-effects models (LMMs) that seek to elucidate the complex relationships between neuroimaging biomarkers and the progression of Parkinson's Disease (PD).  The analytical framework was constructed using the `R` programming environment, leveraging the `lme4` package. This methodology allows for the nuanced exploration of hierarchical data structures commonly encountered in longitudinal neuroimaging studies, where multiple observations per subject are standard.  These models were designed to investigate differences between biomarker-confirmed PPMI PD groups and controls.  We accentuate that these models are for demonstration only and do not constitute fully-vetted "official" PPMI results.  While these models may not account for all relevant covariates, they do provide evidence of validity by confirming the sensitivity of these IDPs to diagnostic group differences.  These models are of the form:
+We provide exemplar linear mixed-effects models (LMMs) that seek to elucidate the complex relationships between neuroimaging biomarkers and the progression of Parkinson's Disease (PD).  The analytical framework was constructed using the `R` programming environment, leveraging the `lme4` package [@kuznetsova_lmertest_2017;@bates_fitting_2014]. This methodology allows for the nuanced exploration of hierarchical data structures commonly encountered in longitudinal neuroimaging studies, where multiple observations per subject are standard.  These models were designed to investigate differences between biomarker-confirmed PPMI PD groups and controls.  We accentuate that these models are for demonstration only and do not constitute fully-vetted "official" PPMI results.  While these models may not account for all relevant covariates, they do provide evidence of validity by confirming the sensitivity of these IDPs to diagnostic group differences.  These models are of the form:
 
 $$
 \begin{split}
@@ -1242,7 +1265,7 @@ $$
 
 where IDP is the imaging outcome, $ID$ and $SITE$ and random effects for subject ID and data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment, $duration_\text{yrs}$ is the estimate of disease duration in years and $modality\_specific\_covariates$ covaries for motion and quality in rsfMRI or DTI.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD groups with $>$ 6 subjects.  The sample sizes for each group within the $DX$ variable are $CN-=$ `r dxcts['CNNegative','n']`, $GBA+=$ `r dxcts['PDGBAPositive','n']`, $LRRK2+=$ `r dxcts['PDLRRK2Positive','n']`, $LRRK2-=$ `r dxcts['PDLRRK2Negative','n']`, $Sporadic+=$ `r dxcts['PDSporadicPositive','n']`, $Sporadic-=$ `r dxcts['PDSporadicNegative','n']` where $-/+$ indicate SAA (alpha-synuclein pathology) status.  
 
-Employing the `lmer` function, linear mixed-effects models were constructed and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table FIXME (for the $DX$ term) and Table FIXME (for the longitudinal term).  Effect sizes for each term are estimated from the $t-$value and degrees of freedom for each model.  The effects of $DX$ on these IDPs are visualized through partial residual plots of diagnosis by time generated for each diagnostic category as in Figures FIXME.
+Employing the `lmer` function, linear mixed-effects models were constructed and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table FIXME (for the $DX$ term) and Table FIXME (for the longitudinal term).  Effect sizes for each term are estimated from the $t-$value and degrees of freedom for each model.  The effects of $DX$ on these IDPs are visualized through partial residual plots [@larsen_use_1972] of diagnosis by time generated for each diagnostic category as in Figures FIXME.
 
 ```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 psel = subtyper::fs( p.adjust( dxdfT1$anv, mycorr ) <= .05 )
@@ -1447,7 +1470,7 @@ print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 
 ## Baseline IDP to longitudinal UPDRS effects in pre-defined structural, white matter and resting functional measurements
 
-As in the prior section, we employ LMMs to measure the relationship of baseline IDP values to clinical decline as evaluated by UPDRS 1, 2 and 3 (off and on) scores.  While these measurements have well-documented limitations in terms of reliability and interpretability [@FIXMEMILESTONESPAPER], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on PD subjects.  These models are of the form:
+As in the prior section, we employ LMMs to measure the relationship of baseline IDP values to clinical decline as evaluated by UPDRS 1, 2 and 3 (off and on) scores.  While these measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on PD subjects.  These models are of the form:
 
 $$
 \begin{split}
@@ -1457,7 +1480,7 @@ $$
 \end{split}
 $$
 
-The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for modality-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to baseline IDP values (i.e. $IDP_\text{bl}$).  The predictor of interest, here, is $years_\text{bl}  *  IDP_\text{bl}$ which allows assessment of the impact of baseline brain health on the change in the given UPDRS score.  These models are assessed in the range of baseline to 2.5 years change.  The effects of interest are visualized through partial residual plots for select IDPs of interest as in Figures FIXME.
+The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for modality-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to baseline IDP values (i.e. $IDP_\text{bl}$).  The predictor of interest, here, is $years_\text{bl}  *  IDP_\text{bl}$ which allows assessment of the impact of baseline brain health on the change in the given UPDRS score.  These models are assessed in the range of baseline to 2.5 years change.  The effects are visualized through partial residual plots for select IDPs of interest as in Figures FIXME.
 
 ### Multi-view example
 
@@ -1493,6 +1516,7 @@ bmdl=suppressMessages(lmer( bform, data=temp2 ))
 mdl=suppressMessages(lmer( mvform, data=temp2 ))
 mycoffs = coefficients( summary( mdl ) )
 mvanv = anova(bmdl,mdl)
+mvanvp = mvanv$Pr[2]
 gglist = list() 
 gglist2 = list() 
 for ( x in 1:length(vois) ) {
@@ -1546,7 +1570,7 @@ $$
 \end{split}
 $$
 
-Analysis of variance determines that model 2 improves the data fit significantly (`r insight::format_p(mvanv$Pr[2],digits=4)`). These models are visualized through partial residual plots and interaction plots (Figures FIXME and FIXME). These visualizations facilitate a nuanced understanding of the biomarkers' impacts across the disease trajectory within the context of their joint effect. This analysis underscores the complementary natures of these neuroimaging biomarkers as they relate to progression in PD. This examples demonstrates the potential of multimodal neuroimaging analyses to inform our understanding of PD progression and highlights the potential of comprehensive statistical approaches in neurodegenerative disease research.
+Analysis of variance determines that model 2 improves the data fit significantly (`r insight::format_p(mvanvp,digits=4)`). These models are visualized through partial residual plots and interaction plots (Figures FIXME and FIXME). These visualizations facilitate a nuanced understanding of the biomarkers' impacts across the disease trajectory within the context of their joint effect. This analysis underscores the complementary natures of these neuroimaging biomarkers as they relate to progression in PD. This examples demonstrates the potential of multimodal neuroimaging analyses to inform our understanding of PD progression and highlights the potential of comprehensive statistical approaches in neurodegenerative disease research.
 
 
 
