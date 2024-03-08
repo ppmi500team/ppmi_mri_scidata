@@ -1541,8 +1541,8 @@ for ( x in 1:length(vois) ) {
         int.type = c("confidence", "prediction")[1], 
         partial.residuals=F  ) + theme(legend.position = "top")
   }
-grid.arrange( grobs=gglist, nrow=2, top='MV base 3 modality')
-grid.arrange( grobs=gglist2, nrow=2, top='MV long 3 modality')
+grid.arrange( grobs=gglist, nrow=1, top='MV base 3 modality')
+grid.arrange( grobs=gglist2, nrow=3, top='MV long 3 modality')
 
 if ( FALSE ) {
   gglist=list()
@@ -1598,4 +1598,7 @@ Our sincere appreciation to the Michael J. Fox Foundation (MJFF) for supporting 
 # Competing interests
 
 ... FIXME ...
+
+
+# References
 
