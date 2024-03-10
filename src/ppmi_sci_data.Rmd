@@ -32,6 +32,7 @@ contributed_equally: "† these authors contributed equally to this work"
 output: 
   pdf_document:
     keep_tex: true
+    fig_caption: yes
     template: null
 #    citation_package: natbib
 biblio-style: naturemag-doi
@@ -1137,16 +1138,17 @@ myregions2DTI$anat =  c(
 )
 
 
-myregionszT1z=ztable(myregions2T1[,c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: T1w L/R average and asym.')
-myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature).')
-myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')],tabular=TRUE,size=2,caption='PD IDPs in ANTsPyMM: DTI L/R average and asym for both fractional anisotropy (FA) and mean diffusion (MD) (not shown).')
+myregionszT1z=ztable(myregions2T1[,c('IDP','anat')],tabular=TRUE,size=2,caption='Table 2. PD IDPs in ANTsPyMM: T1w L/R average and asym.')
+myregionszRSFz=ztable(myregions2RSF[,c('IDP','connectivity')],tabular=TRUE,size=2,caption='Table 4. PD IDPs in ANTsPyMM: rsfMRI bilateral inter or intra-network connectivity  (Yan, et. al. homotopic parcellation nomenclature).')
+myregionszDTIz=ztable(myregions2DTI[grep("dti.fa",myregions2DTI$IDP,fixed=TRUE),c('IDP','anat')],tabular=TRUE,size=2,caption='Table 3. PD IDPs in ANTsPyMM: DTI L/R average and asym for both fractional anisotropy (FA) and mean diffusion (MD) (not shown).')
 print(myregionszT1z)
 # print(myregionszRSFz, type = "latex",size=2,caption=mycap,sidewaystable=FALSE)
 # myregions %>%
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
 #  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
-
+#
 # parallelTables(width=c(0.3,0.3,0.3),list(myregionszT1z,myregionszDTIz,myregionszRSFz),type="latex")
+#
 ```
 
 ```{r predefregions2,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
@@ -1157,7 +1159,7 @@ print(myregionszDTIz)
 print(myregionszRSFz)
 ```
 
-```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=12,warning=FALSE,message=FALSE,results='asis'}
+```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=12,warning=FALSE,message=FALSE,results='asis',fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ###################
 dxglist=list()
 dxdfT1=data.frame()
@@ -1300,7 +1302,7 @@ colnames(dxdfT1selYz)=gsub("yearsbl","y",colnames(dxdfT1selYz))
 
 dxdfT1selz=ztable(dxdfT1selBz,zebra=2)
 mycap='Significant (fwe based on omnibus model p-value) diagnostic group i.e. time independent effects in PPMI PD.  Empty cells represent small effects.'
-mycap='Time independent group effects in PPMI PD.'
+mycap='Table 5. Time independent group effects in PPMI PD.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 # dxdfT1sel[, dxdfT1selcols] %>%
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
@@ -1311,11 +1313,11 @@ print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```{r dxresultslong,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 dxdfT1selz=ztable(dxdfT1selYz,zebra=2)
 mycap='Significant (fwe based on omnibus model p-value) longitudinal group effects in PPMI PD. Empty cells represent small effects.'
-mycap='Longitudinal group effects in PPMI PD.'
+mycap='Table 6. Longitudinal group effects in PPMI PD.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE}
+```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interactionplots show the best region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example FIXME.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
@@ -1482,7 +1484,7 @@ grid.arrange( grobs = cogglist, nrow=2, top='Interactions between baseline IDPs 
 
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(qdfsig,zebra=2,tabular=TRUE)
-mycap='Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
+mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 
 # knitr::kable(qdfsig, "latex", booktabs = TRUE, caption='Significant IDP-UPDRS longitudinal  effects: T1w, DTI and rsfMRI') %>%
@@ -1510,7 +1512,7 @@ The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given UPDRS score.
 Here, we dissect the influence of M3RI neuroimaging biomarkers on the progression of Unified Parkinson's Disease Rating Scale (UPDRS) Part I scores [@chahine_predicting_2019]. The analysis focuses on three neuroimaging biomarkers indicative of structural and functional brain integrity: asymmetry in the putamen volume as derived from T1-weighted images, motor cortex connectivity metrics from resting-state fMRI, and mean diffusivity measures from DTI in the superior longitudinal fasciculus. We construct three linear regression models that predict change in UPDRS1 from baseline data.  The base model uses only clinical information.  We build two additional IDP models: the first includes only the putamen IDP; the second includes IDPs from each modality. This last model extended the clinical reference model by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their improvement in predicting motor symptom progression in the 2 to 4 year range of the followup data. The models include covariates such as LEDD, disease duration, baseline motor function, and demographic information.
 
 
-```{r multiview,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=5,message=FALSE,warning=FALSE}
+```{r multiview,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view regression for predicting change in UPDRS1 scores based on three different modalities demonstrate improved expected peformance."}
 library(groupdata2)
 library(xpectr)
 cog='updrs_totscore'
@@ -1682,7 +1684,7 @@ $$
  (  \cdots ~+~rsf.sommota.2.contc.bl~+~dti.mean.md.sup.l.fasc )
 \end{split}
 $$
-Paired comparison of the correlation between real and predicted UPDRS1 change scores determines that the 3 IDP model improves the data fit significantly over both the baseline (`r insight::format_p(mvanvp3,digits=4)`) and 1 IDP model (`r insight::format_p(mvanvpu,digits=4)`). Figure FIXME demonstrates the distribution of performance between the clinical and 3 IDP models over all of the simulations.  This example demonstrates the potential of multimodal neuroimaging and integrative statistical approaches in PD and neurodegenerative disease research more generally.
+Paired $t$-test show the 3 IDP model improves correlation between real and predicted UPDRS1 change scores versus both the baseline (`r insight::format_p(mvanvp3,digits=4)`) and 1 IDP model (`r insight::format_p(mvanvpu,digits=4)`). Figure FIXME demonstrates the distribution of performance between the clinical and 3 IDP models over all of the simulations.  This example demonstrates the potential of multimodal neuroimaging and integrative statistical approaches in PD and neurodegenerative disease research more generally.
 
 In summary, this tabulated multi-modality MR IDP dataset for PPMI -- derived from deeply validated open source methods -- represents a valuable opportunity to help standardize as well as advance PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerates the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
