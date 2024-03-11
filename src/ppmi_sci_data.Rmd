@@ -17,6 +17,7 @@ author:
   - Michael Nalls^8^
   - Faraz Faghri^8^
   - Roger Gunn^6^
+  - Lana Chahine^9^
   - Kathleen L Poston^7^
   - Kenneth Marek (?)
 affiliation:
@@ -27,6 +28,8 @@ affiliation:
   - "5: Ambry, FIMXE, CA"
   - "6: MJFF, FIMXE, NYC"
   - "7: Stanford, FIMXE, CA"
+  - "8: FIXME"
+  - "9: FIXME"
 corresponding_author: "Brian B. Avants (stnava@gmail.com)"
 contributed_equally: "† these authors contributed equally to this work"
 output: 
@@ -200,8 +203,28 @@ ppmi$imaging_protocol[ ppmi$studyName=='ADNI']=3
 ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
 ppmi[ ppmi$studyName=='ADNI', 'age_BL']=ppmi[ ppmi$studyName=='ADNI', 'AGE']
 
+if ( TRUE ) {
+  temp2=read.csv( './data/temp_or.csv')
+  ppmi$u_hier_id=NA
+  for ( k in 1:nrow(temp) ) {
+    ppmi$u_hier_id[k]=paste0( ppmi$studyName[k],ppmi$subjectID[k], ppmi$date[k], ppmi$imageID[k], collapse='-') 
+  }
+  ppmi=ppmi[ ppmi$u_hier_id %in% temp2$u_hier_id, ]
+  if ( myrez == 'SRF' ) {
+    if ( all(ppmi$u_hier_id==temp2$u_hier_id) ) {
+      ppmi$T1Hier_resnetGrade.SR=ppmi$T1Hier_resnetGrade
+      ppmi$T1Hier_resnetGrade=temp2$T1Hier_resnetGrade # set rG to OR rG
+    }
+  }
+  rm(temp2)
+}
 ```
 
+
+```{r nmratings,echo=FALSE,eval=FALSE}
+my500=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500/ppmi500/data/ppmi500_ids_date.csv")
+
+```
 
 ```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
 ppmi = antspymm_predictors( ppmi, TRUE )
@@ -1712,3 +1735,19 @@ Our sincere appreciation to the Michael J. Fox Foundation (MJFF) for supporting 
 
 # References
 
+
+
+
+
+
+
+```{r mmm,echo=FALSE,eval=FALSE}
+temp=ppmi[ , c("subjectID","imageID", "date", "T1Hier_resnetGrade",'studyName') ] 
+temp$u_hier_id=NA
+for ( k in 1:nrow(temp) ) {
+  temp$u_hier_id[k]=paste0( temp$studyName[k],temp$subjectID[k], temp$date[k], temp$imageID[k], collapse='-') 
+}
+write.csv( temp, './data/temp.csv')
+temp2=read.csv( './data/temp.csv')
+temp=temp[ temp$u_hier_id %in% temp2$u_hier_id, ]
+```
