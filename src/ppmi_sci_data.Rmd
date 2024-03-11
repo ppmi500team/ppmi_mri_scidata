@@ -1340,7 +1340,7 @@ mycap='Table 6. Longitudinal group effects in PPMI PD.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interactionplots show the best region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example FIXME.'}
+```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interactionplots show the best region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
