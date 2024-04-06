@@ -53,8 +53,7 @@ link-citations: true
 
 ```{r samplesizes,echo=FALSE,eval=TRUE}
 redomerge=TRUE
-buildsci=TRUE
-buildsci2=TRUE
+buildsci=buildsci2=TRUE
 ```
 
 
@@ -204,7 +203,7 @@ ppmi$imaging_protocol[ ppmi$studyName=='ADNI']=3
 ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
 ppmi[ ppmi$studyName=='ADNI', 'age_BL']=ppmi[ ppmi$studyName=='ADNI', 'AGE']
 
-if ( TRUE ) {
+if ( FALSE ) {
   temp2=read.csv( './data/temp_or.csv')
   ppmi$u_hier_id=NA
   for ( k in 1:nrow(temp) ) {
@@ -222,33 +221,10 @@ if ( TRUE ) {
 ```
 
 
-```{r nmratings,echo=FALSE,eval=FALSE}
-my500=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500/ppmi500/data/ppmi500_ids_date.csv")
-my500$iddate=NA
-for ( k in 1:nrow(my500)) {
-  my500$iddate[k]=paste0(my500$subjectID[k],"_",my500$date[k])
-}
-ppmi$iddate=NA
-for ( k in 1:nrow(ppmi)) {
-  ppmi$iddate[k]=paste0(ppmi$subjectID[k],"_",ppmi$date[k])
-}
-ppmi500=ppmi[ppmi$iddate %in% my500$iddate, ]
-ppmi500$NM_QC_Ratings_BA=NA
-lohi=c(0.3,0.7)
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_substantianigra_z_coordinate > lohi[1] &  ppmi500$NM2DMT_NM_substantianigra_z_coordinate < lohi[2] ) ]=1
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_substantianigra_z_coordinate <= lohi[1] | ppmi500$NM2DMT_NM_substantianigra_z_coordinate >= lohi[2] ) ]=0
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_volume_substantianigra < 500 ) ]=0
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_avg_substantianigra > 2500 ) ]=0
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_sd > 50 ) ]=0
-ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_max > 5500 ) ]=0
-table( ppmi500$NM_QC_Ratings_BA )
-table( ppmi500$NM_QC_Ratings_BA)/sum(table(ppmi500$NM_QC_Ratings_BA))
-```
-
 ```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
 ppmi = antspymm_predictors( ppmi, TRUE )
-ntokeep = 2950
 ppmitrim = ppmi[ ppmi$studyName == 'PPMI',]
+ntokeep = nrow(ppmitrim) - 50
 ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
 msnames = getNamesFromDataframe("pm_",ppmi,exclusions=c("BL","delta"))
@@ -282,6 +258,7 @@ nprepd=sum( subtyper::fs(ppmitrim0$joinedDX[isbl] %in% c('ProdromalGBA','Prodrom
 vizfll=mean( ppmitrim0$yearsbl[!isbl] )
 vizfll=insight::format_value( vizfll )
 # tt = table( table( ppmitrim0$subjectID[!isbl] ) )
+
 
 ```
 
@@ -323,8 +300,8 @@ tblcols = unique( c( toadd, 'joinedDX'  ) )
 bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
 joinedem=ppmitrim[bsel,tblcols]
 joinedem$imaging_protocol=as.character(joinedem$imaging_protocol)
-joinedem$hasDTI=!is.na(ppmitrim[bsel,'DTI_dti_FD_mean'])
-joinedem$hasfMRI=!is.na(ppmitrim[bsel,'rsfMRI_fcnxpro129_FD_mean'])
+joinedem$hasDTI=!is.na(ppmitrim[bsel,'DTI_dti_FD_max'])
+joinedem$hasfMRI=!is.na(ppmitrim[bsel,'rsfMRI_fcnxpro129_FD_max'])
 names(joinedem)[1]=tblcols[1]='age'
 names(joinedem)[2]=tblcols[2]='Sex'
 wsaa=which(names(joinedem)=='AsynStatus' )
@@ -958,10 +935,11 @@ dxform="  (1|PATNO)  + commonEdu +  age_BL + commonSex + brainVolume_BL "
 dxform="  (1|commonID)+ (1|imaging_protocol) + commonEdu +  age_BL + commonSex + brainVolume_BL "
 raneffstr = " (1|commonID) + (1|SITE) " 
 raneffstr = " (1|commonID) + (1|imaging_protocol)" 
+raneffstr = " (1|commonID) " 
 dxform=paste( raneffstr, "  + age_BL + commonSex " )
 # dxform="  (1|commonID) + (1|SITE) + age_BL + commonSex "
 dxform = paste( dxform, "  + yearsbl ")
-# dxform = paste( dxform, " + DTI_dti_FD_mean + yearsbl ")
+# dxform = paste( dxform, " + DTI_dti_FD_max + yearsbl ")
 # dxform = paste( dxform, " + yearsbl ")
 dxsel = c( "CN", "ProdromalSporadic",  "PDSporadic", "MCI", "AD" )
 negate = c( "CNNegative",# "PDGBANegative",  #"PDLRRK2Negative", "PDSporadicNegative", 
@@ -1022,7 +1000,7 @@ mydog$TDX[ subtyper::fs(mydog$DXSubAsyn  == 'PDSporadicNegative') ]='PDSp-'
 
 
 #  subtyper::fs( ppmi$rsfMRI_fcnxpro122_n_outliers < 100 ) &
-#  subtyper::fs( ppmi$rsfMRI_fcnxpro122_FD_mean <= 0.5 )
+#  subtyper::fs( ppmi$rsfMRI_fcnxpro122_FD_max <= 0.5 )
 mydog = antspymm_predictors(mydog, TRUE )
 idps = antspymm_predictors(mydog, TRUE, TRUE )
 subjectcount = table( mydog$commonID )
@@ -1065,8 +1043,8 @@ mydog$hy_BL = factor( mydog$hy_BL )
 ######################################
 motname = paste( 
       paste0( "rsfMRI_fcnxpro",num,"_minutes_censored_data"), " + ",
-      paste0( "rsfMRI_fcnxpro",num,"_FD_mean") )
-motnamedt = "DTI_dti_FD_mean"
+      paste0( "rsfMRI_fcnxpro",num,"_FD_max") )
+motnamedt = "DTI_dti_FD_max"
 nmstotest = idpst1
 mycorr = 'BY'
 if ( is_test ) {
@@ -1143,6 +1121,10 @@ myregions2RSF$connectivity <- c(
   "Somatomotor Area A",
   "Peripheral Visual Area",
   "Central Visual Area",
+  "Striatum",
+  "Dopaminergic system",
+  "Basal Ganglia",
+  "Midbrain",
   "Temporal Parietal Region",
   "Control Network Component C",
   "Control Network Component B",
@@ -1150,7 +1132,11 @@ myregions2RSF$connectivity <- c(
   "Somatomotor Area B",
   "Somatomotor Area A",
   "Peripheral Visual Area",
-  "Central Visual Area"
+  "Central Visual Area",
+  "Striatum",
+  "Dopaminergic system",
+  "Basal Ganglia", 
+  "Midbrain"
 )
 myregions2DTI$anat =  c(
   "Superior Longitudinal Fasciculus FA",
@@ -1379,12 +1365,12 @@ for ( cog in  cogs[ -grep("tot",cogs)]  ) {
     if ( antspymm_vartype( voi ) == "T1" ) motname=""
     if ( antspymm_vartype( voi ) == "rsfMRI" )  {
       motname = paste( paste0( "rsfMRI_fcnxpro",num,"_n_outliers_BL"), " + ",
-        paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL"))
-      motname = paste0( "rsfMRI_fcnxpro",num,"_FD_mean_BL")
+        paste0( "rsfMRI_fcnxpro",num,"_FD_max_BL"))
+      motname = paste0( "rsfMRI_fcnxpro",num,"_FD_max_BL")
       maxy=2.5
       }
     if ( antspymm_vartype( voi ) == "DTI" )  {
-      motname = "DTI_dti_FD_mean_BL"
+      motname = "DTI_dti_FD_max_BL"
       maxy=3.0
     }
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motname," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
@@ -1577,14 +1563,13 @@ for ( x in 1:length(vois) ) {
 # voisx[3]=paste0(voisx[3],'.asym')
 cogv=paste0(cog,c("_BL","_delta"))
 raneffstr=''
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_mean_BL+ rsfMRI_fcnxpro122_FD_mean_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )  ")
-# bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + LEDD + age_BL + commonSex + ( yearsbl )  ")
+bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max_BL+ rsfMRI_fcnxpro122_FD_max_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )  ")
 uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
 mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
 temp2 = mydogp[ !is.na( mydogp[,vois[3]]) & !is.na( mydogp[,vois[2]]) & 
 #  mydogp$yearsbl <= maxy, ]
 #  mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
-  mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
+  mydogp$TDX != "CN" & mydogp$yearsbl <= 2.5, ]
 for ( x in 1:length(vois) ) {
   temp2[,voisx[x]]=temp2[,vois[x]]
 }
