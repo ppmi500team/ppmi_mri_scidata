@@ -1641,7 +1641,7 @@ g2=cvdf$model =='idp3'
 mvanvpu = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
 ttl=paste( sum( cvdf$model == 'clin',na.rm=T), 'cross-validation runs with a median of', mediann,'subjects in test data and',mediann2,'in train data.')
 print( gghistogram(cvdf[cvdf$model %in% c("clin","idp3"),], 
-  x = m, add = "mean", rug = TRUE,
+  x = m, add = "median", rug = TRUE,
   color = "model", fill = "model", palette='jco', title=ttl, xlab='correlation of real to predicted change' ) )
 ####################################################
 ####################################################
