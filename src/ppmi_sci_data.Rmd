@@ -53,7 +53,8 @@ link-citations: true
 
 ```{r samplesizes,echo=FALSE,eval=TRUE}
 redomerge=TRUE
-if ( ! exists("buildsci"))buildsci=FALSE
+buildsci=TRUE
+buildsci2=TRUE
 ```
 
 
@@ -81,11 +82,11 @@ if ( ! exists("clin2b") ) {
   rdir=path.expand('~/code/multidisorder/data/')
   rdir=path.expand('~/Downloads/ppmi_pym_data/')
   if ( ! exists("pymf") ) {
-    pymfns = data.frame( 
+    pymfns = data.frame(
       fns=c( 
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.7.csv'),
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.7.csv'),
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v1.2.7.csv')  ),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.8.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.8.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v1.2.8.csv')  ),
       rez=c("OR","SRF","SRP") )
     print(paste("ANTsPyMM Pipeline : ", myrez ) )
     pym = read.csv(  pymfns$fn[pymfns$rez == myrez ] )
@@ -223,7 +224,25 @@ if ( TRUE ) {
 
 ```{r nmratings,echo=FALSE,eval=FALSE}
 my500=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500/ppmi500/data/ppmi500_ids_date.csv")
-
+my500$iddate=NA
+for ( k in 1:nrow(my500)) {
+  my500$iddate[k]=paste0(my500$subjectID[k],"_",my500$date[k])
+}
+ppmi$iddate=NA
+for ( k in 1:nrow(ppmi)) {
+  ppmi$iddate[k]=paste0(ppmi$subjectID[k],"_",ppmi$date[k])
+}
+ppmi500=ppmi[ppmi$iddate %in% my500$iddate, ]
+ppmi500$NM_QC_Ratings_BA=NA
+lohi=c(0.3,0.7)
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_substantianigra_z_coordinate > lohi[1] &  ppmi500$NM2DMT_NM_substantianigra_z_coordinate < lohi[2] ) ]=1
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_substantianigra_z_coordinate <= lohi[1] | ppmi500$NM2DMT_NM_substantianigra_z_coordinate >= lohi[2] ) ]=0
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_volume_substantianigra < 500 ) ]=0
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_avg_substantianigra > 2500 ) ]=0
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_sd > 50 ) ]=0
+ppmi500$NM_QC_Ratings_BA[ subtyper::fs( ppmi500$NM2DMT_NM_max > 5500 ) ]=0
+table( ppmi500$NM_QC_Ratings_BA )
+table( ppmi500$NM_QC_Ratings_BA)/sum(table(ppmi500$NM_QC_Ratings_BA))
 ```
 
 ```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
@@ -1340,7 +1359,7 @@ mycap='Table 6. Longitudinal group effects in PPMI PD.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interactionplots show the best region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
+```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
