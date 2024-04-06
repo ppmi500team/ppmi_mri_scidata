@@ -221,11 +221,16 @@ if ( FALSE ) {
 ```
 
 
-```{r maketrim,echo=FALSE,eval=!exists("ppmitrim")}
+```{r ppmitrim,echo=FALSE,eval=!exists("ppmitrim")}
+ppmi = fillBaselineColumn( ppmi,
+        c(  'brainVolume', 'T1Hier_resnetGrade' ),
+        'commonID', 'yearsbl', 0, 
+        fast=T, verbose=F )[[1]]
 ppmi = antspymm_predictors( ppmi, TRUE )
-ppmitrim = ppmi[ ppmi$studyName == 'PPMI',]
-ntokeep = nrow(ppmitrim) - 50
-ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+ppmitrim = ppmi[ ppmi$studyName == 'PPMI' & !(ppmi$subjectID == "101021" ),]
+# ntokeep = nrow(ppmitrim)-round(0.01*nrow(ppmitrim))
+# ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+ppmitrim = ppmitrim[ ppmitrim$T1Hier_resnetGrade_BL >= 0.80 & ppmitrim$T1Hier_resnetGrade > 0.5, ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
 msnames = getNamesFromDataframe("pm_",ppmi,exclusions=c("BL","delta"))
 lrrk2names= getNamesFromDataframe("LRRK2_",ppmi,exclusions=c("BL","delta","LRRK2_MRIPROTOCOL"))
@@ -955,7 +960,7 @@ mylevsx0=c( "CNNegative", "PDSporadicPositive", "MCINegative", "ADNegative" )
 # mylevsx1=c( "CN", "ProdromalSporadic", "PDSporadic", "MCI", "AD" )
 # keep the "best" ntokeep examples
 # mydog = ppmi[ head( order(ppmi$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
-mydog = ppmi[ subtyper::fs(ppmi$T1Hier_resnetGrade > 1.0), ]
+mydog = ppmitrim # [ subtyper::fs(ppmi$T1Hier_resnetGrade > 1.0), ]
 mydog=highestQualityRepeat(mydog,'commonID','yearsbl','T1Hier_resnetGrade')
 # table( ppmi$DXSubAsyn[ ppmi$yearsbl==0]  )
 # table( mydog$DXSubAsyn[ mydog$yearsbl==0]  )
@@ -1552,7 +1557,8 @@ vois = c("T1Hier_vol_bn_str_pu_Asymdeep_cit168_BL",
   "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm" )
 vois = c("T1Hier_vol_bn_str_pu_Asymdeep_cit168_BL",
   "rsfMRI_fcnxpro122_SomMotA_2_ContC_BL",
-  "DTI_mean_md.superior_longitudinal_fasciculus.LRAVG.jhu_icbm_labels_1mm" )
+  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm_BL")
+#  "DTI_mean_md.superior_longitudinal_fasciculus.LRAVG.jhu_icbm_labels_1mm" )
 #  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm" )
   #  "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm" )
 voisx=vois
@@ -1563,13 +1569,14 @@ for ( x in 1:length(vois) ) {
 # voisx[3]=paste0(voisx[3],'.asym')
 cogv=paste0(cog,c("_BL","_delta"))
 raneffstr=''
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max_BL+ rsfMRI_fcnxpro122_FD_max_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )  ")
+bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max_BL+ rsfMRI_fcnxpro122_FD_max_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl ) + ( yearsbl )  ")
+bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs +  LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )   ")
 uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
 mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
 temp2 = mydogp[ !is.na( mydogp[,vois[3]]) & !is.na( mydogp[,vois[2]]) & 
 #  mydogp$yearsbl <= maxy, ]
-#  mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
-  mydogp$TDX != "CN" & mydogp$yearsbl <= 2.5, ]
+  mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
+#  mydogp$TDX != "CN" & mydogp$yearsbl <= 2.5, ]
 for ( x in 1:length(vois) ) {
   temp2[,voisx[x]]=temp2[,vois[x]]
 }
