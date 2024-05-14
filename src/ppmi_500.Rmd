@@ -97,14 +97,14 @@ if ( ! exists("clin2b") ) {
   studynames=c("ADNI", "NIFD4RTNI", "PPMI","UKBB","A4")
   dxnames= c("DX_bl", "DX", "DXSub", "DX", "DX" )
   sexnames=c("PTGENDER","SEX","SEX","sex_f31_0_0","PTGENDER")
-  agenames=c("AGE","Age_BL","age_BL","subjectAge_BL","PTAGE")
+  agenames=c("AGE","Age","age","subjectAge","PTAGE")
   edunames=c("PTEDUCAT","EDUCATION","EDUCYRS","age_completed_full_time_education_f845_0_0","PTEDUCAT")
   sidnames=c("PTID","LONI_ID","PATNO","eid","sid")
   viznames=c("Years.bl","deltaTime","yearsbl","Years.bl","Years.bl")
   adni$commonSex = adni$PTGENDER
   adni$commonEdu = adni$PTEDUCAT
   adni$commonID = adni$subjectID = adni$PTID
-  adni$age_BL = adni$age = adni$AGE
+  adni$age = adni$age = adni$AGE
   adni$yearsbl = adni$Years_bl
   adni$joinedDX = adni$DX_bl
   adni$joinedDX[ grep("MCI",adni$joinedDX)]="MCI"
@@ -200,7 +200,7 @@ ppmi$brainVolume = ppmi$T1Hier_vol_hemisphere_lefthemispheres + ppmi$T1Hier_vol_
 ppmi$brainVolume = ppmi$brainVolume / mean(ppmi$brainVolume)
 ppmi$imaging_protocol[ ppmi$studyName=='ADNI']=3
 ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
-ppmi[ ppmi$studyName=='ADNI', 'age_BL']=ppmi[ ppmi$studyName=='ADNI', 'AGE']
+ppmi[ ppmi$studyName=='ADNI', 'age']=ppmi[ ppmi$studyName=='ADNI', 'AGE']
 
 if ( FALSE ) {
   temp2=read.csv( './data/temp_or.csv')
@@ -236,12 +236,9 @@ ssimth=0.3
 psnrth=12.0
 mmspc=2.0
 evThresh=c(0.40,0.9)  # 0.3
-rgThresh=1.02
-if ( myrez != 'SRF' ) {
-  snrth=c( quantile(ppmi$snr,0.01,na.rm=T) ,Inf)
-} else {
-  snrth=c( quantile(ppmi$snr,0.01,na.rm=T),Inf)
-}
+rgThresh=0.2
+srth=0.0
+snrth=quantile(ppmi$snr,c(srth,1.0-srth),na.rm=T)
 zz=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500//ppmi500/data/ppmi500_ids_date.csv")
 zz$subjectIDdate=zz$subjectID
 for ( k in 1:nrow(zz)) zz$subjectIDdate[k]=paste0(zz$subjectID[k],"-",zz$date[k])
@@ -277,6 +274,8 @@ qcpairs <- ggpairs( qcdf, columns=c(qcnames,"snc"),
     continuous = wrap(my_bin,  high = "red")
   ) )
 print( qcpairs )
+gc()
+
 ```
 
 ```{r ggabllypost,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,message=FALSE,warning=FALSE}
@@ -295,7 +294,7 @@ t1namescita = gsub("LRAVG","Asym",t1namescit)
 t1namesnbma = gsub("LRAVG","Asym",t1namesnbm)
 t1namescrba = gsub("LRAVG","Asym",t1namescrb)
 t1vars = c(t1namesbst,t1namesctx,t1namescit,t1namesnbm,t1namescrb,t1namesctxa,t1namescita,t1namesnbma,t1namescrba)
-ppmitrim0 = ppmitrim[ , c("subjectID","age_BL",'commonSex', "hy_BL", "duration_yrs","LEDD","moca",updnames, msnames, 'joinedDX','AsynStatus', "DXSubAsyn", "educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', lrrk2names,  'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
+ppmitrim0 = ppmitrim[ , c("subjectID","age",'commonSex', "hy", "duration_yrs","LEDD","moca",updnames, msnames, 'joinedDX','AsynStatus', "DXSubAsyn", "educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', lrrk2names,  'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
 ```
 
 ```{r ggabllypost2,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,message=FALSE,warning=FALSE}
@@ -350,15 +349,13 @@ MRI data collection occurred between 2010 and an August 2023 cutoff date for the
 
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
-###
-toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
-toadd = c(  "age_BL", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup' )
-biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
+toadd = c(  "age", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup','T1Hier_resnetGrade', 'EVENT_ID', 'subjectID','DTI_dti_FD_max','rsfMRI_fcnxpro129_FD_max' )
 tblcols = unique( c( toadd, 'joinedDX'  ) )
-bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
-joinedem=ppmitrim[bsel,tblcols]
-#joinedem$hasDTI=!is.na(ppmitrim[bsel,'DTI_dti_FD_max'])
-#joinedem$hasfMRI=!is.na(ppmitrim[bsel,'rsfMRI_fcnxpro129_FD_max'])
+ppmitrimU=highestQualityRepeat( ppmitrim[,tblcols], 'subjectID', 'EVENT_ID', 'T1Hier_resnetGrade')
+joinedem = ppmitrimU[ , !( colnames(ppmitrimU) %in% 
+  c('subjectID', 'EVENT_ID','T1Hier_resnetGrade','DTI_dti_FD_max','rsfMRI_fcnxpro129_FD_max' ))]
+joinedem$hasDTI=!is.na(ppmitrimU[,'DTI_dti_FD_max'])
+joinedem$hasfMRI=!is.na(ppmitrimU[,'rsfMRI_fcnxpro129_FD_max'])
 names(joinedem)[1]=tblcols[1]='age'
 names(joinedem)[2]=tblcols[2]='Sex'
 wsaa=which(names(joinedem)=='AsynStatus' )
@@ -370,6 +367,10 @@ tblcols=gsub("DTI.","",tblcols)
 tblcols=gsub("rsfMRI.fcnxpro122.","rsfMRI.",tblcols)
 names(joinedem)=tblcols
 joinedem$race = as.character( joinedem$race )
+joinedem[ subtyper::fs(joinedem$race == '1'), 'race' ] = 'White'
+joinedem[ subtyper::fs(joinedem$race == '2'), 'race' ] = 'Black'
+joinedem[ subtyper::fs(joinedem$race == '3'), 'race' ] = 'Asian'
+joinedem[ subtyper::fs(joinedem$race == '4'), 'race' ] = 'Other'
 joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
 joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
 joinedem$joinedDX=as.character(joinedem$joinedDX)
@@ -551,350 +552,6 @@ We classify PD and control cases based on the available data using a standard ma
 
 -->
 
-```{r classified,echo=FALSE,eval=FALSE,fig.width=6,fig.height=9,message=FALSE,warning=FALSE,cache=FALSE}
-############################
-ppmi = antspymm_predictors(ppmi, TRUE )
-ppmi$age_BL = antsrimpute( ppmi$age_BL )
-ysel = ppmi$yearsbl >= 0 & !is.na( ppmi$T1Hier_thk_r_i_iicerebellum) & !is.na(ppmi$T1Hier_volLRAVGi_iicerebellum) & subtyper::fs( ppmi$T1Hier_resnetGrade > 1.01 )
-ysel = ppmi$yearsbl == 0 & !is.na( ppmi$T1Hier_thk_r_i_iicerebellum) & !is.na(ppmi$T1Hier_volLRAVGi_iicerebellum) & subtyper::fs( ppmi$T1Hier_resnetGrade > 1.01 )
-dtvec = ppmi$DTI_mean_fa.body_of_corpus_callosum.jhu_icbm_labels_1mm
-seldti = subtyper::fs( dtvec >= quantile(dtvec,0.005, na.rm=TRUE) )
-selfl = !is.na( ppmi$T2Flair_flair_wmh_prior )
-selfmri=!is.na(  ppmi$rsfMRI_fcnxpro122_VisPeri_2_SalVentAttnA) & 
-  !is.na(ppmi$rsfMRI_fcnxpro122_ContA_2_ContA) & 
-  subtyper::fs(ppmi$rsfMRI_fcnxpro122_FD_mean <= 0.5)
-ppmi$DXbasic = NA
-ppmi$DXbasic[ grep("CN",ppmi$joinedDX)]='CN'
-ppmi$DXbasic[ grep("Prodromal",ppmi$joinedDX)]='AR'
-ppmi$DXbasic[ grep("PD",ppmi$joinedDX)]='PD'
-ppmi$DXbasic[ grep("AD",ppmi$joinedDX)]='AD'
-ppmi$DXbasic[ grep("MCI",ppmi$joinedDX)]='MCI'
-cohortCCbl = ppmi[ ysel, ]
-# now match ADNI + ppmi 
-selcn = subtyper::fs( cohortCCbl$joinedDX=='CN' )
-tarsam = sum( subtyper::fs(cohortCCbl$studyName=='PPMI' & selcn ))
-mm = match_cohort_pair( 
-  cohortCCbl[ cohortCCbl$studyName=='ADNI' & selcn,],
-  cohortCCbl[ cohortCCbl$studyName=='PPMI'& selcn,], 
-  c('age_BL'), option='rand', restrict_df1=0.05, 
-  num_iterations=1000,
-  sample_size=tarsam,verbose=T)
-matcheddemog  = cohortCCbl$studyName=='PPMI' | rownames(cohortCCbl)  %in% mm
-cohortCCbl=cohortCCbl[ matcheddemog, ]
-t.test( cohortCCbl[ cohortCCbl$studyName=='PPMI','age_BL'],
-  cohortCCbl[ cohortCCbl$studyName=='ADNI','age_BL'] )
-t.test( cohortCCbl[ cohortCCbl$studyName=='PPMI' & cohortCCbl$joinedDX=='CN','age_BL'],
-  cohortCCbl[ cohortCCbl$studyName=='ADNI'& cohortCCbl$joinedDX=='CN','age_BL'] )
-# t.test( cohortCCbl[ cohortCCbl$studyName=='PPMI'&selcn,'age_BL'],
-#  cohortCCbl[ mm,'age_BL'] )
-
-dxv='joinedDX'
-dxs = c("CN","PDSporadic")
-dxv='AsynStatus'
-dxs = c("Negative","Positive")
-dxv='DXbasic'
-dxs = c("CN","PD")
-dxv='DXSubAsyn'
-dxs = c("PDSporadicNegative","PDSporadicPositive")
-dxs = c("ProdromalSporadicNegative","ProdromalSporadicPositive")
-dxs = c("CNNegative","PDSporadicPositive")
-############################
-cohortCCbl = cohortCCbl[ cohortCCbl[,dxv] %in% dxs , ]
-cohortCCbl$DXbio = 0
-cohortCCbl$DXbio[  cohortCCbl[,dxv] == dxs[2] ] = 1
-cohortCCbldt = cohortCCbldt[ cohortCCbldt[,dxv] %in% dxs , ]
-cohortCCbldt$DXbio = 0
-cohortCCbldt$DXbio[  cohortCCbldt[,dxv] == dxs[2] ] = 1
-cohortCCblrsf = cohortCCblrsf[ cohortCCblrsf[,dxv] %in% dxs , ]
-cohortCCblrsf$DXbio = 0
-cohortCCblrsf$DXbio[  cohortCCblrsf[,dxv] == dxs[2] ] = 1
-idps = antspymm_predictors(cohortCCbl, TRUE, TRUE )
-idps = idps[ -grep("rsfMRI_fcnxpro129",idps)]
-idps = idps[ -grep("rsfMRI_fcnxpro134",idps)]
-idps = idps[ -grep("unclass",idps)]
-idps = idps[ -grep("T1Hier_RandBasis",idps)]
-idps = idps[ -grep("die_hth",idps)]
-# idps = idps[ multigrep( c("Asym","LRAVG"), idps ) ]
-idpst1 = unique( c( 
-  idps[ multigrep( c("T1Hier","LRAVG","cerebellum","thk"),idps,intersect=TRUE)],
-  idps[ multigrep( c("T1Hier","LRAVG","dktcortex","thk"),idps,intersect=TRUE)],
-  idps[ multigrep( c("T1Hier","LRAVG","deep_cit168","vol"),idps,intersect=TRUE)],
-  idps[ multigrep( c("T1Hier","Asym","deep_cit168","vol"),idps,intersect=TRUE)],
-  idps[ multigrep( c("T1Hier","LRAVG","nbm","vol"),idps,intersect=TRUE)],
-#  idps[ multigrep( c("T1Hier","Asym","nbm","vol"),idps,intersect=TRUE)],
-  getNamesFromDataframe( c("vol","brainste"), ppmi, exclusions=c("lobe","issu","cleanup")) ) )
-idpsdt = unique( c( 
-    idps[ multigrep(c("DTI","mean_md","LRAVG"),idps,intersect=TRUE)],
-    idps[ multigrep(c("DTI","mean_fa","LRAVG"),idps,intersect=TRUE)] ) )
-xcl = antspymm_nuisance_names()
-idpsrsfmri = c(
-  getNamesFromDataframe( c("rsfMRI_fcnxpro122","_2_"), ppmi, exclusions=xcl ),
-  getNamesFromDataframe( c("rsfMRI_fcnxpro122","_falff"), ppmi, exclusions=xcl ) )
-print(table( cohortCCbl[,dxv]))
-idpnas = rep(0,length(idps))
-for ( k in 1:length( idps ) ) idpnas[k]=sum(is.na(cohortCCbl[,idps[k]]))
-idpvars = apply( cohortCCbl[,idps], MARGIN=2, FUN=var )
-names(idpvars)=idps
-cohortCCbl$imaging_protocol = as.numeric( cohortCCbl$imaging_protocol )
-if ( ! exists("nrep") ) nrep = 50
-# idpst1 = dcurvarsel( cohortCCbl, idpst1, 0.5 )
-# idpsdt = dcurvarsel( cohortCCbldt, idpsdt, 0.5 )
-# idpsrsfmri = dcurvarsel( cohortCCblrsf, idpsrsfmri, 0.5 )
-#########################
-mycx = mlr3classifiers()
-# mycx = mycx[ !( mycx %in% c("classif.gbm", "classif.ksvm", "classif.fnn",  "classif.kknn", "classif.rpart", "classif.xgboost", "classif.ranger") ) ]
-mycx = mycx[ !( mycx %in% c("classif.gbm",  "classif.fnn", "classif.rpart", "classif.ranger") ) ]
-mycx = c( mycx, "classif.featureless" )
-mybal = 'over'
-srate = 0.95
-dxtbl=table( cohortCCbl[,'DXbio'] )
-mysamp = floor(  max(dxtbl)/min(dxtbl)) 
-cohortCCbl$sex=0
-cohortCCbl$sex[cohortCCbl$commonSex=='Male']=1
-if ( FALSE ) {
-#  for ( z in c(idpst1,idpsdt,idpsrsfmri) ) {
-  for ( z in c(idpst1) ) {
-    loform = paste0( z , "~studyName" )
-    cohortCCbl = adjustByCovariates(cohortCCbl,loform )
-      # groupVariable='DXbasic',group='CN')
-  }
-  idpst1 = paste0(idpst1,"_adjusted")
-#  idpsdt = paste0(idpsdt,"_adjusted")
-#  idpsrsfmri = paste0(idpsrsfmri,"_adjusted")
-}
-#######
-cohortCCbl[,idpst1] = antsrimpute( cohortCCbl[,idpst1])
-cohortCCbl$study = 0
-cohortCCbl$study[ cohortCCbl$studyName == 'ADNI']=1
-mycvbs0 = mlr3classifiercv(
-       cohortCCbl[ cohortCCbl$DXbio == 0, ],
-       tcols = c("study", 'sex','age_BL', idpst1 ),
-       nrepeats = nrep,
-       partrate = srate,
-       dup_size = mysamp,
-       balancing = mybal,
-       mylearners = mycx,
-       subjectIDs = cohortCCbl$subjectID[ cohortCCbl$DXbio == 0],
-       verbose = FALSE
-     )
-aggbs0 = aggregate( bacc ~ mdl, mycvbs0, mean )
-aggbs0
-mycvbs = mlr3classifiercv(
-       cohortCCbl,
-       tcols = c("DXbio", 'sex','age_BL' ),
-       nrepeats = nrep,
-       partrate = srate,
-       dup_size = mysamp,
-       balancing = mybal,
-       mylearners = mycx,
-       subjectIDs = cohortCCbl$subjectID,
-       verbose = FALSE
-     )
-aggbs = aggregate( bacc ~ mdl, mycvbs, mean )
-cohortCCbl=cohortCCbl[cohortCCbl$studyName=='PPMI', ]
-mycvt1 = mlr3classifiercv(
-       cohortCCbl,
-       tcols = c("DXbio", 'sex', idpst1 ),
-       nrepeats = nrep,
-       partrate = srate,
-       dup_size = mysamp,
-       balancing = mybal,
-       mylearners = mycx,
-#       subjectIDs = cohortCCbl$subjectID,
-       verbose = FALSE
-     )
-aggt1 = aggregate( bacc ~ mdl, mycvt1, mean )
-aggt1
-myadj = c(idpst1 , idpsdt )
-cohortCCbldt[,myadj] = antsrimpute( cohortCCbldt[,myadj])
-mycvdt = mlr3classifiercv(
-       cohortCCbldt,
-       tcols = c("DXbio", 'sex','age_BL', myadj ),
-       nrepeats = nrep,
-       partrate = srate,
-       dup_size = mysamp,
-       balancing = mybal,
-       mylearners = mycx,
-       subjectIDs = cohortCCbldt$subjectID,
-       verbose = FALSE
-     )
-aggdt = aggregate( bacc ~ mdl, mycvdt, mean )
-myadj = c(idpst1,idpsdt,idpsrsfmri)
-cohortCCblrsf[,myadj] = antsrimpute( cohortCCblrsf[,myadj])
-mycvrs = mlr3classifiercv(
-       cohortCCblrsf,
-       tcols = c("DXbio",'sex','age_BL', myadj  ),
-       nrepeats = nrep,
-       partrate = srate,
-       dup_size = mysamp,
-       balancing = mybal,
-       mylearners = mycx,
-       subjectIDs = cohortCCblrsf$subjectID,
-       verbose = FALSE
-     )
-aggrs = aggregate( bacc ~ mdl, mycvrs, mean )
-print( aggbs )
-print( aggt1 )
-print( aggdt )
-print( aggrs )
-#########################
-dxs=gsub("Prodromal","AR",dxs)
-dxs=gsub("Positive","+",dxs)
-dxs=gsub("Negative","-",dxs)
-g1t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 alone:", dxs[1], "vs",  dxs[2])))
-g2t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none') + ggtitle(paste("Raw Acc. T1 alone:", dxs[1], "vs",  dxs[2])))
-# g1=( ggstatsplot::ggbetweenstats( mycv, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
-# g2=( ggstatsplot::ggbetweenstats( mycv, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
-
-bbase=( ggstatsplot::ggbetweenstats( mycvbs, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. Age + Sex:", dxs[1], "vs",  dxs[2])))
-t1=( ggstatsplot::ggbetweenstats( mycvt1, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 :", dxs[1], "vs",  dxs[2])))
-t1b=( ggstatsplot::ggbetweenstats( mycvt1, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 :", dxs[1], "vs",  dxs[2])))
-dt=( ggstatsplot::ggbetweenstats( mycvdt, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
-dtb=( ggstatsplot::ggbetweenstats( mycvdt, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI:", dxs[1], "vs",  dxs[2])))
-rs=( ggstatsplot::ggbetweenstats( mycvrs, mdl, acc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Raw Acc. T1 + DTI + rsf:", dxs[1], "vs",  dxs[2])))
-rsb=( ggstatsplot::ggbetweenstats( mycvrs, mdl, bacc, p.adjust.method = 'holm', pairwise.display ='none' ) + ggtitle(paste("Bal. Acc. T1 + DTI + rsf:", dxs[1], "vs",  dxs[2])))
-
-# mygg = grid.arrange( grobs=list(g1t1,g1,g2t1,g2), nrow=4, top=paste('DTI + T1 features outperform T1 features alone in discriminating SAA confirmed', dxs[1], "vs",  dxs[2]))
-mygg1 = grid.arrange( grobs=list(t1,dt,rs), nrow=3, top=paste('DTI + T1 features outperform T1 features alone in discriminating SAA confirmed', dxs[1], "vs",  dxs[2]))
-mygg2 = grid.arrange( grobs=list(t1b,dtb,rsb), nrow=3, top=paste('DTI + T1 features outperform T1 features alone in discriminating SAA confirmed', dxs[1], "vs",  dxs[2]))
-print( mygg1 )
-print( mygg2 )
-
-```
-
-
-```{r interpretit,echo=FALSE,eval=FALSE,fig.width=9,fig.height=5}
-library(ggpubr)
-library(randomForestSRC)
-datcol=c(idpst1, idpsdt, idpsrsfmri)
-datcol=c(idpst1 )
-datcols=shorten_pymm_names(datcol )
-myx=cohortCCbl
-colnames(myx)[  colnames(myx) %in% datcol ] = datcols
-myx=myx[,c("study",'age_BL','commonSex', 'imaging_protocol', datcols )]
-myx$commonSex=factor(myx$commonSex)
-
-rfobj <- rfsrc(study ~ ., data = myx,forest=TRUE)
-myvimp = vimp(rfobj)
-newimp = data.frame( feature=names(myvimp$importance), importance=as.numeric(myvimp$importance ))
-newimp = newimp[ order(newimp$importance,decreasing=T),]
-newimp$type=substr(newimp$feature,0,3)
-newimp$type=gsub("_","",newimp$type)
-print( ggbarplot( head(newimp,20), 'feature','importance', fill='type', palette='npg' ) + 
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+ggtitle(paste("Feature importance ",paste(dxs,collapse=' vs '))) ) 
-
-if ( FALSE  ) {
-  tsk = as_task_classif( x = cohortCCbl[ , c("DXbio", datcols )], target='DXbio',  id='pd' )
-  lrn_gbm = lrn("classif.imbalanced_rfsrc", predict_type = "prob")
-  split = partition(tsk)
-  lrn_gbm$train( tsk, row_ids = split$train )
-  predictor = Predictor$new(lrn_gbm, data = cohortCCbl[,datcols], y = cohortCCbl[,'DXbio'])
-  importance = FeatureImp$new(predictor, loss = "ce", n.repetitions = 10 )
-  importance$resultsfull = importance$results
-  importance$results = importance$results[1:25,] 
-  importance$plot()
-  # newimp = data.frame( importance$results[1:25,]  )
-  # print( ggbarplot( newimp, 'feature','importance',  palette='npg', ylim=c(1,1.2) ) + 
-  #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=0.5))+ggtitle(paste("Feature importance ",paste(dxs,collapse=' vs '))) + geom_errorbar(aes(ymin=importance.05, ymax=importance.95), width=.1,
-  #                    position=position_dodge(.5))  ) 
-}
-```
-
-
-```{r interpretit2,eval=FALSE,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE}
-library(ggpubr)
-library(randomForestSRC)
-datcol=c(idpst1, idpsdt, idpsrsfmri)
-datcol=c(idpst1 )
-datcols=shorten_pymm_names(datcol )
-datcols=gsub("_adjusted","",datcols)
-datcols=gsub("_adjuste","",datcols)
-datcols=gsub("_adjust","",datcols)
-datcols=gsub("_adjus","",datcols)
-datcols=gsub("_adju","",datcols)
-datcols=gsub("_adj","",datcols)
-datcols=gsub("_ad","",datcols)
-outcome='DXbio'
-outcome='study'
-myx=cohortCCbl
-myx$study=0
-myx$study[myx$studyName=='ADNI']=1
-colnames(myx)[  colnames(myx) %in% datcol ] = datcols
-opreds = c('age_BL','commonSex', datcol )
-myx=myx[,c(outcome,'age_BL','commonSex',  datcols )]
-myx$commonSex=factor(myx$commonSex)
-# rfobj <- rfsrc(DXbio ~ ., data = myxtr)
-# rfobj <- rfsrc.fast(DXbio ~ ., data = myxtr)
-mypartition = dataPartition( myx$age_BL, 0.8  )
-myx[,outcome] = factor( myx[,outcome])
-# myrf=rfsrc( DXbio ~ ., data=myx[mypartition$train,], importance=T, forest=TRUE  )
-myrf=imbalanced( study ~ ., data=myx[mypartition$train,], importance=T)#, ntree = 5000  )
-###### from getting started guide
-# oo <- subsample(myrf, verbose = FALSE)
-###### take a delete-d-jackknife procedure for example
-# vimpCI <- extract.subsample(oo)$var.jk.sel.Z
-###### Confidence Intervals for VIMP
-# plot.subsample(oo)
-# take the variable "Month" for example for partial plot
-# plot.variable(myrf, xvar.names = "Month", partial = TRUE)
-###########################################################
-vv = myrf$importance[,1]
-nms=names(vv)
-myimp = data.frame( 
-    nms=names(vv),
-    imp=vv)
-myimp$type = 'cit'
-myimp$type[1:2]='demog'
-myimp$type[ grep("deep",opreds)]='deep'
-myimp$type[ grep("brainstem",opreds)]='brainstem'
-myimp$type[ grep("bf",opreds)]='nbm'
-myimp$type[ grep("cerebell",opreds)]='cerebellum'
-myimp$type[ grep("cortex",opreds)]='cortex'
-myimp$type[ grep("mtl",opreds)]='mtl'
-rownames(myimp)=NULL
-library(ggpubr)
-myimp = myimp[ order( myimp$imp, decreasing=TRUE),]
-ggbarplot(head(myimp,14), x = "nms", y = "imp",
-          fill = "type",               # change fill color by cyl
-          color = "white",            # Set bar border colors to white
-          palette = "jco",            # jco journal color palett. see ?ggpar
-          sort.val = "desc",          # Sort the value in dscending order
-          sort.by.groups = FALSE,     # Don't sort inside each group
-          x.text.angle = 90           # Rotate vertically x axis texts
-          )
-get.imbalanced.performance( myrf, confusion=T )
-##################################
-qq = predict( myrf, newdata=myx[mypartition$test,], type='probabilities' )
-##################################
-```
-
-```{r interpretit2auc,eval=FALSE,echo=FALSE,fig.width=10,fig.height=6,message=FALSE,warning=FALSE,results='asis'}
-## ggplot it
-library(pROC)
-# Create the ROC object
-predictions = as.numeric(qq$class)
-predictions = qq$predicted[,2]
-roc_obj <- roc(myx[mypartition$test,'DXbio'], predictions )
-
-# Plot the ROC curve with smoothing
-plot(roc_obj, print.auc=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE, smooth=TRUE)
-# plot(roc_obj, main="Smoothed ROC Curve", col="#1c61b6", print.auc=TRUE)
-lines(smooth(roc_obj), col="#ff0000")  # Add smoothed ROC curve
-
-if ( FALSE ) {
-  library(evalmod)
-  library(ggplot2)
-  library(precrec)
-  sscurves <- evalmod(scores = predictions, 
-      labels = myx[mypartition$test,'DXbio'], x_bins=10000 )
-  aucs <- auc(sscurves)
-  autoplot( sscurves, show_cb = F )
-  # Use knitr::kable to display the result in a table format
-  knitr::kable(aucs,"latex", booktabs = TRUE) %>%
-    kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
-}
-```
-
 
 ```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
 set.seed( 0 )
@@ -988,13 +645,14 @@ if ( ! exists( "is_test" ) ) is_test = FALSE
 ######################################################################
 num=c(122,129,134)[1] # resting state protocol numbers ###############
 ######################################################################
-dxform=" commonEdu +  age_BL + commonSex + brainVolume_BL "
+dxform=" commonEdu +  age + commonSex + brainVolume "
 raneffstr = " " 
-dxform=paste( raneffstr, " + noise + ssim + T1Hier_evratio + age_BL + commonSex " )
-dxform=paste( raneffstr, " + age_BL + commonSex " )
-mydog = ppmitrim[ subtyper::fs(ppmitrim$T1Hier_resnetGrade > 0.2), ]
+dxform=paste( raneffstr, " + noise + ssim + T1Hier_evratio + age + commonSex " )
+dxform=paste( raneffstr, " + age + commonSex " )
+ppmitrim$EVENT_ID = antsrimpute( ppmitrim$EVENT_ID, FUN=median)
+mydog = ppmitrim[ subtyper::fs(ppmitrim$T1Hier_resnetGrade > rgThresh), ]
 dim(mydog)
-mydog=highestQualityRepeat(mydog,'commonID','yearsbl','T1Hier_resnetGrade')
+mydog=highestQualityRepeat(mydog,'commonID','EVENT_ID','T1Hier_resnetGrade')
 dim(mydog)
 mydog = normalizersfmri( mydog )
 mydog$joinedDX <- fct_relevel(mydog$joinedDX, "CN")
@@ -1013,6 +671,15 @@ mydog$TDX[ subtyper::fs(mydog$DXSubAsyn  == 'PDSporadicNegative') ]='PDSp-'
 mydog$TDX[ subtyper::fs(mydog$DXSubAsyn  == 'ProdromalSporadicPositive') ]='ProSp+'
 mydog$TDX[ subtyper::fs(mydog$DXSubAsyn  == 'ProdromalSporadicNegative') ]='ProSp-'
 mydog$TDX <- fct_relevel(mydog$TDX, "CN-")
+
+###############################################
+# mydog$TDX = NA
+# mydog$TDX[ subtyper::fs(mydog$joinedDX == 'CN' ) ]='CN'
+# mydog$TDX[ subtyper::fs(mydog$joinedDX  == 'PDLRRK2') ]='PDLRRK2'
+# mydog$TDX[ subtyper::fs(mydog$joinedDX  == 'ProdromalSporadicPosMSA') ]=NA 
+# mydog$TDX[ subtyper::fs(mydog$joinedDX  == 'PDSporadic') ]='PDSp'
+# mydog$TDX[ subtyper::fs(mydog$joinedDX  == 'ProdromalSporadic') ]='ProSp'
+# mydog$TDX <- fct_relevel(mydog$TDX, "CN")
 mydog = antspymm_predictors(mydog, TRUE )
 idps = antspymm_predictors(mydog, TRUE, TRUE )
 subjectcount = table( mydog$commonID )
@@ -1041,12 +708,6 @@ dtinamesasymlr = c(
   getNamesFromDataframe( c("DTI","LRAVG"), mydog ),
   getNamesFromDataframe( c("DTI","Asym"), mydog ) )
 idpst1 = c( getNamesFromDataframe(c("T1Hier","cit168","vol"),mydog, exclusions=c("left","right")), getNamesFromDataframe(c("T1Hier","dktcortex","thk"),mydog, exclusions=c("left","right")) )
-######################################
-# print( table( mydog[,dxvar]))
-mydog = fillBaselineColumn( mydog,
-        c( 'hy', 'brainVolume' ),
-        'commonID', 'yearsbl', 0, 
-        fast=T, verbose=F )[[1]]
 ######################################
 motname = paste( "1 + ",
 #      paste0( "rsfMRI_fcnxpro",num,"_minutes_censored_data"), " + ",
@@ -1204,7 +865,7 @@ print(myregionszRSFz, type = "latex",size=4,caption=rsfcap,sidewaystable=FALSE,z
 
 ```{r quicklmdx,echo=FALSE,eval=buildsci,fig.width=9,fig.height=12,warning=FALSE,message=FALSE,results='asis',fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ###################
-mydogU=mydog[ !is.na(mydog$TDX) & mydog$T1Hier_resnetGrade > 1.02, ]
+mydogU=mydog[ !is.na(mydog$TDX) & mydog$T1Hier_resnetGrade > rgThresh, ]
 dxglist=list()
 dxdfT1=data.frame()
 idpsU=idps[ -multigrep( c("alff","peraf"), idps ) ]
@@ -1212,15 +873,15 @@ idpsU=idpsU[ -multigrep( c("fcnxpro134","fcnxpro129"), idpsU ) ]
 idpsU=idpsU[ multigrep( c("_2_","LRAVG","Asym"), idpsU ) ]
 for ( voi in nmstotest ) {
   n=nrow(dxdfT1)+1
-  vois = paste0( voi, c("_BL", "_delta" ) )
+  vois = paste0( voi, c("", "_delta" ) )
   bform = paste( voi, " ~ LRRK2_MRIPROTOCOL+DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+DTI_dti_ssnr_dwi_mean+", dxform )
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ spc0 +spc1+", dxform )
   othdxform=dxform
   if ( antspymm_vartype(voi) == "rsfMRI" ) othdxform=paste0(motname,"+",dxform)
   if ( antspymm_vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
-  bform = paste( voi, " ~ brainVolume_BL+duration_yrs+ T1Hier_resnetGrade+", othdxform )
-#  bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+LEDD+", othdxform )
-  bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+", othdxform )
+  bform = paste( voi, " ~ brainVolume+duration_yrs+ T1Hier_resnetGrade+", othdxform )
+#  bform = paste( voi, " ~ brainVolume+commonEdu+duration_yrs+LEDD+", othdxform )
+  bform = paste( voi, " ~ brainVolume+commonEdu+duration_yrs+", othdxform )
   temp2 = mydogU[ !is.na( mydogU[,voi]) &  mydogU$studyName %in% c('PPMI','ADNI'), ]
   mylen = length( table( temp2$studyName ) )
   if ( mylen == 1 ) {
@@ -1340,16 +1001,13 @@ print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```{r quicklmcog,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
-cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta") )
+cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c("_delta","_BL",'totscore','updrs4') )
 col2sbl = unique(c( idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
-mydogp = fillBaselineColumn( mydogU,
-        col2sbl,
-        'subjectID', 'yearsbl', 0, 
-        fast=T, verbose=F )[[1]]
-mydogp$hy_BL = factor( mydogp$hy_BL )
+mydogp = mydogU
+mydogp$hy = factor( mydogp$hy )
 stadfrsf=data.frame()
 cogglist=list()
-for ( cog in  cogs[ -grep("tot",cogs)]  ) {
+for ( cog in  cogs   ) {
   for ( voi in nmstotest ) {
     n = nrow(stadfrsf)+1
     maxy=5.0
@@ -1362,9 +1020,9 @@ for ( cog in  cogs[ -grep("tot",cogs)]  ) {
       motnameu = motnamedt
       maxy=3.0
     }
-    cogformcommon=paste( cog, "  ~  ",motnameu,"+ duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + TDX " )
-    cogformcommon=paste( cog, "  ~  ",motnameu,"+ age_BL + commonSex + TDX " )
-    temp2 = mydogp[ !is.na( mydogp[,voi]) & !( mydogp$TDX %in% c("CN-","CN+","ProSp-", "ProSp+" ) ), ]
+    cogformcommon=paste( cog, "  ~  ",motnameu,"+ duration_yrs + LEDD + commonEdu + age + commonSex + brainVolume + TDX " )
+    cogformcommon=paste( cog, "  ~  ",motnameu,"+ age + commonSex + TDX " )
+    temp2 = mydogp[ !is.na( mydogp[,voi]) & !( mydogp$TDX %in% c("CN-","CN+","PDSp-", "PDSp+" ) ), ]
     voix = shorten_pymm_names( voi )
     voix = gsub("_fcnxpro129", "",voix)
     voix = gsub("_fcnxpro122", "",voix)
@@ -1535,14 +1193,14 @@ library(xpectr)
 cog='updrs1_score'
 maxy=3000.0
 vois = c(
-  "T1Hier_vol_LRAVG_inferior_parietaldktcortex_BL",
-  "rsfMRI_fcnxpro122_SomMotB_2_ContA_BL",
-  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm_BL")
+  "T1Hier_vol_LRAVG_inferior_parietaldktcortex",
+  "rsfMRI_fcnxpro122_SomMotB_2_ContA",
+  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm")
 vois = c(
-#  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm_BL",
-  "T1Hier_vol_LRAVG_inferior_parietaldktcortex_BL",
- # "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm_BL"
-  "T1Hier_vol_LRAVG_superior_parietaldktcortex_BL"
+#  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm",
+  "T1Hier_vol_LRAVG_inferior_parietaldktcortex",
+ # "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm"
+  "T1Hier_vol_LRAVG_superior_parietaldktcortex"
   )
 voisx=vois
 for ( x in 1:length(vois) ) {
@@ -1550,10 +1208,10 @@ for ( x in 1:length(vois) ) {
 }
 # voisx[2]=paste0(voisx[2],'.avg')
 # voisx[3]=paste0(voisx[3],'.asym')
-cogv=paste0(cog,c("_BL","_delta"))
+cogv=paste0(cog,c("","_delta"))
 raneffstr=''
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max_BL+ DTI_dti_FD_mean_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl ) + ( yearsbl )  ")
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl ) + ( yearsbl )  ")
+bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max+ DTI_dti_FD_mean  + LEDD + commonEdu + age + commonSex + brainVolume + ( yearsbl ) + ( yearsbl )  ")
+bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + LEDD + commonEdu + age + commonSex + brainVolume + ( yearsbl ) + ( yearsbl )  ")
 uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
 mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
 temp2 = mydogp[  !is.na( mydogp[,vois[2]]) & 
@@ -1623,7 +1281,8 @@ print( gghistogram(cvdf[cvdf$model %in% c("clin","idp3"),],
   x = m, add = "median", rug = TRUE,
   color = "model", fill = "model", palette='jco', title=ttl, xlab='correlation of real to predicted change' ) )
 
-  
+gc()
+
 ```
 
 
@@ -1631,6 +1290,22 @@ print( gghistogram(cvdf[cvdf$model %in% c("clin","idp3"),],
 
 ```{r ppmi500,eval=FALSE,echo=FALSE}
 zz=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500//ppmi500/data/ppmi500_ids_date.csv")
+dt=read.csv( paste0( rdir, 'dti_with_b.csv' ) )
+dt$fn=gsub("vizx_2024/viz_PPMI-","",dt$fn)
+dt$fn=gsub(".csv","",dt$fn)
+dt$subjectID=NA
+for ( x in 1:nrow(dt)) dt$subjectID[x]=unlist(strsplit(dt$fn[x],'-'))[1]
+dt500 = dt[ dt$subjectID %in% zz$subjectID, ]
+length(unique(dt500$subjectID))
+dt500g = dt[ dt$subjectID %in% zz$subjectID & dt$bvecnormround > 0.5 & dt$bvalmax > 1, ]
+length(unique(dt500g$subjectID))
+goodrawdt=unique( mm500$subjectID[mm500$hasdti] )
+goodprodt=unique( ppmitrim$subjectID[  !is.na(ppmitrim$DTI_dti_FD_mean)] )
+missingdt=goodrawdt[ !(goodrawdt %in% goodprodt) ]
+mm500 = mm[ mm$subjectID %in% zz$subjectID, ]
+mm=read.csv( paste0( rdir, 'matched_mm_data5.csv' ) )
+mm500 = mm[ mm$subjectID %in% zz$subjectID, ]
+mm500$hasdti = mm500$dtid1 != ""
 nna=!is.na( ppmi$rsfMRI_fcnxpro122_FD_mean )
 table( zz$subjectID %in% ppmi$subjectID[nna] )
 nna=!is.na( ppmi$DTI_dti_FD_mean )

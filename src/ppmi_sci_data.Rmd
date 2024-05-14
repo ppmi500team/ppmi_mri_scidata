@@ -84,11 +84,12 @@ if ( ! exists("clin2b") ) {
   rdir=path.expand('~/code/multidisorder/data/')
   rdir=path.expand('~/Downloads/ppmi_pym_data/')
   if ( ! exists("pymf") ) {
+    v='1.3.4'
     pymfns = data.frame(
       fns=c( 
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v1.2.8.csv'),
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.2.8.csv'),
-        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v1.2.8.csv')  ),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v',v,'.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v',v,'.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v',v,'.csv')  ),
       rez=c("OR","SRF","SRP") )
     print(paste("ANTsPyMM Pipeline : ", myrez ) )
     pym = read.csv(  pymfns$fn[pymfns$rez == myrez ] )
@@ -99,7 +100,7 @@ if ( ! exists("clin2b") ) {
     rm(pym)
     }
   if ( ! exists("adni") ) 
-    adni = read.csv( path.expand("~/code/multidisorder/data/adni_gwas/ADNIMERGE_10Feb2024_antspymm_v1.2.7.csv") )
+    adni = read.csv( path.expand( paste0(rdir, "ADNIMERGE_10Feb2024_antspymm_v",v,".csv" ) ) )
   studynames=c("ADNI", "NIFD4RTNI", "PPMI","UKBB","A4")
   dxnames= c("DX_bl", "DX", "DXSub", "DX", "DX" )
   sexnames=c("PTGENDER","SEX","SEX","sex_f31_0_0","PTGENDER")
@@ -225,7 +226,7 @@ if ( FALSE ) {
 ```
 
 
-```{r ppmitrim,echo=FALSE,eval=!exists("ppmitrim"),fig.width=16,fig.height=10}
+```{r ppmitrim,echo=FALSE,eval=!exists("ppmitrim"),fig.width=16,fig.height=10,message=FALSE,warning=FALSE}
 library(GGally)
 ppmi = fillBaselineColumn( ppmi,
         c(  'brainVolume', 'T1Hier_resnetGrade' ),
@@ -234,29 +235,35 @@ ppmi = fillBaselineColumn( ppmi,
 ppmi = antspymm_predictors( ppmi, TRUE )
 ppmi$maxtominspc = apply(  ppmi[,c("spc0","spc1","spc2")], FUN=max, MARGIN=1 )/
   apply(  ppmi[,c("spc0","spc1","spc2")], FUN=min, MARGIN=1 )
-
-
+#############
 mith=-0.5
 ssimth=0.3
 psnrth=12.0
 mmspc=2.0
-evThresh=c(0.40,0.9)  # 0.3
-rgThresh=1.02
-if ( myrez != 'SRF' ) {
-  snrth=c(5,30)
-  snrth=c( quantile(ppmi$snr,0.01,na.rm=T) ,Inf)
+evThresh=c(0.45,0.9)  # 0.3
+rgThresh=0.2
+rgT1 = c( 0.8, 1.02 )[2]
+qvary = c(0.001,0.999)
+if ( myrez == 'SRF' ) {
+  snrth=c( quantile(ppmi$snr,qvary,na.rm=T) )
 } else {
-  snrth=c( quantile(ppmi$snr,0.01,na.rm=T),Inf)
+  snrth=c( quantile(ppmi$snr,qvary,na.rm=T) )
 }
-asel = subtyper::fs( ppmi$studyName == 'ADNI' & ppmi$T1Hier_resnetGrade_BL >= rgThresh & ppmi$T1Hier_resnetGrade >= 0.8 )
-psel = subtyper::fs( ppmi$studyName %in% c('PPMI') & !(ppmi$subjectID == "101021" ) & 
+asel = subtyper::fs( ppmi$studyName == 'ADNI' & 
+  ppmi$T1Hier_resnetGrade_BL >= rgThresh & ppmi$T1Hier_resnetGrade >= rgThresh )
+studies = c('PPMI','ADNI')
+# studies = c('PPMI')
+psel = subtyper::fs( 
+    ppmi$studyName %in% studies & !(ppmi$subjectID == "101021" ) & 
     ppmi$SITE != 76 &
     ( ppmi$snr >= snrth[1] & ppmi$snr <= snrth[2] ) &
-    ppmi$maxtominspc <= mmspc & ppmi$T1Hier_resnetGrade_BL >= rgThresh &
-    ppmi$T1Hier_resnetGrade >= 0.8 &
-    ppmi$mi < mith & ppmi$ssim > ssimth & ppmi$psnr > psnrth &
-    ppmi$EVR >= evThresh[1] &  ppmi$EVR <= evThresh[2] )
-ppmitrim = ppmi[ psel | asel, ]
+    ppmi$maxtominspc <= mmspc & 
+    ppmi$T1Hier_resnetGrade_BL >= rgThresh &
+    ppmi$T1Hier_resnetGrade >= rgThresh &
+#    ppmi$mi < mith & ppmi$ssim > ssimth & ppmi$psnr > psnrth &
+    ppmi$EVR >= evThresh[1] &  ppmi$EVR <= evThresh[2]
+)
+ppmitrim = ppmi[ psel , ]
 table( ppmitrim$studyName )
 
 qcnames=c( "T1Hier_resnetGrade", "noise", "snr", "EVR", "psnr", "ssim", "mi", "msk_vol", "reflection_err", "mriPixelBandwidth", "mriSAR", "maxtominspc",'updrs_totscore' )
@@ -281,6 +288,8 @@ qcpairs <- ggpairs( qcdf, columns=c(qcnames,"snc"),
     continuous = wrap(my_bin,  high = "red")
   ) )
 print( qcpairs )
+gc()
+
 # ntokeep = nrow(ppmitrim)-round(0.01*nrow(ppmitrim))
 # ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
 updnames = getNamesFromDataframe("upd",ppmi,exclusions=c("BL","delta"))
@@ -392,6 +401,10 @@ tblcols=gsub("DTI.","",tblcols)
 tblcols=gsub("rsfMRI.fcnxpro122.","rsfMRI.",tblcols)
 names(joinedem)=tblcols
 joinedem$race = as.character( joinedem$race )
+joinedem[ subtyper::fs(joinedem$race == '1'), 'race' ] = 'White'
+joinedem[ subtyper::fs(joinedem$race == '2'), 'race' ] = 'Black'
+joinedem[ subtyper::fs(joinedem$race == '3'), 'race' ] = 'Asian'
+joinedem[ subtyper::fs(joinedem$race == '4'), 'race' ] = 'Other'
 joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
 joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
 joinedem$joinedDX=as.character(joinedem$joinedDX)
@@ -1016,7 +1029,7 @@ raneffstr = " (1|commonID) "
 raneffstr = " (1|commonID) + (1|SITE) " 
 raneffstr = " (1|commonID) + (1|imaging_protocol)" 
 dxform=paste( raneffstr, " + noise + ssim + T1Hier_evratio + age_BL + commonSex " )
-dxform=paste( raneffstr, " + age_BL + commonSex " )
+dxform=paste( raneffstr, " + T1Hier_resnetGrade + age_BL + commonSex " )
 # dxform="  (1|commonID) + (1|SITE) + age_BL + commonSex "
 dxform = paste( dxform, "  + yearsbl ")
 # dxform = paste( dxform, " + DTI_dti_FD_max + yearsbl ")
@@ -1286,12 +1299,23 @@ for ( voi in nmstotest ) {
   bform = paste( voi, " ~ LRRK2_MRIPROTOCOL+DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+DTI_dti_ssnr_dwi_mean+", dxform )
   bform = paste( voi, " ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+ spc0 +spc1+", dxform )
   othdxform=dxform
-  if ( antspymm_vartype(voi) == "rsfMRI" ) othdxform=paste0(motname,"+",dxform)
-  if ( antspymm_vartype(voi) == "DTI" ) othdxform=paste0(motnamedt,"+",dxform)
+  selector=!is.na( mydogU[,voi]) 
+  if ( antspymm_vartype(voi) == "T1" ) {
+    selector = selector & subtyper::fs( mydogU$T1Hier_resnetGrade >= rgT1 )
+  }
+  if ( antspymm_vartype(voi) == "rsfMRI" ) {
+    othdxform=paste0(motname,"+",dxform)
+    selector = selector & subtyper::fs( mydogU$rsf1_ol_loop  <= 0.5 &
+      mydogU$rsfMRI_fcnxpro122_FD_mean <= 0.5 )
+  }
+  if ( antspymm_vartype(voi) == "DTI" ) {
+    othdxform=paste0(motnamedt,"+",dxform)
+    selector = selector & subtyper::fs( mydogU$DTI1_ol_loop  <= 0.5 &
+      mydogU$DTI_dti_FD_mean <= 5 )
+  }
   bform = paste( voi, " ~ brainVolume_BL+duration_yrs+ T1Hier_resnetGrade+", othdxform )
-#  bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+LEDD+", othdxform )
   bform = paste( voi, " ~ brainVolume_BL+commonEdu+duration_yrs+", othdxform )
-  temp2 = mydogU[ !is.na( mydogU[,voi]) &  mydogU$studyName %in% c('PPMI','ADNI'), ]
+  temp2 = mydogU[ selector, ]
   mylen = length( table( temp2$studyName ) )
   if ( mylen == 1 ) {
     bform=gsub("studyName","1",bform,fixed=TRUE)
@@ -1459,20 +1483,29 @@ for ( cog in  cogs[ -grep("tot",cogs)]  ) {
     n = nrow(stadfrsf)+1
     voi = paste0(voi,"_BL")
     maxy=5.0
-    if ( antspymm_vartype( voi ) == "T1" ) motnameu=""
+    selector = rep( TRUE, nrow( mydogp ) )
+    if ( antspymm_vartype( voi ) == "T1" ) {
+      motnameu=""
+      selector = selector & subtyper::fs( mydogU$T1Hier_resnetGrade >= rgT1 )
+    }
     if ( antspymm_vartype( voi ) == "rsfMRI" )  {
       motnameu = motname
-      maxy=2.5
+      # maxy=2.5
+      selector = selector & subtyper::fs( mydogp$rsf1_ol_loop  <= 0.5 &
+        mydogp$rsfMRI_fcnxpro122_FD_mean <= 0.5 )
       }
     if ( antspymm_vartype( voi ) == "DTI" )  {
       motnameu = motnamedt
-      maxy=3.0
+      # maxy=3.0
+      selector = selector & subtyper::fs( mydogp$DTI1_ol_loop  <= 0.5 &
+        mydogp$DTI_dti_FD_mean <= 5 )
     }
+    selector = selector & !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy
     cogformcommon=paste( cog, "  ~ (1|PATNO) + ",motnameu," + AsynStatus + joinedDX  + duration_yrs + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+ (1|PATNO) + brainVolume_BL + ", motnameu, " + age_BL + commonSex + AsynStatus + yearsbl" )
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+", raneffstr, "+ duration_yrs + ",motnameu," + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )*TDX + ( yearsbl )" )
 #    cogformcommon=paste( cog  , "~  (1|PATNO) + commonSex + brainVolume_BL + ( yearsbl )")
-    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
+    temp2 = mydogp[ selector, ]
 #    temp2 = mydogp[ !is.na( mydogp[,voi]) & mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy, ]
     temp2[,voi]=psych::winsor( temp2[,voi], 0.005)
     temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.005)
@@ -1581,7 +1614,7 @@ sigth=0.05
   stadfrsf[psel2,'sig']='fdr'
   stadfrsf[psel,'sig']='fwe'
   if ( sum(psel ) > 0 )
-    temp=stadfrsf[psel,]
+    temp=stadfrsf[psel | psel2,]
     qdfsig=temp
 #    qdf = rbind( qdf, temp )
   }
@@ -1589,7 +1622,7 @@ qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
 qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
 qdfcols =  c("cog", "voi" , "anv" ,'sig',othercolsnm)
-qdfcols =  c("cog", "voi" , 'n.base', "anv", othercolsnm)
+qdfcols =  c("cog", "voi" , 'n.base', "anv", 'sig', othercolsnm)
 qdfsig = qdfsig[,qdfcols]
 qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
 qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
@@ -1633,7 +1666,7 @@ Here, we dissect the influence of M3RI neuroimaging biomarkers on the progressio
 
 
 ```{r multiview,echo=FALSE,eval=buildsci2,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view regression for predicting change in UPDRS1 scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
-# this is so-so-so silly-ish-ing
+# this is so-so silly-ish
 library(groupdata2)
 library(xpectr)
 cog='updrs_totscore'
