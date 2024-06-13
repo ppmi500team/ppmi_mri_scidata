@@ -424,28 +424,7 @@ dxsel = ppmitrim$joinedDX %in% c("CN")
 agsel = ppmitrim$age_BL >= 50 & ppmitrim$age_BL <= 70
 ppmitrim$isTrain[ dxsel & agsel ]=TRUE
 table(ppmitrim$isTrain, ppmitrim$studyName )
-oldsimnames = getNamesFromDataframe("PC",ppmitrim,exclusions='rsfMRI')
-if ( length(oldsimnames) > 0 ) {
-  ppmitrim=ppmitrim[,!(colnames(ppmitrim) %in% oldsimnames)]
-}
-mysim = antspymm_simlr( ppmitrim, ppmitrim$yearsbl==0, 
-    energy='cca', nsimlr=8, covariates=NULL, myseed=808, doAsym=2, 
-    returnidps=FALSE,
-    exclusions=c("_delta","_BL",'_adjusted', '122','134' ), 
-    # sparseness=0.95,
-    # inclusions=',
-    verbose=TRUE)
 
-# test these things against cog
-voist1 = c( 
-    getNamesFromDataframe(  "t1PC", mysim$demog ),
-    getNamesFromDataframe(  "t1aPC", mysim$demog ) )
-voisrs = getNamesFromDataframe(  "rsPC", mysim$demog )
-voisdt = c( 
-    getNamesFromDataframe(  "dtPC", mysim$demog ),
-    getNamesFromDataframe(  "dtaPC", mysim$demog ) )
-nmstotest2 = c( voist1, voisdt, voisrs )
-ppmitrim = mysim$demog
 
 ct=0
 for ( x in nmstotest2 ) {
@@ -458,6 +437,28 @@ for ( x in nmstotest2 ) {
     ppmitrim=adjustByCovariates( ppmitrim, myform, 'isTrain', TRUE, TRUE )
 }
 nmstotest2=paste0(nmstotest2,'_adjusted' )
+
+oldsimnames = getNamesFromDataframe("PC",ppmitrim,exclusions='rsfMRI')
+if ( length(oldsimnames) > 0 ) {
+  ppmitrim=ppmitrim[,!(colnames(ppmitrim) %in% oldsimnames)]
+}
+mysim = antspymm_simlr( ppmitrim, ppmitrim$yearsbl==0, 
+    energy='reg', nsimlr=20, covariates='1', myseed=808, doAsym=2, 
+    returnidps=FALSE,
+    exclusions=c("_delta","_BL", '122', '134' ), 
+    # sparseness=0.95,
+    inclusions='_adjusted',
+    verbose=TRUE)
+# test these things against cog
+voist1 = c(
+    getNamesFromDataframe(  "t1PC", mysim$demog ),
+    getNamesFromDataframe(  "t1aPC", mysim$demog ) )
+voisrs = getNamesFromDataframe(  "rsPC", mysim$demog )
+voisdt = c(
+    getNamesFromDataframe(  "dtPC", mysim$demog ),
+    getNamesFromDataframe(  "dtaPC", mysim$demog ) )
+simnames = c( voist1, voisdt, voisrs )
+ppmitrim = mysim$demog
 
 # rm(mysim)
 gc()
@@ -1650,36 +1651,36 @@ psel = subtyper::fs(
 if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
 dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
-dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$minpSS ), ]
-dxdfT1sel$minpSS = insight::format_p(  dxdfT1sel$minpSS, digits=4  )
-dxdfT1sel$minpMX = insight::format_p(  dxdfT1sel$minpMX, digits=4  )
-temp = colnames(dxdfT1sel)
-temp = gsub("PD","",temp)
-colnames(dxdfT1sel)=temp
-dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw"))]
+dxdfT1selY = dxdfT1sel[ order( apply( dxdfT1sel[,c("p.yearsbl.PDSp-","p.yearsbl.PDSp+")], FUN=min, MARGIN=1)), ]
+dxdfT1selB = dxdfT1sel[ order( apply( dxdfT1sel[,c("p.PDSp-","p.PDSp+")], FUN=min, MARGIN=1)), ]
+# dxdfT1sel$minpSS = insight::format_p(  dxdfT1sel$minpSS, digits=4  )
+# dxdfT1sel$minpMX = insight::format_p(  dxdfT1sel$minpMX, digits=4  )
+dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS"))]
 
 dxdfT1selcolsB = dxdfT1selcols[ -grep("d.year",dxdfT1selcols,fixed=TRUE ) ]
 dxdfT1selcolsB = dxdfT1selcolsB[ -grep("p.",(dxdfT1selcolsB),fixed=TRUE ) ]
 dxdfT1selcolsY = c( dxdfT1selcols[c(1:3)] , dxdfT1selcols[ grep("d.year",dxdfT1selcols,fixed=TRUE ) ] )
 # Print the ztable object, ensuring it's treated as LaTeX code
-dxdfT1selBz=dxdfT1sel[!dxdfT1sel$singular, dxdfT1selcolsB]
-dxdfT1selYz=dxdfT1sel[!dxdfT1sel$singular, dxdfT1selcolsY]
+dxdfT1selBz=dxdfT1selB[, dxdfT1selcolsB]
+dxdfT1selYz=dxdfT1selY[, dxdfT1selcolsY]
 colnames(dxdfT1selYz)=gsub("yearsbl","y",colnames(dxdfT1selYz))
-
+if ( "d.y.1" %in% colnames(dxdfT1selYz) ) {
+  dxdfT1selYz=dxdfT1selYz[,!(colnames(dxdfT1selYz) %in% "d.y.1")]
+}
 # baseline t1 top 20
 topk=20
 gg=grep("t1",dxdfT1selBz$voi)
 dxdfT1selBzT1=head( dxdfT1selBz[ gg, ], topk )
-ggdt=grep("dt",dxdfT1selBz$voi)
+ggdt=grep("dti",dxdfT1selBz$voi)
 dxdfT1selBzDT=head( dxdfT1selBz[ ggdt, ], topk )
-ggrs=grep("rs",dxdfT1selBz$voi)
+ggrs=grep("rsf",dxdfT1selBz$voi)
 dxdfT1selBzRS=head( dxdfT1selBz[ ggrs, ], topk )
 
 gg=grep("t1",dxdfT1selYz$voi)
 dxdfT1selYzT1=head( dxdfT1selYz[ gg, ], topk )
-ggdt=grep("dt",dxdfT1selBz$voi)
+ggdt=grep("dti",dxdfT1selYz$voi)
 dxdfT1selYzDT=head( dxdfT1selYz[ ggdt, ], topk )
-ggrs=grep("rs",dxdfT1selBz$voi)
+ggrs=grep("rsf",dxdfT1selYz$voi)
 dxdfT1selYzRS=head( dxdfT1selYz[ ggrs, ], topk )
 
 dxdfT1selz=ztable( rbind(dxdfT1selBzT1,dxdfT1selBzDT,dxdfT1selBzRS), zebra=2)
@@ -1734,7 +1735,7 @@ for ( voi in signames ) {
       selector = selector & subtyper::fs( mydogp2$DTI1_ol_loop  <= 0.5 &
         mydogp2$DTI_dti_FD_mean <= 5 )
     }
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID)+ imaging_protocol + duration_yrs + LEDD + commonEdu + age_BL + commonSex + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex + ( yearsbl )" )
     longids = mydogp2$subjectID[  mydogp2$roundyears >= 1 & selector ]
     baseids = mydogp2$subjectID[  mydogp2$roundyears == 0 & selector ]
     bothids = intersect( longids, baseids )
@@ -1886,7 +1887,7 @@ if ( length( cogglist ) > 0 )
 
 ```{r updrsresults,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
-qdfsigz=ztable(na.omit(qdfsig),zebra=2,tabular=F)
+qdfsigz=ztable(na.omit(qdfsig[subtyper::fs(qdfsig$sig == 'fwe'),]),zebra=2,tabular=F)
 mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 ```
@@ -2136,15 +2137,8 @@ temp=temp[ temp$u_hier_id %in% temp2$u_hier_id, ]
 
 
 ```{r simlrBL,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view ML for predicting change in UPDRS scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
-maxy=2.5
-voist1 = c( 
-    getNamesFromDataframe(  "t1PC", mysim$demog, exclusions=c("_BL","_delta","_adjusted") ),
-    getNamesFromDataframe(  "t1aPC", mysim$demog, exclusions=c("_BL","_delta","_adjusted") ) )
-voisrs = getNamesFromDataframe(  "rsPC", mysim$demog, exclusions=c("_BL","_delta","_adjusted") )
-voisdt = c( 
-    getNamesFromDataframe(  "dtPC", mysim$demog , exclusions=c("_BL","_delta","_adjusted")),
-    getNamesFromDataframe(  "dtaPC", mysim$demog, exclusions=c("_BL","_delta","_adjusted") ) )
-voisx = c( voist1, voisdt, voisrs )
+maxy=4.5
+voisx=sample(nmstotest2,20) # simnames
 cogv = paste0( "updrs1_score", c("_BL","_delta"))
 bform =paste( cogv[2], " ~ ", cogv[1], "  +  LEDD + age_BL + commonSex + brainVolume_BL + ( yearsbl )   ")
 uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
@@ -2209,6 +2203,7 @@ for ( jj in 1:n ) {
       g1=cvdf$model =='clin'
       g2=cvdf$model =='idp3'
       print(t.test(  cvdf[g1,'corr'] ,   cvdf[g2,'corr'] ,  paired=TRUE ))
+      print( mean(cvdf[g2,'corr']) )
 #      print(t.test(  cvdf[g1,'err'] ,   cvdf[g2,'err'] ,  paired=TRUE ))
     }
   }
