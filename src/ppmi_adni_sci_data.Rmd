@@ -1408,6 +1408,9 @@ print(myregionszRSFz, type = "latex",size=4,caption=rsfcap,sidewaystable=FALSE,z
 ```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=10,fig.height=5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ###################
 ###################
+t1qc="T1wQC1+T1wQC2+T1wQC3+T1wQC4+"; t1qc='1+'
+dtqc="+DTIQC1+DTIQC2+DTIQC3+DTIQC4"; dtqc='1+'
+rsqc="+rsfQC1+rsfQC2+rsfQC3+rsfQC4"; rsqc='1+'
 mydogU=mydog[ !is.na(mydog$TDX), ]
 mydogU$age_BL=antsrimpute(mydogU$age_BL)
 mydogU$MOCA=antsrimpute(mydogU$MOCA)
@@ -1444,8 +1447,7 @@ if ( any(grepl("adjusted",nmstotest2)) ) {
 ##############
 dxglist=list()
 dxdfT1=data.frame()
-maxy=2.5
-# nmstotest=nmstotest[multigrep( c('T1Hi','trans'),nmstotest,intersect=TRUE)]
+maxy=2.25
 for ( voi in nmstotest2 ) {
   gc()
   n=nrow(dxdfT1)+1
@@ -1464,7 +1466,7 @@ for ( voi in nmstotest2 ) {
   if ( antspymm_vartype(voi) == "T1" ) {
     selector = selector & subtyper::fs( mydogU$T1Hier_resnetGrade >= rgT1 )
 #    othdxform=gsub("studyName","1",dxform)
-    othdxform=paste0("(T1wQC1+T1wQC2+T1wQC3+T1wQC4)+",dxform)
+    othdxform=paste0(t1qc,dxform)
   }
   if ( antspymm_vartype(voi) == "NM2DMT" ) {
     selector = selector & subtyper::fs( 
@@ -1482,12 +1484,12 @@ for ( voi in nmstotest2 ) {
     if ( grepl("pro122",voi ) ) fnum='122' 
     if ( grepl("pro129",voi ) ) fnum='129' 
     if ( grepl("pro134",voi ) ) fnum='134' 
-    othdxform=paste0("(rsfQC1+rsfQC2+rsfQC3+rsfQC4)+",motname,"+rsfMRI_fcnxpro",fnum,"_minutes_original_data+rsfMRI_fcnxpro",fnum,"_minutes_censored_data+",dxform)
+    othdxform=paste0( rsqc, motname,"+rsfMRI_fcnxpro",fnum,"_minutes_original_data+rsfMRI_fcnxpro",fnum,"_minutes_censored_data+",dxform)
     selector = selector & subtyper::fs( mydogU$rsf1_ol_loop  <= 0.5 &
       mydogU$rsfMRI_fcnxpro129_FD_mean <= 0.5 )
   }
   if ( antspymm_vartype(voi) == "DTI" ) {
-    othdxform=paste0("(DTIQC1+DTIQC2+DTIQC3+DTIQC4)+",motnamedt,"+",dxform)
+    othdxform=paste0(dtqc,motnamedt,"+",dxform)
     # othdxform=paste0(motnamedt,"+",dxform)
     selector = selector & subtyper::fs( mydogU$DTI1_ol_loop  <= 0.5 &
       mydogU$DTI_dti_FD_mean <= 5 )
@@ -1527,6 +1529,11 @@ for ( voi in nmstotest2 ) {
   dxdfT1[n,'voiraw']=voi
   dxdfT1[n,'voi']=voi
   dxdfT1[n,'n.base']=length(unique(temp2$commonID))
+  dxdfT1[n,'n.PD-']=length(unique(temp2$commonID[temp2$TDX=='PDSp-' ]))
+  dxdfT1[n,'n.PD+']=length(unique(temp2$commonID[temp2$TDX=='PDSp+' ]))
+  dxdfT1[n,'n.long']=length(unique(temp2L$commonID))
+  dxdfT1[n,'n.long.PD-']=length(unique(temp2L$commonID[temp2L$TDX=='PDSp-' ]))
+  dxdfT1[n,'n.long.PD+']=length(unique(temp2L$commonID[temp2L$TDX=='PDSp+' ]))
 #  dxdfT1[n,'n.long']=poptbl[2]
   dxdfT1[n,'minpMX']=anvpMX
   dxdfT1[n,'minpSS']=anvpSS
@@ -1564,16 +1571,16 @@ for ( voi in nmstotest2 ) {
     ttl=( paste( shorten_pymm_names(voi), "PD+ : ", anvp1, "PD- : ", anvp2  ) )
 #    mygg = plot( predictorEffects(mdl,'TDX*yearsbl')[[2]], main=ttl,ylab=shorten_pymm_names(voi) )
 #    dxglist[[length(dxglist)+1]]=mygg 
-    print( interactions::probe_interaction(mdl, pred = 'yearsbl', modx = 'TDX',confint=F, facet.modx=F, interval=T, main.title=ttl, y.label=shorten_pymm_names(voi), data=temp2 )$interactplot   )
+    manualColors = pal_futurama(palette = c("planetexpress"), alpha = 1)(4)
+    print( interactions::probe_interaction(mdl, pred = 'yearsbl', modx = 'TDX',confint=F, facet.modx=F, interval=F, main.title=ttl, y.label=shorten_pymm_names(voi), data=temp2, colors=manualColors )$interactplot   )
 #    print( dxglist[[length(dxglist)]] )
 #    print( mygg )
 #    visreg::visreg(mdl,'yearsbl',by='TDX')
-    Sys.sleep(1)
     temp2L$yearsblr=round(temp2L$yearsbl)
-    print( plotSubtypeChange(temp2L,'commonID',vois[2],'TDX','yearsblr',whiskervar='se') )
+#    print( plotSubtypeChange(temp2L,'commonID',vois[2],'TDX','yearsblr',whiskervar='se', ylab=shorten_pymm_names(voi)) ) + scale_colour_manual(values = manualColors )
 #    ( visreg::visreg( mdl, 'yearsbl' , 'TDX', main=ttl))
 #    Sys.sleep(1)
-    print( mycoffs[-1,-c(1:3)] )
+    print( mycoffs[-c(1:3),coffcols] )
     print(myss[, c("statistic","p.value","modx.value", "estimate", "conf.low","conf.high")])
     print(paste(shorten_pymm_names(voi),insight::format_p(anvpMX),insight::format_p(anvpSS)))
 #    print( interpret_simlr_vector(mysim$simlrX, mysim$mats,  gsub("_adjusted","",voi) ) )
@@ -1652,9 +1659,13 @@ if ( sum( psel ) == 0  ) psel = rep(TRUE,nrow(dxdfT1))
 dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1selY = dxdfT1sel[ order( apply( dxdfT1sel[,c("p.yearsbl.PDSp-","p.yearsbl.PDSp+")], FUN=min, MARGIN=1)), ]
-dxdfT1selB = dxdfT1sel[ order( apply( dxdfT1sel[,c("p.PDSp-","p.PDSp+")], FUN=min, MARGIN=1)), ]
-# dxdfT1sel$minpSS = insight::format_p(  dxdfT1sel$minpSS, digits=4  )
-# dxdfT1sel$minpMX = insight::format_p(  dxdfT1sel$minpMX, digits=4  )
+dxdfT1selB = dxdfT1sel[ order( apply( dxdfT1sel[,c( "p.PDSp-","p.PDSp+")], FUN=min, MARGIN=1)), ]
+
+prod1 = dxdfT1sel[,"p.yearsbl.PDSp-"] * dxdfT1sel[,"p.yearsbl.PDSp+"]
+dxdfT1selY = dxdfT1sel[ order( prod1 ), ]
+prod1 = dxdfT1sel[,"p.PDSp-"] * dxdfT1sel[,"p.PDSp+"]
+dxdfT1selB = dxdfT1sel[ order( prod1 ), ]
+
 dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS"))]
 
 dxdfT1selcolsB = dxdfT1selcols[ -grep("d.year",dxdfT1selcols,fixed=TRUE ) ]
@@ -1722,16 +1733,16 @@ for ( voi in signames ) {
     selector = !is.na( mydogp2[,voi]) & (mydogp2$TDX %in% c("PDSp+")) & 
       mydogp2$yearsbl <= maxy & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
     if ( antspymm_vartype( voi ) == "T1"  & FALSE ) {
-      motnameu="T1wQC1+T1wQC2+T1wQC3+T1wQC4+"
+      motnameu=t1qc
       selector = selector & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
     }
     if ( antspymm_vartype( voi ) == "rsfMRI" & FALSE )  {
-      motnameu = paste( motname, "+rsfQC1+rsfQC2+rsfQC3+rsfQC4" )
+      motnameu = paste( motname, rsqc )
       selector = selector & subtyper::fs( mydogp2$rsf1_ol_loop  <= 0.5 &
         mydogp2$rsfMRI_fcnxpro129_FD_mean <= 0.5 )
       }
     if ( antspymm_vartype( voi ) == "DTI"  & FALSE )  {
-      motnameu = paste( motnamedt,  "+DTIQC1+DTIQC2+DTIQC3+DTIQC4" )
+      motnameu = paste( motnamedt,  dtqc )
       selector = selector & subtyper::fs( mydogp2$DTI1_ol_loop  <= 0.5 &
         mydogp2$DTI_dti_FD_mean <= 5 )
     }
