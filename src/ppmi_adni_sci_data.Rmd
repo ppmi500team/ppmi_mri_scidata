@@ -77,6 +77,9 @@ library(dCUR)
 library(mlr3learners)
 library(mlr3verse)
 library(effects)
+library(emmeans)
+library(effectsize)
+options(es.use_symbols = TRUE)
 # library(ANTsR)
 mypartrate=0.8
 mvanvp3=mvanvpu=mvanvp2=mvanvp1=1
@@ -1525,6 +1528,8 @@ for ( voi in nmstotest2 ) {
   rownames(myss)=myss[,'modx.value']
   anvpMX = min( mycoffs[ grep("PD",rownames(mycoffs)) ,5])
   anvpSS = min( myss[ grep("PD",myss[,'modx.value']) ,'p.value'])
+  myem = data.frame(emmeans(mdl, ~ TDX | yearsbl,  at = list(yearsbl = c(0, 1, 2 ))))
+  rownames(myem)=paste0(as.character(myem$TDX),"_",as.character(myem$yearsbl))
   # suppressMessages( anova(bmdl,mdl)$Pr[2] )
   dxdfT1[n,'voiraw']=voi
   dxdfT1[n,'voi']=voi
@@ -1537,6 +1542,31 @@ for ( voi in nmstotest2 ) {
 #  dxdfT1[n,'n.long']=poptbl[2]
   dxdfT1[n,'minpMX']=anvpMX
   dxdfT1[n,'minpSS']=anvpSS
+  dxdfT1[n,'CN.mean']=myem['CN_0','emmean']
+  dxdfT1[n,'CN.mean+']=myem['CN_0','upper.CL']
+  dxdfT1[n,'CN.mean-']=myem['CN_0','lower.CL']
+  dxdfT1[n,'CN.change']=myss['CN','estimate']
+  dxdfT1[n,'CN.change+']=myss['CN','conf.high']
+  dxdfT1[n,'CN.change-']=myss['CN','conf.low']
+  dxdfT1[n,'MCI-.mean']=myem['MCI-_0','emmean']
+  dxdfT1[n,'MCI-.mean+']=myem['MCI-_0','upper.CL']
+  dxdfT1[n,'MCI-.mean-']=myem['MCI-_0','lower.CL']
+  dxdfT1[n,'MCI-.change']=myss['MCI-','estimate']
+  dxdfT1[n,'MCI-.change+']=myss['MCI-','conf.high']
+  dxdfT1[n,'MCI-.change-']=myss['MCI-','conf.low']
+  dxdfT1[n,'PDSp-.mean']=myem['PDSp-_0','emmean']
+  dxdfT1[n,'PDSp-.mean+']=myem['PDSp-_0','upper.CL']
+  dxdfT1[n,'PDSp-.mean-']=myem['PDSp-_0','lower.CL']
+  dxdfT1[n,'PDSp-.change']=myss['PDSp-','estimate']
+  dxdfT1[n,'PDSp-.change+']=myss['PDSp-','conf.high']
+  dxdfT1[n,'PDSp-.change-']=myss['PDSp-','conf.low']
+  dxdfT1[n,'PDSp+.mean']=myem['PDSp+_0','emmean']
+  dxdfT1[n,'PDSp+.mean+']=myem['PDSp+_0','upper.CL']
+  dxdfT1[n,'PDSp+.mean-']=myem['PDSp+_0','lower.CL']
+  dxdfT1[n,'PDSp+.change']=myss['PDSp+','estimate']
+  dxdfT1[n,'PDSp+.change+']=myss['PDSp+','conf.high']
+  dxdfT1[n,'PDSp+.change-']=myss['PDSp+','conf.low']
+  # print(dxdfT1[n,])
   othercols = rownames(mycoffs)
   othercols=c( "yearsbl" , othercols[grep("TDX",othercols)] )
   othercolsnm=gsub("TDX","",othercols)
@@ -1572,7 +1602,26 @@ for ( voi in nmstotest2 ) {
 #    mygg = plot( predictorEffects(mdl,'TDX*yearsbl')[[2]], main=ttl,ylab=shorten_pymm_names(voi) )
 #    dxglist[[length(dxglist)+1]]=mygg 
     manualColors = pal_futurama(palette = c("planetexpress"), alpha = 1)(4)
-    print( interactions::probe_interaction(mdl, pred = 'yearsbl', modx = 'TDX',confint=F, facet.modx=F, interval=F, main.title=ttl, y.label=shorten_pymm_names(voi), data=temp2, colors=manualColors )$interactplot   )
+    manualColors = pal_jco( alpha = 1)(4)
+    pd <- ggplot2::position_dodge( 0.05 ) # move them .05 to the left and right
+    ww = 0.5
+    print( ggplot( myem,
+      aes(x=yearsbl, y=emmean,
+        group = TDX, color = TDX  )) + #, shape = Quant
+      geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+      colour="black", width=ww, position=pd) +
+      geom_line(lwd = 1, show.legend = FALSE ) +
+      geom_point(position=pd, size=3, shape=21, fill="white") + # 21 is filled circle
+      xlab( 'years' ) + ylab(paste(shorten_pymm_names(voi)))+
+      theme(strip.text = element_text(size = rel(1.1))) +
+      theme(legend.position = 'top') +
+      guides(fill=guide_legend(title.position="top")) +
+        theme_bw() + # scale_colour_manual( manualColors) +
+        theme(text = element_text(size=20),
+            axis.text.x = element_text(angle=0, vjust=1),
+            legend.direction = "horizontal", legend.position = "top" )+ scale_colour_manual(values = manualColors ) )
+
+#    print( interactions::probe_interaction(mdl, pred = 'yearsbl', modx = 'TDX',confint=F, facet.modx=F, interval=F, main.title=ttl, y.label=shorten_pymm_names(voi), data=temp2, colors=manualColors )$interactplot   )
 #    print( dxglist[[length(dxglist)]] )
 #    print( mygg )
 #    visreg::visreg(mdl,'yearsbl',by='TDX')
@@ -1666,7 +1715,7 @@ dxdfT1selY = dxdfT1sel[ order( prod1 ), ]
 prod1 = dxdfT1sel[,"p.PDSp-"] * dxdfT1sel[,"p.PDSp+"]
 dxdfT1selB = dxdfT1sel[ order( prod1 ), ]
 
-dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS"))]
+dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS", getNamesFromDataframe("CN",dxdfT1sel), getNamesFromDataframe("mean",dxdfT1sel), getNamesFromDataframe("change",dxdfT1sel)))]
 
 dxdfT1selcolsB = dxdfT1selcols[ -grep("d.year",dxdfT1selcols,fixed=TRUE ) ]
 dxdfT1selcolsB = dxdfT1selcolsB[ -grep("p.",(dxdfT1selcolsB),fixed=TRUE ) ]
@@ -1722,31 +1771,32 @@ cogtotest="updrs_totscore"
 cogtotest='updrs3_score' #  "updrs_totscore"
 # cogtotest='updrs2_score' #  "updrs_totscore"
 cogtotest=c('updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
-signames = nmstotest2
+signames = sample(nmstotest2)
 stadfrsf=data.frame()
 cogglist=list()
 for ( voi in signames ) {
   voi = paste0(voi,"_BL")
-  for ( cog in cogtotest  ) {
+  for ( cog in cogtotest ) {
     n = nrow(stadfrsf)+1
     maxy=2.5
     selector = !is.na( mydogp2[,voi]) & (mydogp2$TDX %in% c("PDSp+")) & 
       mydogp2$yearsbl <= maxy & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
-    if ( antspymm_vartype( voi ) == "T1"  & FALSE ) {
+    if ( antspymm_vartype( voi ) == "T1" ) {
       motnameu=t1qc
       selector = selector & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
     }
-    if ( antspymm_vartype( voi ) == "rsfMRI" & FALSE )  {
+    if ( antspymm_vartype( voi ) == "rsfMRI" )  {
       motnameu = paste( motname, rsqc )
       selector = selector & subtyper::fs( mydogp2$rsf1_ol_loop  <= 0.5 &
         mydogp2$rsfMRI_fcnxpro129_FD_mean <= 0.5 )
       }
-    if ( antspymm_vartype( voi ) == "DTI"  & FALSE )  {
+    if ( antspymm_vartype( voi ) == "DTI"   )  {
       motnameu = paste( motnamedt,  dtqc )
       selector = selector & subtyper::fs( mydogp2$DTI1_ol_loop  <= 0.5 &
         mydogp2$DTI_dti_FD_mean <= 5 )
     }
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex + TDX * yearsbl + ( yearsbl )" )
+    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex +  ( yearsbl )" )
     longids = mydogp2$subjectID[  mydogp2$roundyears >= 1 & selector ]
     baseids = mydogp2$subjectID[  mydogp2$roundyears == 0 & selector ]
     bothids = intersect( longids, baseids )
@@ -1764,56 +1814,45 @@ for ( voi in signames ) {
     if ( nrow(temp2) > 10 ) {
       temp2 = scale_variables_in_equation( temp2, newform , 
         variables_to_exclude=c('yearsbl',voix))
+#      mdl=suppressMessages(lmer( newform, data=temp2 ))
+      voixq=paste0(voix,"_q")
+      myst = trainSubtypeUni( temp2, voix, c("L","M","H"), subtypename=voixq )
+      temp2 = predictSubtypeUni( temp2, myst, 'commonID', 'yearsbl', 0 )
+      newform = as.formula( paste( cogformcommon, " * ", voixq ) )
+      for ( xxx in all.vars( newform )) {
+        if ( is.factor( temp2[,xxx]))
+          contrasts(temp2[,xxx]) <- contr.sum
+      }
       bmdl=suppressMessages(lmer( cogformcommon, data=temp2 ))
       mdl=suppressMessages(lmer( newform, data=temp2 ))
       mycoffs = coefficients( summary( mdl ) )
       anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
-      othercols=rownames(mycoffs)[ grep(voix,rownames(mycoffs))]
       ndf = length(unique(temp2$commonID))
-      chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], c(ndf,ndf) )
       stadfrsf[n,'cog']=cog
       stadfrsf[n,'voi']=voix
       poptbl = table( table( temp2$commonID ) )
       stadfrsf[n,'n.base']=ndf
   #    stadfrsf[n,'n.long']=poptbl[2]
       stadfrsf[n,'anv']=anvp
-      othercolsnm=c("d.b","d.y")
-      stadfrsf[n,othercolsnm]=chnd[,1]
       stadfrsf[n,'res']=myrez
       stadfrsf[n,'singular']=isSingular(mdl)
-      pairstovisB = c(
-        "t1.vol.bn.str.pu.asym.bl", # updrs1 
-        "t1.vol.inf.parietal.ctx.bl",  # updrs1 
-        "dti.mean.md.ant.int.cap.asym.bl",# updrs2 
-        "rsf.sommotb.2.dopamine.bl",
-        "dti.mean.md.post.int.cap.asym.bl" # # updrs3
-        )
-
-
-      pairstovisC = c(
-        "updrs1_score", # updrs1 
-        "updrs1_score",  # updrs1 
-        "updrs2_score",# updrs2 
-        "updrs2_score", # updrs3on 
-        "updrs3_score_on" #  updrs3
-        )
-      ptv = paste0(pairstovisB,"_",pairstovisC)
-  #     if (  anvp < 3e-4 ) {
-      if (  paste0(voix,"_",cog) %in% ptv | anvp < 0.05/length(signames)) {
+      if (  anvp <= 1e-4 ) {
+        chnd = data.frame(effectsize::epsilon_squared(mdl))
+        rownames(chnd)=chnd[,'Parameter']
+        othercolsnm=c("e2.b","e2.y")
+        stadfrsf[n,othercolsnm]=chnd[grep(voix,rownames(chnd)),'Epsilon2_partial']
         cogdel = paste0(cog,"_delta")
     #    print( mycoffs[ , -c(1:3)] )
     #    print( voi )
         anvp = insight::format_p( anvp, digits=4 )
-        anvp1 = insight::format_p( mycoffs[voix,'Pr(>|t|)'], digits=4 )
-        anvp2 = anvp1 # insight::format_p( mycoffs[paste0("yearsbl:",voix),'Pr(>|t|)'], digits=4 )
         ttl=( paste(  voix, myrez, " + ", cog,  " : o", anvp ) )
-        ttl1=( paste(  voix, myrez, " + ", cog,  " : m ", anvp1 ) )
-        ttl2=( paste(  voix, myrez, " + ", cog,  " : y ", anvp2 ) )
+#        ttl1=( paste(  voix, myrez, " + ", cog,  " : m ", anvp1 ) )
+#        ttl2=( paste(  voix, myrez, " + ", cog,  " : y ", anvp2 ) )
         ttl3=c(voix,'higher strat.','lower strat.')
-        temp2$TDX=as.character( temp2$TDX )
-        temp2$TDX[ temp2$TDX == 'PDGBA+']='GB+'
-        temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
-        temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
+#        temp2$TDX=as.character( temp2$TDX )
+#        temp2$TDX[ temp2$TDX == 'PDGBA+']='GB+'
+#        temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
+#        temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
         if ( FALSE ) {
         gg1=( jtools::effect_plot( mdl, 
           !!sym(voix), # mod2='TDX',  
@@ -1833,18 +1872,37 @@ for ( voi in signames ) {
  #         pred = !!sym(voix) ,confint=F, interval = F)$interactplot 
 
   #      mygg = plot( predictorEffects(mdl,paste0(voix,'*yearsbl'))[[2]], main=ttl,ylab=shorten_pymm_names(voix) )
-        if ( length( othercols ) == 2 ) {
-          mygg = plot( predictorEffects(mdl,paste0('yearsbl*',voix))[[2]], main=ttl,ylab=cog )
-
-        } else mygg = plot( predictorEffects(mdl,paste0(voix)), main=ttl,ylab=cog )
+#        if ( length( othercols ) == 2 ) {
+#          mygg = plot( predictorEffects(mdl,paste0('yearsbl*',voix))[[2]], main=ttl,ylab=cog )
+#
+#        } else mygg = plot( predictorEffects(mdl,paste0(voix)), main=ttl,ylab=cog )
 
 #        cogglist[[length(cogglist)+1]]=mygg
-        print(mygg)
+
+      emmform = formula( paste("~", voixq,"| yearsbl") )
+      myem0 = emmeans(mdl, emmform,  at = list(yearsbl = c(0, 1, 2 )))
+      myem = data.frame( myem0 )
+      rownames(myem)=paste0(myem[,voixq],"_",as.character(myem$yearsbl))
+      pd <- ggplot2::position_dodge( 0.05 ) # move them .05 to the left and right
+      ww = 0.5
+      print( ggplot( myem,
+        aes(x=yearsbl, y=emmean, group=!!sym(voixq), color=!!sym(voixq) )) +
+        geom_errorbar(aes(ymin=lower.CL, ymax=upper.CL), 
+        colour="black", width=ww, position=pd) +
+        geom_line(lwd = 1, show.legend = FALSE ) +
+        geom_point(position=pd, size=3, shape=21, fill="white") + # 21 is filled circle
+        xlab( 'years' ) + ylab(paste("change:",cog))+
+        theme(strip.text = element_text(size = rel(1.1))) +
+        theme(legend.position = 'top') +
+        guides(fill=guide_legend(title.position="top")) +
+          theme_bw() + # scale_colour_manual( manualColors) +
+          theme(text = element_text(size=20),
+              axis.text.x = element_text(angle=0, vjust=1),
+              legend.direction = "horizontal", legend.position = "top" )+ scale_colour_manual(values = manualColors ) )
         print( mycoffs[-1,c(4:5)])
         print( cog )
+        print( stadfrsf[n,] )
   #      gg2 =interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voix) ,confint=F, interval = F)$interactplot
-
-    
   #      grid.arrange( grobs=list(gg2), nrow=1, top=ttl)
   #      suppressMessages( threewayinteraction(  temp2, 'yearsbl', cogdel, 'TDX', voix, anatshow=ttl3 ) )
   #      print( threewayinteraction( temp2, 'yearsbl', 'TDX', anat=voi ) )
@@ -1887,7 +1945,7 @@ if ( !is.null( qdfsig ) ) {
   qdfsig = qdfsig[,qdfcols]
   qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
   qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
-  qdfsig = qdfsig[!duplicated(qdfsig),]
+  qdfsig = na.omit( qdfsig[!duplicated(qdfsig),] )
 }
 ###########################################################
 if ( length( cogglist ) > 0 )
