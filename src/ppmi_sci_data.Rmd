@@ -1895,7 +1895,7 @@ for ( voi in (1:npc) ) {
       xviz = names(which.min( mycoffs[vars3xt,"Pr(>|t|)" ] ))
       xviz = gsub("yearsbl:","",xviz)
       wmat = unlist( strsplit( xviz, 'PC') )
-      n2show=3
+      n2show=2
       stadnnh[n,paste0("NNH",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
       if ( anvp <= nnhqth | anvpx <= nnhqth ) {
         cogdel = paste0(cog,"_delta")
@@ -1944,7 +1944,7 @@ qdfsignnh = qdfsignnh[ order( qdfsignnh$anv * qdfsignnh$anv.x ), ]
 qdfsignnh$anv.x = insight::format_p(  qdfsignnh$anv.x, digits=4  )
 qdfsignnh$anv = insight::format_p(  qdfsignnh$anv, digits=4  )
 qdfsignnh$n = paste0(qdfsignnh$n.x,"/",qdfsignnh$n.long)
-qdfsignnh = qdfsignnh[,c(qdfcols,"NNH1","NNH2","NNH3")]
+qdfsignnh = qdfsignnh[,c(qdfcols,"NNH1","NNH2")]
 qdfsignnh$voi=gsub("_",".",qdfsignnh$voi,fixed=TRUE)
 qdfsignnh$cog=gsub("_",".",qdfsignnh$cog,fixed=TRUE)
 qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
@@ -1955,10 +1955,10 @@ qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
 ```{r updrsresults,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
 toviz = na.omit(qdfsig[qdfsig$sig=='fwe',])
-toviz = toviz[ , !colnames(toviz) == 'sig']
-qdfsigz=ztable(na.omit(qdfsig),zebra=2,tabular=F)
+toviz = head( toviz[ , !colnames(toviz) == 'sig'], 50 )
+qdfsigz=ztable(toviz,zebra=2,tabular=F)
 mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
-print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
+print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
