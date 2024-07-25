@@ -92,7 +92,8 @@ rgT1 = c( 0.8, 1.02 )[2]
 if ( file.exists( ppmitrimfn ) & ! exists("ppmitrim")) {
   ppmitrim = read.csv(ppmitrimfn)
   nmstotest2=antspymm_predictors( ppmitrim, TRUE, TRUE )
-  nmstotest2=nmstotest2[ -multigrep( c("alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted"), nmstotest2)]
+  nmstotest2=nmstotest2[ -multigrep( c("alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted","_BL","_delta"), nmstotest2)]
+#  nmstotest2=sample(nmstotest2,25)
 } else if ( ! exists("ppmi") & !exists("ppmitrim") ) {
   if ( ! exists("pymf") ) {
     v='1.3.9'
@@ -1368,7 +1369,7 @@ print(myregionszDTIz, type = "latex",size=4,caption=dticap,sidewaystable=FALSE,z
 print(myregionszRSFz, type = "latex",size=4,caption=rsfcap,sidewaystable=FALSE,zebra=TRUE)
 ```
 
-```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=10,fig.height=5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=10,fig.height=8,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ###################
 ###################
 mydogU=mydog[ !is.na(mydog$TDX), ]
@@ -1469,13 +1470,13 @@ for ( voi in nmstotest2 ) {
   dxdfT1[n,'voiraw']=voi
   dxdfT1[n,'voi']=voi
   dxdfT1[n,'n.base']=length(unique(mydogUbl$commonID))
-#  dxdfT1[n,'n.long']=length(unique(temp2$commonID))
+  dxdfT1[n,'n.long']=length(unique(temp2$commonID))
   dxdfT1[n,'anv.x']=resultsX$model_comparison$Pr[2]
+  dxdfT1[n,'anv']=anvp
   othercols=rownames(mycoffsx)[grep("TDX",rownames(mycoffsx))]
   othercolsnm=gsub("TDX","",othercols)
   dxdfT1[n,paste0("d.x.",othercolsnm)]=resultsX$effect_sizes[,1]
   dxdfT1[n,paste0("p.x.",othercolsnm)]=as.numeric(mycoffsx[ othercols, "Pr(>|t|)"])
-  dxdfT1[n,'anv']=anvp
   othercols = rownames(mycoffs)
   othercols=c( "yearsbl" , othercols[grep("TDX",othercols)] )
   othercolsnm=gsub("TDX","",othercols)
@@ -1599,6 +1600,7 @@ dxdfT1sel = dxdfT1[psel,]
 dxdfT1sel$voi = shorten_pymm_names( dxdfT1sel$voi )
 dxdfT1sel = dxdfT1sel[ order( dxdfT1sel$anv ), ]
 dxdfT1sel$anv = insight::format_p(  dxdfT1sel$anv, digits=4  )
+dxdfT1sel$anv.x = insight::format_p(  dxdfT1sel$anv.x, digits=4  )
 temp = colnames(dxdfT1sel)
 temp = gsub("PD","",temp)
 colnames(dxdfT1sel)=temp
@@ -1606,8 +1608,13 @@ dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singula
 
 dxdfT1selcolsB = dxdfT1selcols[ -grep("d.year",dxdfT1selcols,fixed=TRUE ) ]
 dxdfT1selcolsB = dxdfT1selcolsB[ -grep("p.",(dxdfT1selcolsB),fixed=TRUE ) ]
-dxdfT1selcolsY = c( dxdfT1selcols[c(1:3)] , dxdfT1selcols[ grep("d.year",dxdfT1selcols,fixed=TRUE ) ] )
+dxdfT1selcolsB = dxdfT1selcolsB[ !(dxdfT1selcolsB %in% 
+  c('anv', "n.long",  "d.MCI", "d.Sp-", "d.Sp+")) ]
+dxdfT1selcolsY = c( dxdfT1selcols[c(1,3,5)] , dxdfT1selcols[ grep("d.year",dxdfT1selcols,fixed=TRUE ) ] )
+dxdfT1selcolsY = dxdfT1selcolsY[ !(dxdfT1selcolsY %in% 
+  c('anv.x',  "d.MCI", "d.Sp-", "d.Sp+")) ]
 # Print the ztable object, ensuring it's treated as LaTeX code
+
 dxdfT1selBz=dxdfT1sel[!dxdfT1sel$singular, dxdfT1selcolsB]
 dxdfT1selYz=dxdfT1sel[!dxdfT1sel$singular, dxdfT1selcolsY]
 colnames(dxdfT1selYz)=gsub("yearsbl","y",colnames(dxdfT1selYz))
@@ -1645,11 +1652,11 @@ mycap='Table 6. Longitudinal group effects in PPMI PD. Top 20 per modality.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=!exists("mydogp"),fig.width=10,fig.height=8,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
+```{r quicklmcog,echo=FALSE,eval=!exists("mydogp"),fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","_on") )
-col2sbl = unique(c( nmstotest2, idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
+col2sbl = nmstotest2# unique(c( nmstotest2, idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
 mydogp = fillBaselineColumn( mydogU,
         col2sbl,
         'subjectID', 'yearsbl', 0, 
@@ -1760,10 +1767,10 @@ for ( voi in signames ) {
         temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
         temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
         gglist = list()
-        gglist[[length(gglist)+1]]=jtools::effect_plot( resultsX$full_model, !!sym(voi), interval=T, facet.modx=F ) + ggtitle(paste("X:",voix)) + labs(y = NULL) + theme(legend.position = "none") 
-        gglist[[length(gglist)+1]]=( interactions::interact_plot( mdl,  'yearsbl',!!sym(voix), interval=T, facet.modx=F ) + ggtitle(paste("L:",voix)) + labs(y = NULL) + theme(legend.position = "none") )
-        grid.arrange( grobs=gglist, nrow=2, top=ttl )
-        print( mycoffs[-1,c(4:5)])
+        gglist[[length(gglist)+1]]=jtools::effect_plot( resultsX$full_model, !!sym(voi), interval=T, facet.modx=F ) + ggtitle(paste("X:",voix)) +  theme(legend.position = "none") 
+        gglist[[length(gglist)+1]]=( interactions::interact_plot( mdl,  'yearsbl',!!sym(voix), interval=T, facet.modx=F ) + ggtitle(paste("L:",voix)) +  theme(legend.position = "none") )
+        grid.arrange( grobs=gglist, nrow=1, top=ttl )
+        # print( mycoffs[-1,c(4:5)])
         print(stadfrsf[n,] )
 
     }
@@ -1778,6 +1785,8 @@ sigth=0.05
 #  mypvs[ stadfrsf$cog != cog  ] = NA
   psel = subtyper::fs( p.adjust( mypvs, 'BY' ) <= sigth )
   psel2 = subtyper::fs( p.adjust( mypvs, 'BH' ) <= sigth )
+  psel = psel | subtyper::fs( p.adjust( stadfrsf$anv.x, 'BY' ) <= sigth )
+  psel2 = psel2 | subtyper::fs( p.adjust( stadfrsf$anv.x, 'BH' ) <= sigth )
   stadfrsf[psel2,'sig']='fdr'
   stadfrsf[psel,'sig']='fwe'
   if ( sum(psel ) > 0 )
@@ -1785,18 +1794,21 @@ sigth=0.05
     qdfsig=temp
 #    qdf = rbind( qdf, temp )
   }
-if ( !is.null( qdfsig ) ) {
   qdfsig=stadfrsf
-  qdfsig = qdfsig[ order( qdfsig$anv ), ]
+  qdfsig = qdfsig[ order( qdfsig$anv * qdfsig$anv.x ), ]
   qdfsig$voi = shorten_pymm_names( qdfsig$voi )
   qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
+  qdfsig$anv.x = insight::format_p(  qdfsig$anv.x, digits=4  )
   qdfcols =  c("cog", "voi" , "anv" ,'sig',othercolsnm)
-  qdfcols =  c("cog", "voi" , 'n.base', "anv", 'sig', othercolsnm)
+  qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
+  qdfsig$n = paste0(qdfsig$n.x,"/",qdfsig$n.long)
   qdfsig = qdfsig[,qdfcols]
   qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
   qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
   qdfsig = qdfsig[!duplicated(qdfsig),]
-}
+  qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
+  qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
+
 ###########################################################
 if ( length( cogglist ) > 0 )
   grid.arrange( grobs = cogglist, nrow=2, top='Interactions between baseline IDPs and UPDRS changes within PD.' )
@@ -1804,16 +1816,19 @@ if ( length( cogglist ) > 0 )
 ```
 
 
+## integrated analysis
 
-```{r quicknnh,echo=FALSE,eval=FALSE,fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='NNH results.'}
+```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='NNH results.'}
 #########################################################
 coggers = c("ess", "gds", "lns", "moca", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
+coggers = c("ess",  "moca", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 simfile="~/Downloads/ppmi_pym_data/TESTUKB"
 simfile="~/Downloads/ppmi_pym_data/NADA"
 simfile="~/Downloads/ppmi_pym_data/NADATHK100"
 presim=read_simlr_data_frames( path.expand(simfile), 
     c("t1","t1a", "dt", "dta", "rsf" ))
 npc = ncol(presim[[1]])
+# npc = 10
 mydogp = apply_simlr_matrices(  mydogp, presim, robust=FALSE )[[1]]
 nnhnames = apply_simlr_matrices(  mydogp, presim, robust=FALSE )[[2]]
 mydogp = fillBaselineColumn( mydogp,
@@ -1823,6 +1838,7 @@ mydogp = fillBaselineColumn( mydogp,
 mydogp$roundyears = round( mydogp$yearsbl )
 stadnnh=data.frame()
 cogglist=list()
+nnhqth = 0.05 / ( npc * length(coggers) )
 # for ( voi in nnhnames ) {
 for ( voi in (1:npc) ) {
 #  voi = paste0(voi,"_BL")
@@ -1874,7 +1890,14 @@ for ( voi in (1:npc) ) {
       )
       stadnnh[n,'res']=myrez
       stadnnh[n,'singular']=isSingular(mdl)
-      if (  anvp <= 0.05/npc | anvpx <=0.05/npc ) {
+      vars3xt=c(vars3,paste0("yearsbl:",vars3))
+      vars3xt=intersect(vars3xt,rownames(mycoffs))
+      xviz = names(which.min( mycoffs[vars3xt,"Pr(>|t|)" ] ))
+      xviz = gsub("yearsbl:","",xviz)
+      wmat = unlist( strsplit( xviz, 'PC') )
+      n2show=3
+      stadnnh[n,paste0("NNH",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
+      if ( anvp <= nnhqth | anvpx <= nnhqth ) {
         cogdel = paste0(cog,"_delta")
         anvp = insight::format_p( anvp, digits=4 )
         anvpx = insight::format_p( anvpx, digits=4 )
@@ -1889,21 +1912,13 @@ for ( voi in (1:npc) ) {
         temp2$TDX[ temp2$TDX == 'PDGBA+']='GB+'
         temp2$TDX[ temp2$TDX == 'PDLRRK2+']='LR+'
         temp2$TDX[ temp2$TDX == 'PDSp+']='sp+'
-
-        vars3xt=c(vars3,paste0("yearsbl:",vars3))
-        vars3xt=intersect(vars3xt,rownames(mycoffs))
-        xviz = names(which.min( mycoffs[vars3xt,"Pr(>|t|)" ] ))
-        xviz = gsub("yearsbl:","",xviz)
-        wmat = unlist( strsplit( xviz, 'PC') )
-        n2show=2
-        stadnnh[n,paste0("NNH",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
         gglist = list()
         for ( k in 1:length(vars3)) 
-            gglist[[length(gglist)+1]]=jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]), interval=T, facet.modx=F ) + ggtitle(paste("X:",vars3[k])) + labs(y = NULL) + theme(legend.position = "none") 
+            gglist[[length(gglist)+1]]=jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]), interval=T, facet.modx=F ) + ggtitle(paste("X:",vars3[k])) + theme(legend.position = "none") 
         for ( k in 1:length(vars3)) 
-            gglist[[length(gglist)+1]]=( interactions::interact_plot( mdl,  'yearsbl',!!sym(vars3[k]), interval=T, facet.modx=F ) + ggtitle(paste("L:",vars3[k])) + labs(y = NULL) + theme(legend.position = "none") )
+            gglist[[length(gglist)+1]]=( interactions::interact_plot( mdl,  'yearsbl',!!sym(vars3[k]), interval=T, facet.modx=F ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
         grid.arrange( grobs=gglist, nrow=2, top=ttl )
-        print( mycoffs[-1,c(4:5)])
+#        print( mycoffs[-1,c(4:5)])
         print(stadnnh[n,] )
     }
   } }
@@ -1911,9 +1926,10 @@ for ( voi in (1:npc) ) {
 #####################
 stadnnh = stadnnh[!stadnnh$singular,]
 sigth=0.05
-for ( cog in unique(stadnnh$cog) ) {
+for ( cog in unique(stadnnh$cog) ) 
+  {
   cogsel = subtyper::fs(stadnnh$cog == cog)
-#  cogsel = rep(TRUE,nrow(stadnnh))
+  # cogsel = rep(TRUE,nrow(stadnnh))
   mypvs = stadnnh$anv[ cogsel ]
   mypvsx = stadnnh$anv.x[ cogsel ]
   psel = subtyper::fs( p.adjust( mypvs, 'BY' ) <= sigth )
@@ -1923,24 +1939,36 @@ for ( cog in unique(stadnnh$cog) ) {
   stadnnh[cogsel, 'sig'][psel2|psel2x] <- 'fdr'
   stadnnh[cogsel, 'sig'][psel|pselx] <- 'fwe'
   }
-qdfsig=stadnnh[ stadnnh$sig %in% c("fdr","fwe"), ]
-qdfsig = qdfsig[ order( qdfsig$anv ), ]
-qdfsig$anv.x = insight::format_p(  qdfsig$anv.x, digits=4  )
-qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
-qdfcols =  c("cog", "voi" , 'n.base', 'anv.x',  "anv", 'd.b', 'd.y', 'sig', othercolsnm)
-qdfsig = qdfsig[,qdfcols]
-qdfsig$voi=gsub("_",".",qdfsig$voi,fixed=TRUE)
-qdfsig$cog=gsub("_",".",qdfsig$cog,fixed=TRUE)
-qdfsig = qdfsig[!duplicated(qdfsig),]
+qdfsignnh=stadnnh[ stadnnh$sig %in% c("fwe"), ]
+qdfsignnh = qdfsignnh[ order( qdfsignnh$anv * qdfsignnh$anv.x ), ]
+qdfsignnh$anv.x = insight::format_p(  qdfsignnh$anv.x, digits=4  )
+qdfsignnh$anv = insight::format_p(  qdfsignnh$anv, digits=4  )
+qdfsignnh$n = paste0(qdfsignnh$n.x,"/",qdfsignnh$n.long)
+qdfsignnh = qdfsignnh[,c(qdfcols,"NNH1","NNH2","NNH3")]
+qdfsignnh$voi=gsub("_",".",qdfsignnh$voi,fixed=TRUE)
+qdfsignnh$cog=gsub("_",".",qdfsignnh$cog,fixed=TRUE)
+qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
 ###########################################################################
 ```
 
 
 ```{r updrsresults,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
+toviz = na.omit(qdfsig[qdfsig$sig=='fwe',])
+toviz = toviz[ , !colnames(toviz) == 'sig']
 qdfsigz=ztable(na.omit(qdfsig),zebra=2,tabular=F)
 mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
+```
+
+
+```{r updrsresultsNNH,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
+# Print the ztable object, ensuring it's treated as LaTeX code
+toviz = na.omit(qdfsignnh[qdfsignnh$sig=='fwe',])
+toviz = toviz[ , !colnames(toviz) == 'sig']
+qdfsigzNNH=ztable(toviz,zebra=2,tabular=F)
+mycap='Table 8. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI joint prediction.'
+print(qdfsigzNNH, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
