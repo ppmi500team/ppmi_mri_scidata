@@ -1867,6 +1867,7 @@ if ( length( cogglist ) > 0 )
 ```
 
 ```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
+qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
 #########################################################
 coggers = c("ess", "gds", "lns", "moca", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 coggers = c("ess",  "moca", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
@@ -1992,7 +1993,9 @@ qdfsignnh = qdfsignnh[ order( qdfsignnh$anv * qdfsignnh$anv.x ), ]
 qdfsignnh$anv.x = insight::format_p(  qdfsignnh$anv.x, digits=4  )
 qdfsignnh$anv = insight::format_p(  qdfsignnh$anv, digits=4  )
 qdfsignnh$n = paste0(qdfsignnh$n.x,"/",qdfsignnh$n.long)
-qdfsignnh = qdfsignnh[,c(qdfcols,"SiMLR1","SiMLR2")]
+zzz=intersect(colnames(qdfsignnh),c(qdfcols,"SiMLR1","SiMLR2"))
+zzz=c("cog","voi","n","anv.x","anv","SiMLR1","SiMLR2")
+qdfsignnh = qdfsignnh[,zzz]
 qdfsignnh$voi=gsub("_",".",qdfsignnh$voi,fixed=TRUE)
 qdfsignnh$cog=gsub("_",".",qdfsignnh$cog,fixed=TRUE)
 qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
@@ -2012,15 +2015,15 @@ print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 
 ```{r updrsresultsSiMLR,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
-toviz = na.omit(qdfsignnh[qdfsignnh$sig=='fwe',])
-toviz = head( toviz[ , !colnames(toviz) == 'sig'], 20 )
-qdfsigzNNH=ztable(toviz,zebra=2,tabular=F)
+#toviz = na.omit(qdfsignnh[qdfsignnh$sig=='fwe',])
+# toviz = head( toviz[ , !colnames(toviz) == 'sig'], 20 )
+qdfsigzNNH=ztable(qdfsignnh,zebra=2,tabular=F)
 mycap='Table 7. Significant (fwe) IDP to MDS-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI joint prediction.'
 print(qdfsigzNNH, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
-As in the prior section, we employ LMMs to measure the relationship of baseline IDP values to clinical decline as evaluated by MDS-UPDRS 1, 2 and 3 (off) scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on SAA$+$ sporadic PD subjects.  These models are of the form:
+We use LMMs to estimate the relationship of IDP values to clinical decline as evaluated by MDS-UPDRS 1, 2 and 3 (off) scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on SAA$+$ sporadic PD subjects.  These models are of the form:
 
 $$
 \begin{split}
