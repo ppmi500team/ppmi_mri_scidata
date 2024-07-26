@@ -1,38 +1,4 @@
 ---
-title: "Magnetic Resonance Imaging Data Phenotypes for the Parkinson's Progression Markers Initiative"
-author:
-  - Brian B. Avants^1,2^
-  - Lino Becerra^1^
-  - Leon Fonville^3,†^
-  - Olivia Hampton^1,†^
-  - Alexandra Reardon^1,†^
-  - Andrew Stenger^1,†^
-  - Nicholas J. Tustison^2^
-  - Philip A. Cook^4^
-  - Xue Wang^1,†^
-  - Linda Polfus^5^
-  - Adam Chamberlin^5^
-  - Barbara Marebwa^6^
-  - Anant Dadu^8^
-  - Michael Nalls^8^
-  - Faraz Faghri^8^
-  - Roger Gunn^6^
-  - Lana Chahine^9^
-  - Kathleen L Poston^7^
-  - Kenneth Marek (?)
-  - Alzheimer's Disease Neuroimaging Initiative 
-affiliation:
-  - "1: Invicro, Boston, MA, FIMXE, USA"
-  - "2: University of Virginia, Department of Radiology and Medical Imaging, Charlottesville, VA, FIXME, USE"
-  - "3: Invicro, FIMXE, UK"
-  - "4: UPENN, FIMXE, Philly"
-  - "5: Ambry, FIMXE, CA"
-  - "6: MJFF, FIMXE, NYC"
-  - "7: Stanford, FIMXE, CA"
-  - "8: FIXME"
-  - "9: FIXME"
-corresponding_author: "Brian B. Avants (stnava@gmail.com)"
-contributed_equally: "† these authors contributed equally to this work"
 output: 
   pdf_document:
     keep_tex: true
@@ -45,12 +11,85 @@ classoption: table
 header-includes:
   - \usepackage{multirow}
   - \usepackage{rotating}
+  - \usepackage{authblk}
+  - \renewcommand\Affilfont{\small}
 linenumbers: true
 urlcolor: blue
 # nocite: '@*'
 link-citations: true
 ---
 
+
+
+\begin{centering}
+
+$ $
+
+\vspace{0.1 cm}
+
+\LARGE
+
+{\bf Magnetic Resonance Imaging Data Phenotypes for the Parkinson's Progression Markers Initiative}
+
+\vspace{1.0 cm}
+
+\normalsize
+
+Brian B Avants$^{1,2}$,
+Leon Fonville$^{1}$,
+Olivia Hampton$^{1}$,
+Alexandra Reardon$^{1}$,
+Andrew Stenger$^{1}$,
+Xue Wang$^{1}$,
+Nicholas J Tustison$^{2}$,
+Philip A Cook$^3$,
+Barbara Marebwa$^4$,
+Lana M Chahine$^5$,
+Kathleen L Poston$^6$,
+Kenneth Marek$^7$,
+Lino Becerra$^{1}$,
+Roger Gunn$^{1}$
+for the Alzheimer's Disease Neuroimaging Initiative*
+
+
+\vspace{0.25 cm}
+
+\small
+
+$^1$Invicro, Needham, MA, USA
+
+$^2$Department of Radiology and Medical Imaging, University of Virginia, Charlottesville, VA, USA
+
+$^3$Department of Radiology, University of Pennsylvania, Philadelphia, PA
+
+$^4$Parkinson's Research, The Michael J. Fox Foundation,  New York City, New York, USA
+
+$^5$Department of Neurology, University of Pittsburgh, Pittsburgh, PA, USA
+
+$^6$Department of Neurology, Stanford University, Palo Alto, CA, USA
+
+$^7$Institute for Neurodegenerative Disorders, New Haven, CT, USA
+
+
+\end{centering}
+
+\vspace{2.2 cm}
+
+\small
+
+Corresponding author: \
+Brian B. Avants \
+avants@grasp.cis.upenn.edu
+
+\noindent\rule{4cm}{0.4pt}
+
+\footnotesize
+
+*Data used in preparation of this article were obtained from the Alzheimer’s Disease Neuroimaging Initiative (ADNI) database (adni.loni.usc.edu). As such, the investigators within the ADNI contributed to the design and implementation of ADNI and/or provided data but did not participate in analysis or writing of this report. A complete listing of ADNI investigators can be found at: http://adni.loni.usc.edu/wp-content/uploads/how_to_apply/ADNI_Acknowledgement_List.pdf
+
+\newpage
+
+\normalsize
 
 ```{r samplesizes,echo=FALSE,eval=TRUE}
 redomerge=TRUE
@@ -337,7 +376,7 @@ ppmitrim$mriMagneticFieldStrength[
 ppmitrim$mriMagneticFieldStrength=factor(ppmitrim$mriMagneticFieldStrength)
 ```
 
-```{r ppmitrimX,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,message=FALSE,warning=FALSE,cache=FALSE}
+```{r ppmitrimX,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,messages=FALSE,warnings=FALSE,cache=FALSE}
 library(GGally)
 qcnames=c( "T1Hier_resnetGrade", "noise", "snr", "EVR", "psnr", "ssim", "mi", "msk_vol", "reflection_err", "mriPixelBandwidth", "mriSAR", "maxtominspc",'updrs_totscore' )
 my_bin <- function(data, mapping, ..., low = "#132B43", high = "#56B1F7") {
@@ -360,8 +399,8 @@ qcpairs <- ggpairs( qcdf, columns=c(qcnames,"snc"),
     combo = wrap("facethist", binwidth = 1),
     continuous = wrap(my_bin,  high = "red")
   ) )
-print( qcpairs )
-gc()
+# print( qcpairs )
+# gc()
 
 # ntokeep = nrow(ppmitrim)-round(0.01*nrow(ppmitrim))
 # ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
@@ -451,24 +490,24 @@ Parkinson's Disease (PD) is characterized by the progressive accumulation of Lew
 
 Analyzing longitudinal M3RI in the PPMI study necessitates accessible data representations for the PD research community. While each MRI modality provides distinct insights, their combined analysis is challenging due to the data's high dimensionality and computational demands. Therefore, creating clear, accessible data representations is crucial for advancing PD research and fostering new discoveries in particular using multi-view data linking pathology, symptoms and imaging [@nemmi_totally_2019; @tremblay_sex_2020; @markello_multimodal_2021].
 
-The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI from 2010 to 2023, focusing on T1-weighted, diffusion-weighted, and resting-state functional MRI for analyzing neurodegenerative diseases. The extended duration of data collection underscores the necessity for robust processing techniques that manage the resultant heterogeneity in images. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient multi-site M3RI data processing [@avants_pediatric_2015; 
+The study utilizes the Advanced Normalization Tools X (ANTsX) ecosystem to process PPMI MRI from 2010 to early 2024, focusing on T1-weighted, diffusion-weighted, and resting-state functional rsfMRI. The extended duration of data collection underscores the necessity for robust processing techniques that manage the resultant heterogeneity in images. ANTsX, leveraging decades of MRI analysis expertise, employs advanced techniques and integrates open science, deep learning, and machine learning for efficient multi-site M3RI data processing [@avants_pediatric_2015; 
 @stone_functional_2020; @tustison_antsx_2021]
 
 <!--
 To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts [@hawco_longitudinal_2022; @tanaka_multi-site_2021; @tong_reproducibility_2019] and an additional easily accessible M3RI young control cohort [@avants_pediatric_2015].  We collectively analyze these data in a uniform manner to establish reliability benchmarks and demonstrate the empirical significance of multi-view data in predicting population characteristics from neuroimaging.  Additionally, we illustrate statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD. 
 -->
 
-To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts [@hawco_longitudinal_2022; @tanaka_multi-site_2021; @tong_reproducibility_2019].  We analyze these data collectively and uniformly to establish reliability benchmarks and to demonstrate feasibility of consistent processing in multi-site studies such as PPMI.  Additionally, we exemplify statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD.
+To establish face validity, this study leverages not only PPMI M3RI, but also traveling subject data in three cohorts [@hawco_longitudinal_2022; @tanaka_multi-site_2021; @tong_reproducibility_2019].  We analyze these data collectively and uniformly to establish reliability benchmarks and to demonstrate feasibility of consistent processing in multi-site studies such as PPMI.  Additionally, we exemplify statistical models using PPMI data that are appropriate for unlocking key questions relevant to biomarker-confirmed PD and related conditions.
 
 Historically, MRI research on PD has primarily utilized T1-weighted (T1w) structural imaging to investigate neuroanatomical changes. A consistent finding across these studies has been the identification of early neurodegeneration in mid-brain regions, particularly the substantia nigra  [@schwarz_t1-weighted_2011;@aquino_substantia_2014;@ryman_mri_2020;@poston_substantia_2020]. Diffusion-weighted MRI (dwMRI) has further enhanced our understanding by allowing for the investigation of white matter microstructural integrity which may be impacted not only in sporadic PD [@peran_magnetic_2010;@owens-walton_worldwide_2024] but also in LRRK2-PD [@tolosa_lrrk2_2020]. Similarly, resting state functional MRI (rsfMRI) has unveiled alterations in network connectivity in PD patients, highlighting changes in the functional integration and segregation of brain networks involved in motor and cognitive functions [@hacker_resting_2012;@kim_abnormal_2017;@esposito_rhythm-specific_2013]. Taken together, these findings suggest that PD impacts both the structural and functional aspects of the brain, pointing towards a more integrative approach to understanding PD [@menke_mri_2009;@markello_multimodal_2021] and the role of alpha-synuclein in these effects [@simuni_biological_2024].
 
-The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs are computed with [ANTsPyMM v1.4.0](https://pypi.org/project/antspymm/) and depend on standard anatomical and functional hierarchies that are well-established in the field and consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dwMRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables easily merge with the associated demographics, SAA status, clinical data such as the Unified Parkinson's Disease Rating Scale (UPDRS) [@disease_unified_2003] and standard PPMI DAT-SPECT summary measurements [@bega_clinical_2021; @droby_aberrant_2022]. Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
+The present study extends previous foundations by providing standardized imaging data phenotypes (IDPs) for PPMI with a particular emphasis on an accessible tabular representation.  The summary IDPs are computed with [ANTsPyMM v1.4.0](https://pypi.org/project/antspymm/) and depend on standard anatomical and functional hierarchies that are well-established in the field and consistently integrated in this work across modalities.  This approach supports investigations based on T1w structural imaging, dwMRI, and rsfMRI either independently or collectively.  Importantly, these imaging variables easily merge with the associated demographics, SAA status, clinical data such as the Movement Disorder Society-Sponsored Unified Parkinson's Disease Rating Scale (MDS-UPDRS) [@disease_unified_2003] and standard PPMI DAT-SPECT summary measurements [@bega_clinical_2021; @droby_aberrant_2022]. Through this integrative methodology, we aim to contribute to a deeper understanding of PD, facilitating the development of more effective diagnostic and therapeutic strategies and accelerating PD research.
 
 # Methods
 
 ## MRI data collection 
 
-MRI data collection occurred between 2010 and an August 2023 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at [@avants_ppmi_2024] and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  The PPMI data includes control subjects, idiopathic (sporadic) PD subjects and genetic PD subjects characterized by GBA, LRRK2, SNCA and PRKN mutations; the latter two groups appear infrequently in PPMI.  Additionally, presymptomatic subjects comprise a substantial and growing portion of the cohort; these are also characterized by genetic mutations and/or early risk factors for PD (hyposmia or RBD ) [@siderowf_assessment_2023].  Table 1 summarizes the cohort characteristics.  In the following sections, we focus on the PD cohort with SAA measurements as the presymptomatic cohort is undergoing significant additional data collection.
+MRI data collection occurred between 2010 and an April 2024 cutoff date for these data.  Two phases of MRI collection occurred in PPMI; the first collected T1w and later DTI as part of exploratory investigations.  In 2020, a new phase of collection sought to improve both MRI quality and consistency and expand the number of modalities collected.  The sequences used at each site are provided in detail at [@avants_ppmi_2024] and in the original Laboratory of Neuroimaging (LONI) source data (described below in Data Records). The "phase" of data collection is captured in the variable `imaging_protocol`.  The PPMI data includes control subjects, idiopathic (sporadic) PD subjects and genetic PD subjects characterized by GBA, LRRK2, SNCA and PRKN mutations; the latter two groups appear infrequently in this PPMI M3RI cohort.  Additionally, presymptomatic subjects comprise a substantial and growing portion of the cohort; these are also characterized by genetic mutations and/or early risk factors for PD (hyposmia or RBD ) [@siderowf_assessment_2023].  Table 1 summarizes the cohort characteristics.  In the following sections, we focus on the PD cohort with SAA measurements as the presymptomatic cohort is undergoing significant additional data collection.
 
 
 ```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
@@ -521,8 +560,12 @@ joinedem$joinedDX[
 mlevs = c( "CN", "GenAR", "SporadicAR","OtherGenPD", 'LRRK2PD', 'GBAPD', "SporadicPD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
 mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols)]
+mytbl$imaging.protocol=as.character(mytbl$imaging.protocol)
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
 rownames(mytbl)=1:nrow(mytbl)
-mycap="Table 1. Baseline cohort for subjects with T1w IDPs and non-missing diagnosis."
+mycap="Table 1. Baseline PPMI IDP cohort. AR=at-risk; MSA = multi-system atrophy; OtherGen = other genetic; RBD = REM Sleep Behavior Disorder."
 ####
 ```
 
@@ -546,13 +589,13 @@ t1kable(x)
 
 Raw DICOM data was downloaded from LONI and converted to nifti format via `dcm2niix` [@li_first_2016]. These data were then organized into a directory tree following the [NRG format](https://github.com/stnava/biomedicalDataOrganization) illustrated in Figure 1. This BIDS-like structure [@gorgolewski_brain_2016] is defined to aid in longitudinal analyses of multiple modality data and intends to support: (a) sortable and specific dates associated with imaging sessions; (b) links between the data on disk and its origin (LONI) through the "Image ID"; (c) easy maintenance of multiple modality data collections; and (d) predictable input/output structure.  Critically, the unique ID allows the original data associated with an IDP to be easily found in LONI.  In brief, this system assigns each image -- and categories of derivative data -- a directory and individual file name that assist in making data findable, accessible, interpretable and reproducible (FAIR) for both early and downstream processing.
 
-![The NRG format supports predictable and interpretable data storage and processing that can easily be tied back to the LONI source dicom.  The filename proceeds from less specific information(Project ID at reader's left) to the most specific (unique image ID at reader's right).  A specific character -- here the dash -- is reserved exclusively as a separator between the stages of information.](../figs/nrg_format.jpg)
+![The NRG format supports predictable and interpretable data storage and processing that can easily be tied back to the LONI source dicom.  The filename proceeds from less specific information (Project ID at reader's left) to the most specific (unique image ID at reader's right).  A specific character -- here the dash -- is reserved exclusively as a separator between the stages of information.](../figs/nrg_format.jpg)
 
 ### ANTsPyMM processing
 
 ANTsPyMM collects and documents best ANTsX practices for both data inspection and IDP generation for the modalities of interest in a single python package.  While ANTsPyMM supports BIDS format, it behaves most predictably and safely with NRG format.  Each "run" of the integrated multiple modality processing encoded by ANTsPyMM is driven by a data frame that defines a multiple modality "collection" of images for a given subject at a given date.  There are two key functions that aid users in defining the appropriate input data structure and sending that data to processing.  The first is `antspymm.generate_mm_dataframe` which generates the appropriate multiple modality subject dataframe that documents on disk locations for image sets.  The resulting dataframe defines the expected input as well as output structures.  The second key function runs the multiple modality processing (`antspymm.mm_csv`) based on the multiple modality subject dataframe.  The "Usage Notes" section provides more details on this system with an accompanying reproducible example based on freely accessible multiple modality neuroimaging.
 
-![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles arterial spin labeling (perfusion), FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 122 referred to with a prefix `rsfMRI_fcnxpro129`.](../figs/antspymm_3.jpg)
+![Overview of ANTsPyMM outputs for T1-weighted MRI, diffusion MRI and resting state fMRI.  Panel (a) shows example input data; the package does not require all modalities to be present -- only T1w.  It also handles arterial spin labeling (perfusion), FLAIR and neuromelanin, not covered here.  Panel (b) illustrates core T1w outputs across several inter-related and PD relevant systems in the brain.  Panel (c) shows the standard outputs associated with DTI. Whole brain tractography is also output but no evaluation results are available to contextualize its performance and, as such, we do not recommend its use.  Panel (d) summarizes the various rsfMRI outputs for processing parameter set number 129 referred to with a prefix `rsfMRI_fcnxpro129`.](../figs/antspymm_3.jpg)
 
 ### Semi-automated quality assessment
 
@@ -571,7 +614,7 @@ T1-weighted MRI processing is described in detail in [@tustison_antsx_2023;@tust
 
 ### Diffusion weighted MRI processing
 
-Diffusion tensor image (DTI) processing leverages best practices from both ANTsX [@avants_pediatric_2015;@stone_neurological_2023;@stone_functional_2020] and the collaborative DTI-focused project [DiPy](https://dipy.org) [@garyfallidis_dipy_2014]. This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through SR techniques, culminating in an optimized DTI reconstruction. The SR stream applies to each volume in the DWI timeseries after motion correction and distortion correction but before tensor fitting i.e. in a relatively minimally invasive fashion.  After reconstruction, the pipeline integrates atlas-based labeling and template-based normalization processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure 4 summarizes the pipeline which follows these steps:
+Diffusion tensor image (DTI) processing leverages best practices from both ANTsX [@avants_pediatric_2015;@stone_neurological_2023;@stone_functional_2020] and the open-source DTI-focused project [DiPy](https://dipy.org) [@garyfallidis_dipy_2014]. This pipeline is specifically designed to utilize DWI acquisitions with either a single or opposed phase encoding directions. The functionality has been developed to address a broad spectrum of preprocessing requirements, such as motion correction, denoising, dewarping and gradient reorientation, and enhancement through SR techniques, culminating in an optimized DTI reconstruction. The SR stream applies to each volume in the DWI timeseries after motion correction and distortion correction but before tensor fitting i.e. in a relatively minimally invasive fashion.  After reconstruction, the pipeline integrates atlas-based labeling and template-based normalization processes, thereby enhancing the anatomical interpretability of the DTI metrics.  Figure 4 summarizes the pipeline which follows these steps:
 
 ![Overview of the DTI processing pipeline based on ANTsX and DiPy.](../figs/dti_pipe.jpg)
 
@@ -612,17 +655,17 @@ Resting state functional MRI (rsfMRI) processing builds on prior multi-view M3RI
 
 7. **Functional activity**: is computed with three models: mfALFF, mALFF and mPerAf as described in [@jia_percent_2020].  These are versions of fALFF, ALFF and PerAf where each is divided by the global mean in the brain.  Summary values are averaged within each of 500 labels in the homotopic label set which facilitates left/right asymmetry and mean values which are critical to studying diseases with laterality effects.
 
-Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters.  These sets are named by their position in the parameter search data frame as [122, 134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/0d987b7c56d2d24a4a24ccb71dbb93d51157ff05/antspymm/mm.py#L6596-L6605).  They encode 3 different choices for outlier rejection (based on motion) and control of nuisance signal via aCompCor.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. IDPs from the rsfMRI processing are denoted by prefixes `rsfMRI_fcnxpro129` for 122 and similarly for 129 and 134.
+Due to the relatively diverse needs of researchers and the variety of rsfMRI that is generally present in public data, we run the above processing with three different sets of parameters.  These sets are named by their position in the parameter search data frame as [122, 134 and 129](https://github.com/ANTsX/ANTsPyMM/blob/0d987b7c56d2d24a4a24ccb71dbb93d51157ff05/antspymm/mm.py#L6596-L6605).  They encode 3 different choices for outlier rejection (based on motion) and control of nuisance signal via aCompCor.  These three parameter choices led to rsfMRI IDPs that were the top performers in terms of reliability and predictive power out of 78 that we tested empirically.  See [this repository](https://github.com/stnava/antspymm_reproducibility) and the technical validation section for further details. IDPs from the rsfMRI processing are denoted by prefixes `rsfMRI_fcnxpro122` for 122 and similarly for 129 and 134.
 
 # Data Records
 
 The PPMI IDPs for T1w, rsfMRI and DTI are located at [@avants_ppmi_2024]. The neuroimaging and associated standard PPMI demographics and clinical data is hosted in the [LONI Imaging Data Archive (LONI IDA)](http://ida.loni.usc.edu). The former is stored in DICOM format and the latter in tabular `csv` format.  Additionally, data dictionaries describing all non-imaging column headers are available on the LONI IDA.  
 
-We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2024-01-29 `PPMI_Curated_Data_Cut_Public_20240129`) from the LONI IDA.  Code for this merging process is within the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are at [this location](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071).  We also provide a "trim" version [here](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071) that is intended to allow users to "get started" with these data without being overwhelmed by the sheer number of variables (many thousand in raw form).  We base demonstrations below on the trim version of these PPMI IDPs and justify their choice based on extant results in the literature.
+We attach the neuroimaging IDPs to the PPMI Curated Data Cut Curated (v.2024-01-29 `PPMI_Curated_Data_Cut_Public_20240129`) from the LONI IDA.  Code for this merging process is within the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are at [this location](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071).
 
-We also supplement these PPMI data with subjects from the Alzheimer's Disease Neuroimaging Initiative (ADNI) due to the relative dearth of longitudinal control data in PPMI.  Subjects from ADNI are included if they are controls with acceptable quality longitudinal neuroimaging. To balance the PPMI and ADNI control cohorts, the `subtyper` function `match_cohort_pair` is used, matching the 'ADNI' cohort with the 'PPMI' cohort based on subject age at baseline. The resultant matched demographic data is identified and extracted, combining the PPMI cohort with matched control ADNI subjects.
+We supplement these PPMI data with subjects from the Alzheimer's Disease Neuroimaging Initiative (ADNI) due to the relative dearth of longitudinal control data in PPMI.  Subjects from ADNI are included if they are controls with acceptable quality longitudinal neuroimaging. To balance the PPMI and ADNI control cohorts, the `subtyper` function `match_cohort_pair` is used, matching the 'ADNI' cohort with the 'PPMI' cohort based on subject age at baseline. 
 
-Following this, we train a regression model to adjust imaging variables for systematic differences across the studies, the primary MRI manufacturers ('GE', 'Philips', 'Siemens') and magnetic field strength. Subjects aged between 50 and 80 and belonging to asymptomatic gorups are designated as training samples.  The regression map is learned and applied to each IDP throughout the full cohort using the `subtyper` function `adjustByCovariates`.  The purpose of this process is to mitigate the influence of different imaging protocols, ensuring that subsequent analyses are less confounded by these factors.
+We then train a regression model on the matched subjects to adjust imaging variables for systematic differences across the studies, the primary MRI manufacturers ('GE', 'Philips', 'Siemens') and magnetic field strength. Subjects aged between 50 and 70 and belonging to asymptomatic groups are designated as training samples.  The regression map is learned and applied to each IDP throughout the full cohort using the `subtyper` function `adjustByCovariates`.  The purpose of this process is to mitigate the influence of different imaging protocols, ensuring that subsequent analyses are less confounded by these factors.  This approach has been used in practical studies of ADNI MRI data [@Risacher2017].
 
 
 # Technical Validation
@@ -1378,17 +1421,17 @@ mydogU$MOCA=antsrimpute(mydogU$MOCA)
 mydogU$studyNameNum=0
 mydogU$studyNameNum[mydogU$studyName=='ADNI']=1
 # summary(glm( studyNameNum ~ age_BL * commonSex, data=mydogU))
-print( paste("Before matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + 
-commonSex + MOCA, data=mydogU)) ))
-t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
-    mydogU$age_BL[mydogU$studyName=='PPMI'] )
+# print( paste("Before matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + 
+# commonSex + MOCA, data=mydogU)) ))
+# t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
+#    mydogU$age_BL[mydogU$studyName=='PPMI'] )
 mydogUa=mydogU[ mydogU$studyName == 'ADNI' & mydogU$age_BL <= 71.0, ]
 mydogUp=mydogU[ mydogU$studyName == 'PPMI', ]
 mydogUa=match_data_frames( mydogUp, mydogUa, c("age_BL",'commonSex','MOCA'))
 mydogU=rbind(mydogUa,mydogUp)
-print( paste("After matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + commonSex+ MOCA, data=mydogU)) ))
-t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
-    mydogU$age_BL[mydogU$studyName=='PPMI'] )
+# print( paste("After matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + commonSex+ MOCA, data=mydogU)) ))
+# t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
+#    mydogU$age_BL[mydogU$studyName=='PPMI'] )
 # summary(glm( studyNameNum ~ age_BL * commonSex, data=mydogU))
 mydogU$TDX[ mydogU$TDX %in% c("MCI-","MCI+")]='MCI'
 dxform="  (1|commonID) + stats::poly(age_BL,2) + commonSex  + yearsbl "
@@ -1444,6 +1487,7 @@ for ( voi in nmstotest2 ) {
   }
 
   covarsX = paste("brainVolume_BL+commonEdu+duration_yrs+", othdxform)
+  covarsX = paste("brainVolume_BL+commonEdu+", othdxform)
   temp =gsub("(1|commonID) +","",covarsX,fixed=T)
   temp =gsub("+ yearsbl","",temp,fixed=T)
 
@@ -1503,7 +1547,7 @@ for ( voi in nmstotest2 ) {
   thosetoviz = c( "t1.vol.inf.parietal.ctx", "dti.mean.md.sup.l.fasc.asym","dti.mean.md.ant.int.cap.asym","t1.vol.nbm.antbf" )
 #  if ( any(  mycoffs[ multigrep( c("PD","MCI"),rownames(mycoffs)), 5 ] < 1e-3 ) ) {
   if ( ! dxdfT1[n,'singular']  )
-  if ( (anvp < 0.01/length(nmstotest2) |  dxdfT1[n,'anv.x'] < 0.01/length(nmstotest2)) ) {
+  if ( (anvp < 0.001/length(nmstotest2) |  dxdfT1[n,'anv.x'] < 0.001/length(nmstotest2)) ) {
     coffcols = c("Estimate" ,  "t value"  ,  "Pr(>|t|)" )
 #    print(  knitr::kable( data.frame(mycoffs[-1,coffcols]), "latex", booktabs = TRUE,       caption=shorten_pymm_names(voi)) %>%      kableExtra::kable_styling(latex_options = c("striped", "scale_down")) )
 
@@ -1563,7 +1607,7 @@ if ( length(dxglist) > 0 )
 
 ## Sensitivity to differences from controls
 
-Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes in T1w, DTI and rsfMRI IDPs that are pre-defined for PD relevance.  These regions are listed in Table 2 (T1w), Table 3 (DTI) and Table 4 (rsfMRI) and span motor, associative and limbic systems that may be impacted in PD and associated disorders [@ryman_mri_2020].  These include motor and parietal cortex [@filippi_progressive_2020;@sokolowski_longitudinal_2024], midbrain and striatal regions and basal forebrain [@batzu_increased_2023] from T1w.  Due to known concomitant, AD-related pathology in some PD subjects, we also include a medial temporal lobe IDP [@das_episodic_2019].  Relatedly, we select mean diffusion and FA derived from DTI in the striatum and substantia nigra [@hu_diffusion_2023] as well as major white matter tracts [@gattellaro_white_2009;@pietracupa_freezing_2018], the fornix and external and internal capsule; a recent large-scale study demonstrated sensitivity of these measures to PD [@owens-walton_worldwide_2024].  In rsfMRI, we focus on connectivity between sensorimotor regions and other networks, in particular visual and cognitive control [@caspers_within_2021;@wang_investigation_2021;@tahmasian_systematic_2015].  In total, this leads to `r length(nmstotest)` different measurements which includes a left-right averaged as well as asymmetry metric:
+Symptoms of Parkinson's disease (PD) exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes in T1w, DTI and rsfMRI IDPs that are pre-defined for PD relevance.  These regions are listed in Table 2 (T1w), Table 3 (DTI) and Table 4 (rsfMRI) and span motor, associative and limbic systems that may be impacted in PD and associated disorders [@ryman_mri_2020].  These include motor and parietal cortex [@filippi_progressive_2020;@sokolowski_longitudinal_2024], midbrain and striatal regions and basal forebrain [@batzu_increased_2023] from T1w.  Due to known concomitant, AD-related pathology in some PD subjects, we also include a medial temporal lobe IDP [@das_episodic_2019].  Relatedly, we select mean diffusion and FA derived from DTI in the striatum and substantia nigra [@hu_diffusion_2023] as well as major white matter tracts [@gattellaro_white_2009;@pietracupa_freezing_2018], the fornix and external and internal capsule; a recent large-scale study demonstrated sensitivity of these measures to PD [@owens-walton_worldwide_2024].  In rsfMRI, we focus on connectivity between sensorimotor regions and other networks, in particular visual and cognitive control [@caspers_within_2021;@wang_investigation_2021;@tahmasian_systematic_2015].  In total, we test `r length(nmstotest2)` different measurements which include left-right averaged as well as asymmetry metrics:
 $$
 avg(x_l,x_r)=\frac{1}{2}(x_l+x_r);~~~asym(x_l,x_r)=|x_l-x_r|
 $$
@@ -1580,13 +1624,13 @@ We provide exemplar linear mixed-effects models (LMMs) that seek to elucidate th
 
 $$
 \begin{split}
-\text{IDP } \approx (1|ID) + (1|SITE) + \text{BV}_\text{bl} + Edu + LEDD + duration_\text{yrs} + \\
+\text{IDP } \approx (1|ID) + \text{BV}_\text{bl} + Edu + duration_\text{yrs} + \\
   modality\_specific\_covariates  + age_\text{bl} + \\ 
   Sex_\text{bio}  + years_\text{bl}   *  \text{DX}
 \end{split}
 $$
 
-where IDP is the imaging outcome, $ID$ and $SITE$ and random effects for subject ID and data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment, $duration_\text{yrs}$ is the estimate of disease duration in years and $modality\_specific\_covariates$ covaries for motion and quality in rsfMRI or DTI.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD groups with $>$ 6 subjects.  The sample sizes for each group within the $DX$ variable are $CN-=$ `r dxcts['CNNegative','n']`, $GBA+=$ `r dxcts['PDGBAPositive','n']`, $LRRK2+=$ `r dxcts['PDLRRK2Positive','n']`, $LRRK2-=$ `r dxcts['PDLRRK2Negative','n']`, $Sporadic+=$ `r dxcts['PDSporadicPositive','n']`, $Sporadic-=$ `r dxcts['PDSporadicNegative','n']` where $-/+$ indicate SAA (alpha-synuclein pathology) status.  
+where IDP is the imaging outcome, $ID$ is a random effect for subject ID, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment and $modality\_specific\_covariates$ covaries for modality-specific variability due to site and related effects.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD subjects as well as ADNI subjects with mild cognitive impairment (MCI) for comparison.  The sample sizes for each group within the $DX$ variable are $CN=229, MCI=174, PDSp-=43, PDSp+=569$.  
 
 Employing the `lmer` function, linear mixed-effects models were constructed and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table 5 (for the $DX$ term) and Table 6 (for the longitudinal term).  Effect sizes for each term are estimated from the $t-$value and degrees of freedom for each model.  Very small effect sizes are represented by empty cells. The effects of $DX$ on these IDPs are visualized through partial residual plots [@larsen_use_1972] of diagnosis by time generated for each diagnostic category as in Figure 8.  These IDPs are significant under family wise error (fwe) multiple comparisons correction at $p$-value $\le$ 0.05 (after correction based on the above-mentioned `anova`).  These plots and other regression plots are displayed with the `R` package [`interactions`](https://interactions.jacob-long.com).
 
@@ -1652,7 +1696,11 @@ mycap='Table 6. Longitudinal group effects in PPMI PD. Top 20 per modality.'
 print(dxdfT1selz, type = "latex",size=2,caption=mycap,sidewaystable=TRUE)
 ```
 
-```{r quicklmcog,echo=FALSE,eval=!exists("mydogp"),fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the four UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
+
+## Baseline IDP to longitudinal MDS-UPDRS effects in structural, white matter and resting functional measurements
+
+
+```{r quicklmcog,echo=FALSE,eval=!exists("mydogp"),fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the MDS-UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in MDS-UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 #########################################################
 # for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
 cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","_on") )
@@ -1669,7 +1717,10 @@ mydogp2=highestQualityRepeat( mydogp2, 'commonID', 'roundyears', 'T1Hier_resnetG
 cogtotest="updrs_totscore"
 cogtotest='updrs3_score' #  "updrs_totscore"
 # cogtotest='updrs2_score' #  "updrs_totscore"
-cogtotest=c('updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
+cogtotest=c( "pigd", "scopa", 'updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
+```
+
+```{r quicklmcogB,echo=FALSE,eval=FALSE,fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the MDS-UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in MDS-UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that subjects with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
 signames = nmstotest2
 stadfrsf=data.frame()
 cogglist=list()
@@ -1696,7 +1747,7 @@ for ( voi in signames ) {
     }
 
     temp2b = mydogp2[ selector & mydogp2$yearsbl == 0.0, ]
-    covarsX='imaging_protocol + duration_yrs + LEDD + commonEdu + age_BL + commonSex'
+    covarsX='duration_yrs + LEDD + commonEdu + age_BL + commonSex'
     resultsX = lm_anv_p_and_d( temp2b, cog, voi, covarsX, predictoroperator='+', verbose=F )
     anvpx=resultsX$model_comparison$Pr[2]
 
@@ -1811,24 +1862,23 @@ sigth=0.05
 
 ###########################################################
 if ( length( cogglist ) > 0 )
-  grid.arrange( grobs = cogglist, nrow=2, top='Interactions between baseline IDPs and UPDRS changes within PD.' )
+  grid.arrange( grobs = cogglist, nrow=2, top='Interactions between baseline IDPs and MDS-UPDRS changes within PD.' )
 ###########################################################################
 ```
 
-
-## integrated analysis
-
-```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='NNH results.'}
+```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=6,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
 #########################################################
 coggers = c("ess", "gds", "lns", "moca", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 coggers = c("ess",  "moca", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 simfile="~/Downloads/ppmi_pym_data/TESTUKB"
 simfile="~/Downloads/ppmi_pym_data/NADA"
 simfile="~/Downloads/ppmi_pym_data/NADATHK100"
+simfile="~/Downloads/ppmi_pym_data/PPMISiMLRW100"
 presim=read_simlr_data_frames( path.expand(simfile), 
     c("t1","t1a", "dt", "dta", "rsf" ))
 npc = ncol(presim[[1]])
 # npc = 10
+coggers = c( "updrs1_score", "updrs2_score", "updrs3_score"  )
 mydogp = apply_simlr_matrices(  mydogp, presim, robust=FALSE )[[1]]
 nnhnames = apply_simlr_matrices(  mydogp, presim, robust=FALSE )[[2]]
 mydogp = fillBaselineColumn( mydogp,
@@ -1838,16 +1888,15 @@ mydogp = fillBaselineColumn( mydogp,
 mydogp$roundyears = round( mydogp$yearsbl )
 stadnnh=data.frame()
 cogglist=list()
-nnhqth = 0.05 / ( npc * length(coggers) )
-# for ( voi in nnhnames ) {
+nnhqth = 0.01 / ( npc * length(coggers) )
 for ( voi in (1:npc) ) {
-#  voi = paste0(voi,"_BL")
   for ( cog in (coggers) ) {
     n = nrow(stadnnh)+1
     maxy=4.5
-    selector = (mydogp$TDX %in% c("PDSp+","CN")) & 
+    dxsel = c("PDSp+","CN")[1]
+    selector = (mydogp$TDX %in% dxsel ) & 
       mydogp$yearsbl <= maxy & subtyper::fs( mydogp$T1Hier_resnetGrade >= rgT1 )
-    covarsX="imaging_protocol + duration_yrs + LEDD + commonEdu + age_BL + commonSex + ( yearsbl )"
+    covarsX="duration_yrs + LEDD + commonEdu + age_BL + commonSex + ( yearsbl )"
     cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID)+ ", covarsX )
     longids = mydogp$subjectID[  mydogp$roundyears >= 1 & selector ]
     baseids = mydogp$subjectID[  mydogp$roundyears == 0 & selector ]
@@ -1896,14 +1945,14 @@ for ( voi in (1:npc) ) {
       xviz = gsub("yearsbl:","",xviz)
       wmat = unlist( strsplit( xviz, 'PC') )
       n2show=2
-      stadnnh[n,paste0("NNH",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
+      stadnnh[n,paste0("SiMLR",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
       if ( anvp <= nnhqth | anvpx <= nnhqth ) {
         cogdel = paste0(cog,"_delta")
         anvp = insight::format_p( anvp, digits=4 )
         anvpx = insight::format_p( anvpx, digits=4 )
         anvp1 = insight::format_p( min(mycoffs[othercols,'Pr(>|t|)']), digits=4 )
         anvp2 = anvp1 # insight::format_p( mycoffs[paste0("yearsbl:",voix),'Pr(>|t|)'], digits=4 )
-        voix=paste0("NNH",voi)
+        voix=paste0("SiMLR",voi)
         ttl=( paste(  voix, myrez, " + ", cog,  " X: o", anvpx,  " L: o", anvp ) )
         ttl1=( paste(  voix, myrez, " + ", cog,  " : m ", anvp1 ) )
         ttl2=( paste(  voix, myrez, " + ", cog,  " : y ", anvp2 ) )
@@ -1926,8 +1975,7 @@ for ( voi in (1:npc) ) {
 #####################
 stadnnh = stadnnh[!stadnnh$singular,]
 sigth=0.05
-for ( cog in unique(stadnnh$cog) ) 
-  {
+for ( cog in unique(stadnnh$cog) ) {
   cogsel = subtyper::fs(stadnnh$cog == cog)
   # cogsel = rep(TRUE,nrow(stadnnh))
   mypvs = stadnnh$anv[ cogsel ]
@@ -1944,7 +1992,7 @@ qdfsignnh = qdfsignnh[ order( qdfsignnh$anv * qdfsignnh$anv.x ), ]
 qdfsignnh$anv.x = insight::format_p(  qdfsignnh$anv.x, digits=4  )
 qdfsignnh$anv = insight::format_p(  qdfsignnh$anv, digits=4  )
 qdfsignnh$n = paste0(qdfsignnh$n.x,"/",qdfsignnh$n.long)
-qdfsignnh = qdfsignnh[,c(qdfcols,"NNH1","NNH2")]
+qdfsignnh = qdfsignnh[,c(qdfcols,"SiMLR1","SiMLR2")]
 qdfsignnh$voi=gsub("_",".",qdfsignnh$voi,fixed=TRUE)
 qdfsignnh$cog=gsub("_",".",qdfsignnh$cog,fixed=TRUE)
 qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
@@ -1952,47 +2000,45 @@ qdfsignnh = qdfsignnh[!duplicated(qdfsignnh),]
 ```
 
 
-```{r updrsresults,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
+```{r updrsresults,echo=FALSE,eval=FALSE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
 toviz = na.omit(qdfsig[qdfsig$sig=='fwe',])
 toviz = head( toviz[ , !colnames(toviz) == 'sig'], 50 )
 qdfsigz=ztable(toviz,zebra=2,tabular=F)
-mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
+mycap='Table 7. Significant (fwe) IDP to MDS-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
-```{r updrsresultsNNH,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
+```{r updrsresultsSiMLR,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
 toviz = na.omit(qdfsignnh[qdfsignnh$sig=='fwe',])
-toviz = toviz[ , !colnames(toviz) == 'sig']
+toviz = head( toviz[ , !colnames(toviz) == 'sig'], 20 )
 qdfsigzNNH=ztable(toviz,zebra=2,tabular=F)
-mycap='Table 8. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI joint prediction.'
+mycap='Table 7. Significant (fwe) IDP to MDS-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI joint prediction.'
 print(qdfsigzNNH, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
-
-## Baseline IDP to longitudinal UPDRS effects in structural, white matter and resting functional measurements
-
-As in the prior section, we employ LMMs to measure the relationship of baseline IDP values to clinical decline as evaluated by UPDRS 1, 2 and 3 (off and on) scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on PD subjects.  These models are of the form:
+As in the prior section, we employ LMMs to measure the relationship of baseline IDP values to clinical decline as evaluated by MDS-UPDRS 1, 2 and 3 (off) scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on SAA$+$ sporadic PD subjects.  These models are of the form:
 
 $$
 \begin{split}
-\text{UPDRSX}_{delta} \approx (1|ID) + (1|SITE) + \text{UPDRS}_{bl} + \text{BV}_\text{bl} + Edu + duration_\text{yrs} + \\
-  modality\_specific\_covariates  + age_\text{bl} + \\ 
-  Sex_\text{bio}  + years_\text{bl}   *  \text{DX} + years_\text{bl}  *  IDP_\text{bl}
+\text{UPDRSX}_{delta} \approx (1|ID) + \text{UPDRSX}_{bl} + \text{BV}_\text{bl} + Edu + LEDD + duration_\text{yrs}  + \\ 
+  age_\text{bl} + Sex_\text{bio} + years_\text{bl}  *  IDP^k_\text{M3RI}
 \end{split}
 $$
 
-The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for modality-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to baseline IDP values (i.e. $IDP_\text{bl}$).  The predictor of interest, here, is $years_\text{bl}  *  IDP_\text{bl}$ which allows assessment of the impact of baseline brain health on the change in the given UPDRS score.  These models are assessed in the range of baseline to 2.5 years change.  The effects are visualized through partial residual plots for select IDPs of interest as in Figure 9.  Effect sizes and $p$-values for each significant (fwe) pair of outcomes and IDPs in in Table 7.  Overall, these models demonstrate that baseline brain state -- as measured by each modality of interest -- may contribute to acceleration/deceleration of changes in UPDRS scores.  However, we accentuate that these models are relatively simple and linear; as such, they yield only rough suggestions that additional modeling effort may be warranted to understand the differential value of these IDPs across the spectrum of PD symptomology.
+The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given MDS-UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for disease duration, treatment effects (LEDD) as well as baseline values of the given score.  This latter variable approximates a control for subject and domain-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to  IDP values.  The predictor of interest, here, is $years_\text{bl}  *  IDP^k_\text{M3RI}$ which allows assessment of the impact of baseline brain health (summarized by three modalities) on the change in the given MDS-UPDRS score.  These models are assessed in the range of baseline to `r maxy` years change.  The effects are visualized through partial residual plots for select IDPs of interest.  Effect sizes and $p$-values for each significant (fwe) pair of outcomes and IDPs in in Table FIXME.  Overall, these models demonstrate that baseline brain state -- as measured jointly by these modalities -- may contribute to acceleration/deceleration of changes in MDS-UPDRS scores.  However, we accentuate that these models are relatively simple and linear; as such, they yield only rough suggestions that additional modeling effort may be warranted to understand the differential value of these IDPs across the spectrum of PD symptomology.
 
-### Multi-view example: M3RI predicts change in UPDRS1 in 2 to 4 year followup
+<!--
 
-Here, we dissect the influence of M3RI neuroimaging biomarkers on the progression of Unified Parkinson's Disease Rating Scale (UPDRS) Part I scores [@chahine_predicting_2019]. The analysis focuses on three neuroimaging biomarkers indicative of structural and functional brain integrity: asymmetry in the putamen volume as derived from T1-weighted images, motor cortex connectivity metrics from resting-state fMRI, and mean diffusivity measures from DTI in the superior longitudinal fasciculus. We construct three linear regression models that predict change in UPDRS1 from baseline data.  The base model uses only clinical information.  We build two additional IDP models: the first includes only the putamen IDP; the second includes IDPs from each modality. This last model extended the clinical reference model by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their improvement in predicting motor symptom progression in the 2 to 4 year range of the followup data. The models include covariates such as LEDD, disease duration, baseline motor function, and demographic information.
+### Multi-view example: M3RI predicts change in MDS-UPDRS1 in 2 to 4 year followup
+
+Here, we dissect the influence of M3RI neuroimaging biomarkers on the progression of MDS-UPDRS Part I, II and III scores [@chahine_predicting_2019]. The analysis focuses on three neuroimaging biomarkers indicative of structural and functional brain integrity: asymmetry in the putamen volume as derived from T1-weighted images, motor cortex connectivity metrics from resting-state fMRI, and mean diffusivity measures from DTI in the superior longitudinal fasciculus. We construct three linear regression models that predict change in MDS-UPDRS1 from baseline data.  The base model uses only clinical information.  We build two additional IDP models: the first includes only the putamen IDP; the second includes IDPs from each modality. This last model extended the clinical reference model by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their improvement in predicting motor symptom progression in the 2 to 4 year range of the followup data. The models include covariates such as LEDD, disease duration, baseline motor function, and demographic information.
 
 
-```{r multiview,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view regression for predicting change in UPDRS1 scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
+```{r multiview,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view regression for predicting change in MDS-UPDRS1 scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
 # this is so-so silly-ish
 library(groupdata2)
 library(xpectr)
@@ -2148,10 +2194,10 @@ grid.arrange( grobs=ii, nrow=3, top='MV long 3 modality: Johnson Neyman plots.')
 }
 ```
 
-The effects of neuroimaging biomarkers on UPDRS Part I score changes are predictive both independently and even more so in combination. This can be quantified in several ways;  here, we use a resampling approach to generate many runs of this modal comparison in different subsets of the data.  Each independent train-test run uses `r 100*mypartrate`\% of subjects in training with a minimum of 6 left out subjects in each test set.  Aggregating across many simulations provides the opportunity to estimate the expected additional value of the 3 IDP vs 1 IDP vs baseline clinical model.  The 1 IDP model is:
+The effects of neuroimaging biomarkers on MDS-UPDRS Part I score changes are predictive both independently and even more so in combination. This can be quantified in several ways;  here, we use a resampling approach to generate many runs of this modal comparison in different subsets of the data.  Each independent train-test run uses `r 100*mypartrate`\% of subjects in training with a minimum of 6 left out subjects in each test set.  Aggregating across many simulations provides the opportunity to estimate the expected additional value of the 3 IDP vs 1 IDP vs baseline clinical model.  The 1 IDP model is:
 $$
 \begin{split}
-\text{UPDRS1}_{delta} \approx  \text{UPDRS1}_\text{bl} + duration_\text{yrs} \\
+\text{UPDRS1}_{delta} \approx  \text{MDS-UPDRS1}_\text{bl} + duration_\text{yrs} \\
 + DTI_\text{FD} + rsfMRI_\text{FD}  + LEDD + Edu + age_\text{bl} + Sex + \text{BV}_\text{bl} \\ 
 + years_\text{bl}~*~DX + years_\text{bl}  * t1.vol.bn.str.pu.asym.bl;
 \end{split}
@@ -2159,13 +2205,16 @@ $$
 The most prominent predictors in this model include interaction of diagnostic group with years from baseline, LEDD and the baseline score as well as the IDP. The 3 IDP model adds rsfMRI connectivity between motor and cognitive control regions and mean diffusion:
 $$
 \begin{split}
-\text{UPDRS1}_{delta} \approx  \cdots + years_\text{bl}  * \\
+\text{MDS-UPDRS1}_{delta} \approx  \cdots + years_\text{bl}  * \\
  (  \cdots ~+~rsf.sommota.2.contc.bl~+~dti.mean.md.fornix.asym.bl )
 \end{split}
 $$
-Paired $t$-test show the 3 IDP model improves correlation between real and predicted UPDRS1 change scores versus both the baseline (`r insight::format_p(mvanvp3,digits=4)`) and 1 IDP model (`r insight::format_p(mvanvpu,digits=4)`). Figure 10 demonstrates the distribution of performance between the clinical and 3 IDP models over all of the simulations.  This example demonstrates the potential of multimodal neuroimaging and integrative statistical approaches in PD and neurodegenerative disease research more generally.
+Paired $t$-test show the 3 IDP model improves correlation between real and predicted MDS-UPDRS1 change scores versus both the baseline (`r insight::format_p(mvanvp3,digits=4)`) and 1 IDP model (`r insight::format_p(mvanvpu,digits=4)`). Figure 10 demonstrates the distribution of performance between the clinical and 3 IDP models over all of the simulations.  
 
-In summary, this tabulated multi-modality MR IDP dataset for PPMI -- derived from deeply validated open source methods -- represents a valuable opportunity to help standardize as well as advance PD M3MRI research. It simplifies the analysis of complex imaging data, potentially accelerates the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
+-->
+
+
+In summary, these data and reference results demonstrate the potential of multimodal neuroimaging and integrative statistical approaches in PD and neurodegenerative disease research more generally.  This tabulated multi-modality MR IDP dataset for PPMI -- derived from deeply validated open source methods -- represents a valuable opportunity to help standardize as well as advance PD M3MRI research. It simplifies the analysis of complex imaging data and potentially accelerates the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
 
 # Usage Notes
@@ -2174,20 +2223,35 @@ An example of processing used here is shown in the github respository [https://g
 
 # Code availability
 
-ANTsPyMM is installable via `pypi` and available at [github](https://github.com/stnava/ANTsPyMM). The version used for this work is `1.2.7` along with tensorflow `2.11.0`, antspyx `0.4.2`, antspynet `0.2.3` and antspyt1w `0.9.1`.
+ANTsPyMM is installable via `pypi` and available at [github](https://github.com/stnava/ANTsPyMM). The version used for this work is `1.4.` along with tensorflow `2.11.0`, antspyx `0.5.0`, antspynet `0.2.8` and antspyt1w `0.9.4`.
 
 # Acknowledgements
 
-Our sincere appreciation to the Michael J. Fox Foundation (MJFF) for supporting this work through MJFF-021144 and FIXME OTHER SUPPORT.
+Our sincere appreciation to the Michael J. Fox Foundation (MJFF) for supporting this work through MJFF-021144.
 
 # Author contributions statement
 
-... FIXME ...
+B.A. conceptualized and designed the study. L.F., O.H., A.R., A.S., X.W. conducted the experiments and collected the data. B.A. and L.B. performed data analysis and interpretation. N.J.T and P.A.C. contributed to the development of the software framework and methodology. A.S. and A.R. were responsible for the software and computational tools used in the study. L.C., B.M., R.G, K.P. and K.M. supervised the research and provided critical feedback on the manuscript. B.A. wrote the first draft of the manuscript. All authors reviewed and approved the final version of the manuscript.
 
 # Competing interests
 
-... FIXME ...
-
+BA declares research support and consulting fees from The
+Michael J Fox Foundation. LMC declares research support and consulting fees from The Michael J Fox Foundation. KP declares consultancies for Curasen; was
+on a scientific advisory board for Curasen and Amprion; honoraria from
+invited scientific presentations to universities and professional societies
+not exceeding $5000 per year from California Congress of Clinical
+Neurology, California Neurological Society, and Johns Hopkins
+University; and patents or patent applications numbers 17/314,979 and
+63/377,293. KP also declares grants to her institution (Stanford
+University School of Medicine) from NIH/NINDS NS115114, NS062684,
+NS075097, NIH/NIA U19 AG065156, P30 AG066515, The Michael J Fox
+Foundation, Lewy Body Dementia Association, Alzheimer’s Drug
+Discovery Foundation, Sue Berghoff LBD Research Fellowship, and the
+Knight Initiative for Brain Resilience.
+KM declares support to his institution (Institute for Neurodegenerative Disorders) from The Michael J Fox Foundation. KM also declares consultancies for Invicro, The Michael J Fox Foundation, Roche, Calico, Coave, Neuron23,
+Orbimed, Biohaven, Anofi, Koneksa, Merck, Lilly, Inhibikase,
+Neuramedy, IRLabs, and Prothena. KM participates on DSMB at
+Biohaven.
 
 # References
 
@@ -2215,26 +2279,37 @@ temp=temp[ temp$u_hier_id %in% temp2$u_hier_id, ]
 
 
 
-```{r simlr,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view ML for predicting change in UPDRS scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
-maxy=2.5
-t1nms = paste0(nmstotest2[ grep("T1",nmstotest2)],"_BL")
-dtnms = paste0(nmstotest2[ grep("DTI",nmstotest2)],"_BL")
-rsnms = paste0(nmstotest2[ grep("rsfM",nmstotest2)],"_BL")
-# antspymm_simlr = function( blaster, select_training_boolean, connect_cog,  energy=c('cca','reg','lrr'), nsimlr=5, covariates='1', myseed=3,  doAsym=TRUE, returnidps=FALSE, restrictDFN=FALSE, 
-# resnetGradeThresh=1.02, doperm=FALSE ) {
+```{r simlr,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view ML for predicting change in MDS-UPDRS scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
 
-mysimVars = antspymm_simlr( mydogp, mydogp$yearsbl==0, 
-    energy='cca', nsimlr=20, covariates='1', myseed=99, doAsym=2, 
-    returnidps=TRUE, 
-    exclusions=c("_delta","_BL"), 
-    inclusions='_adjusted',
-    verbose=TRUE)
-mysim = antspymm_simlr( mydogp, mydogp$yearsbl==0, 
-    energy='cca', nsimlr=12, covariates='1', myseed=808, doAsym=2, 
-    returnidps=F, 
-    exclusions=c("_delta","_BL",'_adjusted'), 
-   # inclusions='_adjusted',
-    verbose=TRUE)
+n.comp=100
+simfile = paste0("~/Downloads/ppmi_pym_data/PPMISiMLRW",n.comp)
+if ( ! file.exists( paste0(simfile,'_t1_simlr.csv') ) ) {
+    temp = mydogp[mydogp$yearsbl==0,]
+    trainer = subtyper::fs( temp$T1Hier_resnetGrade > 1.12 )
+    print(table(trainer))
+    mysimN = log_parameters(
+        antspymm_simlr,
+        logfile=path.expand(simfile),
+        blaster=data.frame(temp), 
+        select_training_boolean=trainer, 
+        energy='cca',
+        nsimlr=n.comp,
+        doAsym=2,
+#        sparseness=0.90,
+        covariates=c( 'lowrank', 'whiten' ),
+        exclusions=c("fcnxpro134","fcnxpro122",'mean_md' ,'area','vol','adjusted','delta',"_BL","PC",'reference'),
+        returnidps=F,
+        verbose=T )
+#    myvars=rep(NA,length(mysimN))
+#    for ( k in 1:length(myvars)) myvars[k]=var(temp[,mysimN[k]],na.rm=T)
+    write_simlr_data_frames( mysimN$simlrX$v, path.expand(simfile)  )
+    rm( temp )
+    gc()
+}
+presim=read_simlr_data_frames( path.expand(simfile), 
+    c("t1","t1a", "dt", "dta", "rsf" ))
+npc = ncol(presim[[1]])
+
 
 # test these things against cog
 voist1 = c( 
