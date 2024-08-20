@@ -1,0 +1,575 @@
+---
+title: SAA positive subtyping in idiopathic PD
+output: html_document
+---
+
+
+```{r samplesizes,echo=FALSE,eval=TRUE}
+redomerge=TRUE
+buildsci=buildsci2=TRUE
+```
+
+
+```{r ppmimerge, echo=FALSE,eval=redomerge,cache=FALSE}
+library(ztable)
+options(ztable.zebra.color="platinum")
+options(ztable.colnames.bold=TRUE)
+options(ztable.include.rownames=FALSE)
+library(moonBook)
+library(plyr)
+library(subtyper)
+library(forcats)
+library(lmerTest)
+library(lme4)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(mclust)
+library(MASS)
+library(dCUR)
+library(mlr3learners)
+library(mlr3verse)
+library(effects)
+library(ANTsR)
+library(fpc)
+mypartrate=0.8
+npd=ngpd=nprepd=0
+mvanvp3=mvanvpu=mvanvp2=mvanvp1=1
+doadj=FALSE
+dxcts=data.frame()
+rdir=path.expand('~/code/multidisorder/data/')
+rdir=path.expand('~/Downloads/ppmi_pym_data/')
+ppmitrimfn = paste0(rdir,'ppmi_idps_trim_v1.4.0.csv')
+rgT1 = c( 0.8, 1.02 )[2]
+# if ( ! exists("ppmitrim") )
+#    ppmitrim = read.csv( ppmitrimfn )
+```
+
+
+
+
+```{r neuromelaninsrmerge,echo=FALSE,eval=TRUE}
+
+if ( ! exists( "ppmitrim" ) ) {
+    # nmor=read.csv( paste0(rdir,'ppmi_matched_qc_mm_processedCSV_v1.4.0.csv'))
+    nmsr=read.csv( paste0(rdir,'ppmi_matched_qc_mm_processedCSVSRFIRST_v1.4.0.csv'))
+    demog=read.csv( paste0(rdir,'Demographics_06Feb2024.csv'))
+    ppmidemog0=read.csv(paste0(rdir,'PPMI_Curated_Data_Cut_Public_20240129.csv'))
+    saa=read.csv(paste0(rdir,'PPMI_CSFSAA_09Oct2023.csv'))
+    ppmitrim=merge_ppmi_imaging_clinical_demographic_data( demog, ppmidemog0, nmsr, 'v1.4.0', saa )
+    ppmitrim=antspymm_predictors( ppmitrim, TRUE )
+    ppmitrim$mriMagneticFieldStrength[ 
+    ppmitrim$mriMagneticFieldStrength %in% c(1.494)]=1.5
+    ppmitrim$mriMagneticFieldStrength[ 
+    ppmitrim$mriMagneticFieldStrength %in% c(2.89362)]=3
+    ppmitrim$mriMagneticFieldStrength[ 
+    !(ppmitrim$mriMagneticFieldStrength %in% c(1.5,3))]='other'
+    ppmitrim$mriMagneticFieldStrength=factor(ppmitrim$mriMagneticFieldStrength)
+
+    nmnames = getNamesFromDataframe( c("NM2DMT_NM","_substantianigra"), ppmitrim, exclusions='z_coord'  )
+    nmqcnames = getNamesFromDataframe( "NM2DMT", ppmitrim, exclusions='_substantianigra' )
+    ppmitrim$SITE[ is.na( ppmitrim$SITE ) ]=0
+}
+if ( FALSE ) {
+    nmsr=antspymm_predictors( nmsr, TRUE )
+    c2k = c( "filename", 'subjectIDdate', getNamesFromDataframe( "NM2DMT", nmsr ) )
+    nmsrf=nmsr[  ,  c2k ]
+
+    table( nmsrf$filename %in% ppmitrim$filename )
+    table( ppmitrim$filename[ ppmitrim$studyName =='PPMI'] %in% nmsrf$filename )
+
+    table( nmsrf$subjectIDdate %in% ppmitrim$subjectIDdate )
+    table( ppmitrim$subjectIDdate[ ppmitrim$studyName =='PPMI'] %in% nmsrf$subjectIDdate )
+
+    table( nmor$subjectIDdate %in% ppmitrim$subjectIDdate )
+    table( ppmitrim$subjectIDdate[ ppmitrim$studyName =='PPMI'] %in% nmor$subjectIDdate )
+
+
+    ppmitrimsr=ppmitrim
+    c2r = getNamesFromDataframe( "NM2DMT", nmsr )
+    ppmitrimsr=replace_values_by_key( ppmitrimsr, nmsrf, 'filename', c2r )
+    ppmitrimor=ppmitrim
+    ppmitrim=ppmitrimsr
+}
+```
+
+```{r neuromelanin,echo=FALSE,eval=TRUE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+shorten_nm_names = shorten_pymm_names
+###################
+###################
+mydogNM=ppmitrim[ !is.na(ppmitrim$NM2DMT_NM_avg_substantianigra), ]
+mydogNM=mydogNM[ mydogNM$NM2DMT_NM_volume_substantianigra > 10 & 
+  mydogNM$NM2DMT_NM_avg_substantianigra < 750& 
+  mydogNM$NM2DMT_NM_avg_substantianigra > 5, ]
+#  mydogNM$NM2DMT_NM_avg_refregion < 1200, ]
+mydogNM$age_BL=antsrimpute(mydogNM$age_BL)
+mydogNM$MOCA=antsrimpute(mydogNM$MOCA)
+mydogNM$roundyears = round( mydogNM$yearsbl )
+mydogNM$SITE=factor(mydogNM$SITE)
+mydogNM$hy_BL=as.numeric(mydogNM$hy_BL)
+dxform=" (1|commonID/SITE) + age_BL + commonSex  + yearsbl "
+coggers=c("MOCA","updrs1_score","updrs2_score","updrs3_score","updrs_totscore")
+maxy=2.5
+dxglist=list()
+dxdfNM=data.frame()
+nmstotest2=nmnames[ multigrep( c("vol","intmean","avg"), nmnames)]
+for ( mydxvar in coggers )
+for ( voi in (nmstotest2) ) {
+  gc()
+  n=nrow(dxdfNM)+1
+  vois = paste0( voi, c("_BL", "_delta" ) )
+  othdxform=dxform
+  longids = mydogNM$commonID[ mydogNM$roundyears > 0 ]
+  selector=mydogNM$yearsbl <= maxy  & mydogNM$joinedDX != 'CN'
+  selector=mydogNM$yearsbl <= maxy  & mydogNM$joinedDX %in% c("ProdromalSporadic","PDSporadic")
+  selector=mydogNM$yearsbl <= maxy  & mydogNM$DXSubAsyn %in% c("ProdromalSporadicPositive","PDSporadicPositive") # &  mydogNM$commonID %in% longids &  mydogNM$NM2DMT_NM_q0pt90 < 1000
+  zrange=c(0.3,0.8)
+  zrange=c(0.1,0.9)
+  zrange=c(0.0,1)
+  selector = selector & subtyper::fs( 
+      mydogNM$NM2DMT_NM_substantianigra_z_coordinate >= zrange[1] &
+      mydogNM$NM2DMT_NM_substantianigra_z_coordinate <= zrange[2] )
+
+  othdxform=paste0("NM2DMT_NM_evr+
+      NM2DMT_NM_q0pt05+NM2DMT_NM_q0pt95+
+      NM2DMT_NM_q0pt10+NM2DMT_NM_q0pt90+
+      NM2DMT_NM_substantianigra_z_coordinate+",dxform)
+
+  othdxform=paste0("NM2DMT_NM_evr+NM2DMT_NM_q0pt10+NM2DMT_NM_q0pt90+NM2DMT_NM_midbrainROI_mean+NM2DMT_NM_avg_refregion+NM2DMT_NM_substantianigra_z_coordinate+",dxform)
+  # control for:  noise & histogram effects
+  othdxform=paste0("(1|SITE)+NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+NM2DMT_NM_substantianigra_z_coordinate+",dxform)
+  othdxform=paste0("(1|SITE)+NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+",dxform)
+  othdxform=paste0("NM2DMT_NM_substantianigra_z_coordinate+NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+",dxform)
+#  othdxform=paste0("(1|SITE)+NM2DMT_NM_substantianigra_z_coordinate+NM2DMT_NM_avg_refregion+",dxform)
+#  othdxform=paste0("NM2DMT_NM_avg_refregion+",dxform)
+  covarsX = paste("brainVolume_BL+commonEdu+LEDD+", othdxform)
+  temp =gsub(" ","",covarsX,fixed=T)
+  temp =gsub("(1|commonID)+","",temp,fixed=T)
+  temp =gsub("(1|imaging_protocol)+","",temp,fixed=T)
+  temp =gsub("(1|SITE)+","",temp,fixed=T)
+  temp =gsub("+yearsbl","",temp,fixed=T)
+  bform = paste( voi, " ~ ", covarsX )
+  bform = paste( mydxvar, " ~ ", covarsX )
+  temp2 = mydogNM[ selector, ]
+  temp2$LEDD[ is.na( temp2$LEDD ) ] = 0
+  temp2$duration_yrs[ is.na( temp2$duration_yrs ) ] = 0
+  mydogUbl = temp2[ temp2$yearsbl == 0 , ]
+#  mydxvar='TDX'
+#  mydxvar='joinedDX'
+  resultsX = lm_anv_p_and_d( mydogUbl, voi, mydxvar, 
+    temp, predictoroperator='+', verbose=F )
+  resultsX = lm_anv_p_and_d( mydogUbl,  mydxvar, voi,
+    temp, predictoroperator='+', verbose=F )
+  temp2 = mydogNM[ selector, ]
+  temp2$LEDD[ is.na( temp2$LEDD ) ] = 0
+  temp2$duration_yrs[ is.na( temp2$duration_yrs ) ] = 0
+
+  mylen = length( table( temp2$studyName ) )
+  if ( mylen == 1 ) {
+    bform=gsub("studyName","1",bform,fixed=TRUE)
+  }
+  newform = paste( bform, " + ", voi  )
+  temp2$SITE=factor(temp2$SITE)
+  temp2 = scale_variables_in_equation( temp2, newform, variables_to_exclude=c(voi,'yearsbl'))
+  temp2[,voi]=psych::winsor(temp2[,voi],tr=0.01)
+  mdl=lmer( newform, data=temp2 )
+  bmdl=lmer( bform, data=temp2[names(predict(mdl)),] )
+  mdl=lmer( newform, data=temp2[names(predict(mdl)),] )
+  mycoffsx = resultsX$coefficients
+  mycoffs = coefficients( summary( mdl ) )
+  anvp = min( mycoffs[ grep(voi,rownames(mycoffs)) ,5])
+  anvp=suppressMessages( anova(bmdl,mdl)$Pr[2] )
+  myeta = data.frame( effectsize::eta_squared(mdl) )
+  rownames(myeta)=myeta$Parameter
+  myetavoi = myeta[voi,'Eta2_partial']
+  myetavoiy = myeta[paste0('yearsbl:',voi),'Eta2_partial']
+  dxdfNM[n,'voiraw']=voi
+  dxdfNM[n,'voi']=voi
+  dxdfNM[n,'cog']=mydxvar
+  dxdfNM[n,'n.base']=length(unique(mydogUbl$commonID))
+  dxdfNM[n,'n.long']=length(unique(temp2$commonID))
+  dxdfNM[n,'anv.x']=resultsX$model_comparison$Pr[2]
+  dxdfNM[n,'anv']=anvp
+  dxdfNM[n,'eta_p']=myetavoi
+  dxdfNM[n,'eta_p.y']=myetavoiy
+  dxdfNM[n,'singular']=isSingular(mdl)
+  scl=1.0/length(nmstotest2)
+  scl=1.0
+  qth=0.01
+  if ( ! dxdfNM[n,'singular']  )
+  if ( anvp <= qth * scl | 
+        dxdfNM[n,'anv.x'] <= qth*scl )  {
+    coffcols = c("Estimate" ,  "t value"  ,  "Pr(>|t|)" )
+    anvpx = insight::format_p( dxdfNM[n,'anv.x'], digits=4 )
+    anvp = insight::format_p( anvp, digits=4 )
+    ttl=( paste( mydxvar, shorten_pymm_names(voi), "omnibus : x ", anvpx, " : y ", anvp ) )
+    voix=shorten_pymm_names(voi)
+    mygg0 = jtools::effect_plot( mdl,  !!sym(voi), interval=T, facet.modx=F, plot.points=T ) + labs(y = mydxvar ) + theme(legend.position = "none")
+#    mygg2 = prplot(mdl,voi,titlestring=paste(voix,'by',mydxvar)) + ylim(20,40) + ylab(mydxvar) + xlab(voix)
+    # visreg::visreg( mdl, voi, 'yearsbl', gg=TRUE) + theme_minimal()
+#    mygg2=( interactions::interact_plot( mdl,  'yearsbl', mydxvar, interval=T, facet.modx=T ) + ggtitle(paste("L:",voix)) + labs(y = NULL) + theme(legend.position = "top") )
+    dxglist[[ length(dxglist)+1 ]]=mygg0
+#    dxglist[[ length(dxglist)+1 ]]=mygg2
+#    grid.arrange( grobs=list( mygg0, mygg2 ), nrow=2, top=ttl )
+#    print(visreg::visreg( mdl, voi, gg=TRUE) + theme_minimal() + ggtitle(ttl) )
+    print(mygg0)
+    print( mycoffs[,-c(1:3)] )
+#    if ( myetavoi > 0.04 ) derka
+  }
+}
+dxdfNM$voi = shorten_nm_names(dxdfNM$voi )
+dxdfNM$eta_p.t=dxdfNM$eta_p+dxdfNM$eta_p.y
+# dxdfNM[dxdfNM$eta_p.t >= 0.01,c('voi','cog', 'eta_p.t','anv')] # anything small  or more
+print(dxdfNM[dxdfNM$eta_p >= 0.01,c('voi','cog', 'eta_p','anv')])# anything small  or more
+#######
+#######
+#######
+```
+
+
+
+
+```{r neuromelanin2,echo=FALSE,eval=TRUE,fig.width=6,fig.height=3.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+###################
+###################
+ppmitrim$SN = ppmitrim$T1Hier_vol_mtg_sn_snr_LRAVGdeep_cit168 + ppmitrim$T1Hier_vol_mtg_sn_snc_LRAVGdeep_cit168
+nmvar='NM2DMT_NM_volume_substantianigra'
+mydogNM=ppmitrim[ !is.na(ppmitrim$T1Hier_vol_mtg_sn_snc_LRAVGdeep_cit168), ]
+mydogNM=ppmitrim[ !is.na(ppmitrim[,nmvar]), ]
+mydogNM=mydogNM[ na2f(mydogNM$SN > 0 & mydogNM$NM2DMT_NM_volume_substantianigra > 0) , ]
+mydogNM$SITE2=paste0(mydogNM$SITE,".",substr(mydogNM$mrimfg,0,1))
+mydogNM$SITE2=factor(mydogNM$SITE2)
+mydogNM$age_BL=antsrimpute(mydogNM$age_BL)
+mydogNM$MOCA=antsrimpute(mydogNM$MOCA)
+mydogNM$roundyears = round( mydogNM$yearsbl )
+mydogNM$SITE=factor(mydogNM$SITE)
+mydogNM$hy_BL=as.numeric(mydogNM$hy_BL)
+dxform=" (1|commonID/SITE2) + stats::poly(age_BL,2) + commonSex  "
+dxform=" (1|commonID) + age_BL   "
+maxy=2.25
+dxglist=list()
+nmstotest2=c("SN")
+nmstotest2=c( "SN", nmnames ) # [ -grep("",nmnames)]
+dxs=c("PDSporadic","PDGBA",'PDLRRK2','ProdromalSporadic')
+# dxs=c("PDSporadic" )
+# dxs=unique(mydogNM$joinedDX)
+dxel =  na2f( mydogNM$joinedDX %in% dxs & !is.na(mydogNM[,nmvar]) )
+siteTbl=table( mydogNM$SITE2[dxel] )
+siteTbl
+stocheck = names( siteTbl[siteTbl >= 10 ])
+mydogNM=mydogNM[ mydogNM$SITE2 %in% stocheck, ]
+dxel =  mydogNM$joinedDX %in% dxs & !is.na(mydogNM[,nmvar])
+nmstotest2=c( "SN", nmnames ) # [ -grep("",nmnames)]
+dxdfNM=data.frame()
+heatdf=data.frame()
+confdf=data.frame()
+for ( site in stocheck )
+for ( voi in c(nmstotest2[c(1,2,4)]) ) {
+  gc()
+  vois = paste0( voi, c("_BL", "_delta" ) )
+  othdxform=dxform
+  mytbl = table( mydogNM$commonID )
+  baseids = mydogNM$commonID[ mydogNM$yearsbl == 0 ]
+  follids = mydogNM$commonID[ mydogNM$yearsbl > 0 ]
+  longids = intersect( baseids, follids )
+  selector=mydogNM$yearsbl <= maxy  & mydogNM$joinedDX != 'CN'
+  selector=mydogNM$yearsbl <= maxy  & mydogNM$SITE2 == site & dxel # & # mydogNM$T1Hier_resnetGrade > 1.02 &
+#  selector=mydogNM$yearsbl <= maxy  &  dxel # & # mydogNM$T1Hier_resnetGrade > 1.02 &
+#    mydogNM$mrimfg == 'Siemens' &  mydogNM$mriMagneticFieldStrength == 3 &
+#    mydogNM$TDX %in% c("PDSp+","CN") # & mydogNM$NM2DMT_NM_q0pt90 < 800 &
+#    mydogNM$NM2DMT_NM_evr > 0.65 & mydogNM$NM2DMT_NM_q0pt90 > 300
+  othdxform=paste0("1+",dxform)
+  covarsX = paste("brainVolume_BL+commonEdu+mriSAR+", othdxform)
+#  othdxform=paste0("NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+",dxform)
+  covarsX = paste("T1Hier_resnetGrade +NM2DMT_NM_substantianigra_z_coordinate+NM2DMT_NM_avg_refregion+", othdxform)
+#  covarsX = paste("1+NM2DMT_NM_substantianigra_z_coordinate+", othdxform)
+#  covarsX = paste("brainVolume_BL+", othdxform)
+  bform = paste( voi, " ~ ", covarsX )
+  longselect = selector & mydogNM$commonID %in% longids
+#  temp2 = mydogNM[ selector, ]
+  temp2 = mydogNM[ longselect, ]
+  if ( length(unique(temp2$commonID)) > 6 ) {
+  n=nrow(dxdfNM)+1
+  newform = paste( bform, " + yearsbl"  )
+  temp2$SITE=factor(temp2$SITE)
+  temp2 = scale_variables_in_equation( temp2, newform, variables_to_exclude=c(voi,'yearsbl'))
+  temp2[,voi]=psych::winsor(temp2[,voi],tr=0.05)
+  mdl=lmer( newform, data=temp2 )
+  mycoffs = coefficients( summary( mdl ) )
+  myeta = data.frame( effectsize::eta_squared(mdl) )
+  rownames(myeta)=myeta$Parameter
+  myetacnf = myeta['NM2DMT_NM_substantianigra_z_coordinate','Eta2_partial']
+  myetavoi = myeta['yearsbl','Eta2_partial']
+  myetavoi = myetavoi * (-1.0) * sign( mycoffs['yearsbl','t value'] )
+  mygg0 = jtools::effect_plot( mdl,  'yearsbl', interval=T, facet.modx=F, plot.points=T )+ggtitle(site)
+  print(mygg0)
+    print( mycoffs[,-c(1:3)] )
+    dxtbl=table( temp2$joinedDX )
+    print(dxtbl[dxtbl>0])
+    print( paste(site ,voi,myetavoi))
+    Sys.sleep(3)
+  # suppressMessages( anova(bmdl,mdl)$Pr[2] )
+  dxdfNM[n,'voiraw']=voi
+  dxdfNM[n,'voi']=voi
+  dxdfNM[n,'site']=site
+  mfgtable=table(temp2$mrimfg)
+  mfgtable=mfgtable[mfgtable==max(mfgtable)]
+  dxdfNM[n,'mrimfg']=names(mfgtable)[1]
+  dxdfNM[n,'n']=length(unique(temp2$commonID))
+  dxdfNM[n,'anv']=mycoffs['yearsbl','Pr(>|t|)']
+  dxdfNM[n,'eta_p']=myetavoi
+  dxdfNM[n,'nm_q0pt90']=mean(temp2$NM2DMT_NM_q0pt90,na.rm=T)
+  dxdfNM[n,'singular']=isSingular(mdl)
+  heatdf[paste0(site,".",dxdfNM[n,'n']),voi]=myetavoi
+  confdf[paste0(site,".",dxdfNM[n,'n']),voi]=myetacnf
+  print(dxdfNM[n,])
+  }
+#  mygg0 = interactions::interact_plot( mdl,  'yearsbl', 'TDX', interval=T, facet.modx=F, plot.points=F ) 
+#  print(mygg0)
+#    Sys.sleep(0.5)
+#    if ( myetavoi > 0.04 ) derka
+  }
+voinames=shorten_nm_names( colnames(heatdf) )
+voinames[1]='t1.vol.sn'
+colnames(heatdf)=colnames(confdf)=voinames
+heatdfo=heatdf
+```  
+
+```{r neuromelanin2h,echo=FALSE,eval=TRUE,fig.width=6,fig.height=3.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+#############################################
+th=0.5
+heatdf[ abs(heatdf) < 0.01 ]=0
+heatdf[ (heatdf) > th ]=th
+heatdf[ (heatdf) < th*(-1.0) ]=-th
+confdf[ abs(confdf) < 0.01 ]=0
+confdf[ abs(confdf) > th ]=th
+library(RColorBrewer)
+#neword=c(1,4,5,6,9,2,7,8,3)
+pheatmap::pheatmap( heatdf[,], display_numbers=TRUE, cluster_rows=F, cluster_cols=F, color = colorRampPalette(rev(brewer.pal(n = 7, name = "Spectral")))(100) )
+pheatmap::pheatmap( confdf[,], display_numbers=TRUE, cluster_rows=F, cluster_cols=F, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdGy")))(100) )
+dxdfNM=dxdfNM[!dxdfNM$singular,]
+dxdfNM$eta_p_r = insight::format_value( dxdfNM$eta_p )
+dxdfNM$voi = shorten_nm_names(dxdfNM$voi )
+dxdfNM[,c('voi', 'n','eta_p_r','anv','site')]
+dxdfNMsig=dxdfNM[dxdfNM$eta_p >= 0.06,c('voi','n', 'eta_p','anv','site','mrimfg')] # anything small  or more
+dxdfNMsig
+dxdfNMsig=dxdfNM[dxdfNM$mrimfg == 'Siemens' & dxdfNM$n >=15,c('voi','n', 'eta_p','anv','site','mrimfg')] # anything small  or more
+dxdfNMsig
+# table(dxdfNMsig$voi)
+# aggregate( eta_p ~ voi, data=dxdfNMsig,FUN=mean,na.rm=T)
+# aggregate( eta_p ~ voi, data=dxdfNMsig,FUN=sum,na.rm=T)
+if ( FALSE ) {
+    temp = lmer( paste0(voi,"~(1|SITE2)+age_BL+brainVolume_BL+commonSex"),data=temp2)
+    temp = lm( paste0(voi,"~SITE2+age_BL+brainVolume_BL+commonSex"),data=temp2)
+    temp2$SN_resid = residuals(temp) # + mean(predict(temp))
+    plotSubtypeChange( temp2, 'commonID', 'SN_resid','joinedDX', 'roundyears' )
+    }
+# plot(emmeans(mdl,'yearsbl',  at=list(yearsbl=c(0,1))))
+#######
+#######
+#######
+```
+
+```{r neuromelaninMatchI,echo=FALSE,eval=TRUE,fig.width=10,fig.height=7}
+#' Train Linear Models for Each Row and Apply to Fixed Variables
+#'
+#' This function fits a linear regression model for each row in `tempNM`, 
+#' mapping the predictors in `intvars` to the target means (`tarints`). 
+#' It then applies the learned models to predict the values of `fixvars`.
+#' 
+#' @param tempNM A dataframe containing the data.
+#' @param intvars A character vector of column names to be used as predictors.
+#' @param fixvars A character vector of column names to apply the learned model to.
+#' @param tarints A numeric vector of target means to map `intvars` to.
+#' 
+#' @return A dataframe with the original `tempNM` and predictions for `fixvars` as new columns.
+#' 
+#' @examples
+#' fixvars <- getNamesFromDataframe("NM2DMT_NM_avg_substantianigra", tempNM)
+#' intvars <- c(getNamesFromDataframe("NM2DMT_NM_q0", tempNM), "NM2DMT_NM_avg_refregion", 
+#'              "NM2DMT_NM_avg_mean", "NM2DMT_NM_avg_cropped_mean")
+#' tempNMtrain <- tempNM[tempNM$NM2DMT_NM_avg_refregion < 800, ]
+#' tarints <- colMeans(tempNMtrain[, intvars])
+#' result <- train_and_apply_models(tempNM, intvars, fixvars, tarints)
+#' 
+#' @export
+train_and_apply_models <- function(tempNM, intvars, fixvars, tarints) {
+  # Create a copy of the dataframe to store predictions
+  result_df <- tempNM
+  
+  # Loop over each row in the dataframe
+  for (i in 1:nrow(tempNM)) {
+    # Extract the current row's predictor values
+    current_row <- as.numeric(tempNM[i, intvars])
+    
+    # Check if there is more than one predictor
+    if (length(intvars) > 1) {
+      # Fit a linear model to map intvars to tarints
+      model <- lm(tarints ~ current_row)
+      
+      # Apply the learned model to the fixvars columns
+      fix_values <- as.numeric(tempNM[i, fixvars])
+      predictions <- coef(model)[1] + coef(model)[2] * fix_values
+    } else {
+      # If there's only one predictor, simply scale by the ratio of target to input
+      predictions <- tarints * tempNM[i, fixvars] / current_row
+    }
+    
+    # Store the predictions in the result dataframe
+    result_df[i, paste0(fixvars, "_pred")] <- predictions
+  }
+  
+  return(result_df)
+}
+
+fixvars =  getNamesFromDataframe( "NM2DMT_NM_avg_", ppmitrim, exclusions="_pred" )
+intvars = c( getNamesFromDataframe( "NM2DMT_NM_q0", ppmitrim, exclusions="_pred" ), "NM2DMT_NM_avg_refregion", "NM2DMT_NM_avg_mean" , "NM2DMT_NM_avg_cropped_mean")
+intvars = c( getNamesFromDataframe( "NM2DMT_NM_q0", ppmitrim, exclusions="_pred" ) )
+intvars = unique( c(  "NM2DMT_NM_avg_cropped_mean", "NM2DMT_NM_avg_mean", intvars ) )
+tempNMtest = ppmitrim[ na2f( ppmitrim$NM2DMT_NM_avg_refregion < 2222 ), ]
+cndx = unique( c( "CN", unique(ppmitrim$joinedDX)[grep("rodromal",unique(ppmitrim$joinedDX))]))
+cndx='CN'
+tempNMtrain2 = ppmitrim[ 
+  na2f(
+    ppmitrim$joinedDX %in% cndx &  
+    ppmitrim$yearsbl == 0.0 &
+    ppmitrim$NM2DMT_NM_substantianigra_z_coordinate >= 0.2 & 
+    ppmitrim$NM2DMT_NM_substantianigra_z_coordinate <= 0.8 &
+    ppmitrim$NM2DMT_NM_avg_refregion <=800 ), ]
+tarints = colMeans( tempNMtrain2[,intvars], na.rm=T )
+zz=rowwise_linear_variable_adjustments( tempNMtest, intvars, 
+    unique(c(fixvars,nmnames)), tarints, poly_order=1 )
+dxvar = 'DXSubAsyn'
+dxs=table( zz[,dxvar] )
+dxs=names(dxs[dxs>28])
+zzsel=zz[ zz[,dxvar] %in% dxs & zz$yearsbl <= 2.5 &
+  zz$NM2DMT_NM_substantianigra_z_coordinate >= 0.3 & 
+  zz$NM2DMT_NM_substantianigra_z_coordinate <= 0.8 &
+  zz$mrimfg == 'Siemens' &
+  zz$NM2DMT_NM_avg_refregion > 5, ]
+zzsel[na2f(zzsel$joinedDX=='CN'),dxvar]='CNNegative' # good guess
+baseids = zzsel$commonID[ zzsel$yearsbl == 0 ]
+follids = zzsel$commonID[ zzsel$yearsbl > 0 ]
+longids = c( intersect( baseids, follids ), zzsel$commonID[ zzsel[,dxvar] %in% 
+    c('CN','CNNegative','CNPositive') ] )
+# zzsel = zzsel[ zzsel$commonID %in% longids, ]
+zzsel[,dxvar]=as.character(zzsel[,dxvar])
+zzsel[na2f(zzsel$joinedDX=='CN'),dxvar]='CN'
+zzsel[,dxvar] <- fct_relevel(zzsel[,dxvar], "CN")
+table( zzsel[,dxvar] )
+zzsel$temp = zzsel$NM2DMT_NM_avg_substantianigra_pred - zzsel$NM2DMT_NM_avg_refregion_pred
+mdl=(lmer( temp  ~ brainVolume_BL + commonSex+ (1|commonID) + (1|SITE)+ age_BL + yearsbl * DXSubAsyn, data=zzsel))
+mdl=(lmer( NM2DMT_NM_avg_substantianigra_pred  ~ NM2DMT_NM_evr+
+    NM2DMT_NM_substantianigra_z_coordinate+ NM2DMT_NM_avg_refregion_pred+ 
+    commonSex+ (1|commonID)+ age_BL + yearsbl * DXSubAsyn, data=zzsel))
+myco=coefficients(summary(mdl))
+myco[-1,-c(1:3)]
+# visreg::visreg( mdl, 'yearsbl' , dxvar )
+print( prplot( mdl, 'yearsbl' , dxvar, colorvar=dxvar, addpoints=2 ) )
+#############################################
+```
+
+```{r neuromelaninQC,echo=FALSE,eval=TRUE,fig.width=16,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+library( fpc )
+covars=c("NM2DMT_NM_substantianigra_z_coordinate","NM2DMT_NM_avg_refregion",'mriSAR','NM2DMT_NM_evr','NM2DMT_NM_q0pt10','NM2DMT_NM_q0pt90')
+tempNM=ppmitrim[ !is.na(ppmitrim$NM2DMT_NM_substantianigra_z_coordinate), ]
+tempNM$SITE=factor(tempNM$SITE)
+qcdata=tempNM[,covars]
+clustsites=pamk( qcdata )
+qcdata$k = clustsites$pamobject$clustering
+table(qcdata$k)
+qcdata$site = tempNM$SITE
+table( as.character(tempNM[,'SITE']), qcdata$k )
+mydogNMx=tempNM[tempNM$NM2DMT_NM_avg_refregion < 2000, ]
+mdls=list()
+gglist=list()
+for ( k in 1:length(covars) ) {
+  myform = paste( covars[k], "~SITE")
+  mdl = lm( myform , data=mydogNMx)
+  mdls[[length(mdls)+1]]=mdl
+  tt=shorten_pymm_names(covars[k])
+  tt=gsub("nm2dmt.nm.","nm.",tt)
+  gglist[[length(gglist)+1]]= prplot( mdl, 'SITE', titlestring=tt )+ ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+  }
+grid.arrange( grobs=gglist, top='NM QC variables by SITE')
+```
+
+
+```{r neuromelanin3,echo=FALSE,eval=FALSE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+###################
+###################
+# stocheck2=c("24.S","25.S","26.S","36.S","41.S","70.S","72.P")
+mydogNM=ppmitrim[ !is.na( ppmitrim[,nmnames[1]]), ]
+mydogNM$SITE2=paste0(mydogNM$SITE,".",substr(mydogNM$mrimfg,0,1))
+mydogNM$SITE2=factor(mydogNM$SITE2)
+# mydogNM = mydogNM[ mydogNM$NM2DMT_NM_avg_refregion < 750, ]
+qcdata=antsrimpute(mydogNM[,covars])
+clustsites=pamk( qcdata, 2:10 )
+qcdata$k = clustsites$pamobject$clustering
+bigclust = table( qcdata$k )
+bigclust = names( bigclust[ bigclust > quantile(bigclust,0.25)])
+zz=outlierness( antsrimpute(qcdata), outlierfunctions = c("LOOP","LOF") )
+mydogNM$clust=factor( qcdata$k )
+mydogNM$loopy=zz$OL_LOOP
+# dxel=mydogNM$joinedDX %in% c("PDSporadic","ProdromalSporadic")
+dxdfNMlm=data.frame()
+for ( voi in (nmstotest2) ) {
+  gc()
+  n=nrow(dxdfNMlm)+1
+  vois = paste0( voi, c("_BL", "_delta" ) )
+  othdxform=dxform
+  baseids = mydogNM$commonID[ mydogNM$yearsbl == 0 ]
+  follids = mydogNM$commonID[ mydogNM$yearsbl > 0 ]
+  longids = intersect( baseids, follids )
+  selector=mydogNM$yearsbl <= maxy  &  mydogNM$joinedDX %in% dxs  & # mydogNM$clust %in% bigclust
+    # mydogNM$SITE2 %in% stocheck  & 
+    mydogNM$NM2DMT_NM_avg_mean<1500 & mydogNM$NM2DMT_NM_avg_mean > 50 &
+    mydogNM$NM2DMT_NM_substantianigra_z_coordinate <= 0.8 &
+    mydogNM$NM2DMT_NM_substantianigra_z_coordinate >= 0.3 
+  # mydogNM$clust %in% c(2,3,4) & mydogNM$loopy <= 0.5
+    # & qcdata$k %in% c(1:5) # 
+    # & mydogNM$NM2DMT_NM_q0pt90 < 1000
+  othdxform=paste0("1+",dxform)
+  allcv = paste(covars,collapse='+')
+  covarsX = paste("commonSex+loopy+clust+",allcv,"+", othdxform)
+#  covarsX = paste("commonSex+loopy+clust+", othdxform)
+#  covarsX = paste("commonSex+T1Hier_resnetGrade+brainVolume_BL+",allcv,"+", othdxform)
+#  covarsX = paste("commonSex+", othdxform)
+  bform = paste( voi, " ~ ", covarsX )
+  longselect = selector & mydogNM$subjectID %in% longids
+  temp2 = mydogNM[ longselect, ]
+  temp2[,voi]=psych::winsor(temp2[,voi],0.01)
+  temp2$SITE=factor(temp2$SITE)
+  newform = paste( bform, " + yearsbl"  )
+  temp2 = scale_variables_in_equation( temp2, newform, variables_to_exclude=c(voi,'yearsbl','NM2DMT_NM_q0pt90'))
+  mdl=lmer( newform, data=temp2 )
+  mycoffs = coefficients( summary( mdl ) )
+  myeta = data.frame( effectsize::eta_squared(mdl) )
+  rownames(myeta)=myeta$Parameter
+  myetacnf = myeta['NM2DMT_NM_substantianigra_z_coordinate','Eta2_partial']
+  myetavoi = myeta['yearsbl','Eta2_partial']
+  myetavoi = myetavoi * (-1.0) * sign( mycoffs['yearsbl','t value'] )
+  dxdfNMlm[n,'voiraw']=voi
+  dxdfNMlm[n,'voi']=voi
+  dxdfNMlm[n,'n']=length(unique(temp2$commonID))
+  dxdfNMlm[n,'NM_q0pt90']=mean(temp2$NM2DMT_NM_q0pt90,na.rm=T)
+  dxdfNMlm[n,'anv']=mycoffs['yearsbl','Pr(>|t|)']
+  dxdfNMlm[n,'eta_p']=myetavoi
+  dxdfNMlm[n,'eta_p_conf']=myetacnf
+  dxdfNMlm[n,'singular']=isSingular(mdl)
+  mygg0 = jtools::effect_plot( mdl,  'yearsbl', interval=T, facet.modx=F, plot.points=F )+ggtitle(voi)
+  print(mygg0)
+  print( mycoffs[,-c(1:3)] )
+  print(voi)
+  print(dxdfNMlm[n,])
+#  Sys.sleep(3)
+  }
+
+voinames=shorten_nm_names(dxdfNMlm$voi)
+voinames[1]="t1.vol.sn"
+dxdfNMlm$voi=voinames
+dxdfNMlm$eta_p_r=insight::format_value(dxdfNMlm$eta_p)
+dxdfNMlm[,c("voi","eta_p_r","eta_p_conf",'NM_q0pt90')]
+#######
+```
+
