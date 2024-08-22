@@ -135,7 +135,7 @@ if ( ! exists( "ppmitrim0" ) ) {
             ppmitrimNM[,v] > quantile(ppmitrimNM[,v],0.02) )
         hist( ppmitrimNM[subsel,'NM2DMT_NM_avg_substantianigra'] )
         ppmitrimNM=ppmitrimNM[ subsel, ]
-        ppmitrimNM=ppmitrimNM[ ppmitrimNM$NM2DMT_NM_avg_substantianigra- ppmitrimNM$NM2DMT_NM_avg_refregion >0 , ]
+        ppmitrimNM=ppmitrimNM[ ppmitrimNM$NM2DMT_NM_avg_substantianigra - ppmitrimNM$NM2DMT_NM_avg_refregion >0 , ]
         intvarseq='1'
     } else {
         ppmitrimNM=ppmitrim[ !is.na(ppmitrim$NM2DMT_NM_avg_substantianigra),  ]
@@ -219,13 +219,14 @@ mydogNM$SITE=factor(mydogNM$SITE)
 mydogNM$hy_BL=as.numeric(mydogNM$hy_BL)
 dxform=" (1|commonID) + age_BL + commonSex  + yearsbl "
 coggers=c("MOCA","updrs1_score","updrs2_score","updrs3_score","updrs_totscore")
+coggers = c("ess",  "moca", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 maxy=2.5
 nmstotest2=unique(c(nmvars2testadj,nmnames[ multigrep( c("vol","intmean","avg"), nmnames)]))
 nmstotest2=unique( c("SN",nmnames,nmstotest2))
 nmstotest2=nmstotest2[-multigrep( c('refreg',"NM2DMT_NM_avg_mean" ,"NM2DMT_NM_avg_cropped_mean"), nmstotest2)]
 ```
 
-```{r neuromelanin,echo=FALSE,eval=TRUE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin,echo=FALSE,eval=TRUE,fig.width=6,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ######
 dxglist=list()
 dxdfNM=data.frame()
@@ -254,8 +255,7 @@ for ( voi in (nmstotest2) ) {
   othdxform=paste0("(1|SITE)+NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+",dxform)
   othdxform=paste0("NM2DMT_NM_substantianigra_z_coordinate+NM2DMT_NM_evr+NM2DMT_NM_q0pt90+NM2DMT_NM_avg_refregion+",dxform)
 #  othdxform=paste0("(1|SITE)+NM2DMT_NM_substantianigra_z_coordinate+NM2DMT_NM_avg_refregion+",dxform)
-  othdxform=paste0("NM2DMT_NM_avg_refregion+NM2DMT_NM_substantianigra_z_coordinate+ ", 
-    intvarseq, " + ",dxform)
+  othdxform=paste0( intvarseq, " + ",dxform)
   covarsX = paste("brainVolume_BL+commonEdu+LEDD+", othdxform)
   temp =gsub(" ","",covarsX,fixed=T)
   temp =gsub("(1|commonID)+","",temp,fixed=T)
@@ -312,14 +312,13 @@ for ( voi in (nmstotest2) ) {
   scl=1.0
   qth=0.01
   if ( ! dxdfNM[n,'singular']  )
-  if ( anvp <= qth * scl | 
-        dxdfNM[n,'anv.x'] <= qth*scl )  {
+  if ( anvp <= qth * scl | dxdfNM[n,'anv.x'] <= qth*scl )  {
     coffcols = c("Estimate" ,  "t value"  ,  "Pr(>|t|)" )
     anvpx = insight::format_p( dxdfNM[n,'anv.x'], digits=4 )
     anvp = insight::format_p( anvp, digits=4 )
-    ttl=( paste( mydxvar, shorten_pymm_names(voi), "omnibus : x ", anvpx, " : y ", anvp ) )
+    ttl=( paste( mydxvar, shorten_pymm_names(voi), " : x ", anvpx, " : y ", anvp ) )
     voix=shorten_pymm_names(voi)
-    mygg0=prplot( mdl, voi, addpoints=T )
+    mygg0=prplot( mdl, voi, addpoints=T, titlestring=ttl, ystring=mydxvar )
 #    mygg0 = jtools::effect_plot( mdl,  !!sym(voi), interval=T, facet.modx=F, plot.points=T ) + labs(y = mydxvar ) + theme(legend.position = "none")
 #    mygg2 = prplot(mdl,voi,titlestring=paste(voix,'by',mydxvar)) + ylim(20,40) + ylab(mydxvar) + xlab(voix)
     # visreg::visreg( mdl, voi, 'yearsbl', gg=TRUE) + theme_minimal()
@@ -456,7 +455,7 @@ heatdfo=heatdf
 ##############
 ```  
 
-```{r neuromelanin2h,echo=FALSE,eval=TRUE,fig.width=6,fig.height=3.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin2h,echo=FALSE,eval=TRUE,fig.width=6,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 #############################################
 th=0.5
 heatdf[ abs(heatdf) < 0.01 ]=0
@@ -490,7 +489,7 @@ if ( FALSE ) {
 ```
 
 
-```{r neuromelaninQC,echo=FALSE,eval=TRUE,fig.width=16,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelaninQC,echo=FALSE,eval=TRUE,fig.width=6,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 library( fpc )
 covars=c("NM2DMT_NM_substantianigra_z_coordinate","NM2DMT_NM_avg_refregion",'mriSAR','NM2DMT_NM_evr','NM2DMT_NM_q0pt10','NM2DMT_NM_q0pt90')
 tempNM=ppmitrimNM[ !is.na(ppmitrimNM$NM2DMT_NM_substantianigra_z_coordinate), ]
@@ -517,7 +516,7 @@ grid.arrange( grobs=gglist, top='NM QC variables by SITE')
 ```
 
 
-```{r neuromelanin3,echo=FALSE,eval=FALSE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin3,echo=FALSE,eval=TRUE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
 ###################
 ###################
 # stocheck2=c("24.S","25.S","26.S","36.S","41.S","70.S","72.P")
