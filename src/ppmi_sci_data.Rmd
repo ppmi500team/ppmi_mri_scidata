@@ -1990,7 +1990,6 @@ if ( ! file.exists( paste0(simfile,'_t1_simlr.csv') ) ) {
 
 
 ```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
-# ```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=12,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
 maxy=4.1
 qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
 #########################################################
@@ -2037,8 +2036,8 @@ for ( voi in (1:npc) ) {
     mydogpnnaBase = mydogpnna[ mydogpnna$yearsbl == 0.0, ]
     mydogpnnaLong = select_longitudinal_subjects( mydogpnna, 'commonID', 'roundyears', 2, baseline=0.0 )
     if ( cog=='MOCA') topkval=c(425,225) else topkval=c(375,200)
-    selector = na2f( topk( mydogpnnaBase, "T1Hier_resnetGrade", topkval[1] ) )
-    selectorLong = na2f( topk( mydogpnnaLong, "T1Hier_resnetGrade", topkval[2] ) )
+#    selector = na2f( topk( mydogpnnaBase, "T1Hier_resnetGrade", topkval[1] ) )
+#    selectorLong = na2f( topk( mydogpnnaLong, "T1Hier_resnetGrade", topkval[2] ) )
     temp2b=mydogpnnaBase[ selector,]
     resultsX = lm_anv_p_and_d( temp2b, cog, vars3f, covarsX, predictoroperator='+', verbose=F )
     anvpx=resultsX$model_comparison$Pr[2]
