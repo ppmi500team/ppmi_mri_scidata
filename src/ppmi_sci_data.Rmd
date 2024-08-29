@@ -1952,37 +1952,59 @@ simfile = paste0("~/Downloads/ppmi_pym_data/PPMISiMLRW_new_pca_cca",n.comp,'_rez
 simfile = paste0("~/Downloads/ppmi_pym_data/PPMISiMLRW_fin_pca_cca",n.comp,'_rez',myrez)
 simfile = paste0("~/Downloads/ppmi_pym_data/PPMISiMLRW_fin_pca_lrr",n.comp,'_rez',myrez)
 simfile = paste0("~/Downloads/ppmi_pym_data/PPMISiMLRW_fin_ica_reg",n.comp,'_rez',myrez)
+simfile='/tmp/ASS'
 if ( ! file.exists( paste0(simfile,'_t1_simlr.csv') ) ) {
     coggers = c("ess",  "MOCA", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
+    xcl='_bl'
+    supervisors = c( 
+        getNamesFromDataframe( c("MMSE"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("CDRSB"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("ADAS"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("PACC"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("RAVLT"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("FAQ"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("LDEL"), ppmitrim, exclusions=xcl),
+        getNamesFromDataframe( c("TRAB"), ppmitrim, exclusions=xcl)
+    )
+    supervisors = c( supervisors, getNamesFromDataframe(c("Ecog"),ppmitrim,exclusions=c( '_bl') ) ) %>% unique()
+    supervisors = supervisors[ -multigrep( c("RAVLT_learning", "RAVLT_forgetting","LDELTOTAL_BL","_bl"),supervisors)]
+
     vars3=c("T1Hier_resnetGrade","rsfMRI_fcnxpro129_VisCent_2_VisPeri","DTI_mean_fa_die_hth_LRAVG")
     issaapos = na2f( ppmitrim$CSFSAA == 1 )
     isav45pos = na2f( ppmitrim$AV45_bl >= 1.1 )
-    mycc = complete.cases( ppmitrim[,vars3]) & ( isav45pos | issaapos )
-    temp <- subset_and_combine_studies(
-      df = ppmitrim[mycc,],
-      study_column = "studyName",
-      study_names = c("ADNI", "PPMI"),
-      grade_column = "T1Hier_resnetGrade",
-      k_values = c(200,200)
-    )
+    mycc = complete.cases( ppmitrim[,c(vars3,supervisors)]) & 
+      ppmitrim$T1Hier_resnetGrade >= 1.05
+    # & ( isav45pos | issaapos )
+    if ( FALSE )
+      temp <- subset_and_combine_studies(
+        df = ppmitrim[mycc,],
+        study_column = "studyName",
+        study_names = c("ADNI", "PPMI"),
+        grade_column = "T1Hier_resnetGrade",
+        k_values = c(1000,1000)
+      ) else temp=ppmitrim[mycc,]
     table( temp$studyName )
     trainer = rep(TRUE,nrow(temp))
+    temppca=prcomp( temp[,supervisors], scale. =TRUE, rank.=10 )
+    colnames(temppca$x)=paste0('prcomp',1:10)
+    temp = cbind( temp, temppca$x )
     mysimN = log_parameters(
         antspymm_simlr,
         logfile=path.expand(simfile),
         blaster=data.frame(temp), 
         select_training_boolean=trainer, 
-        energy='reg',
+        energy='regression',
         nsimlr=n.comp,
-        constraint='Grassmannx0.1x1000',
-#        connect_cog=coggers,
+        constraint='Grassmannx0.1x10',
+        connect_cog=colnames(temppca$x),
         doAsym=2,
         iterations=35,
 #        sparseness=0.90,
 #        covariates=c( 'center', 'scale', 'lowrank', 'center', 'scale', 'np' ),
         covariates=c(  'center', 'scale', 'np' ),
-        exclusions=c("fcnxpro134","fcnxpro122",'mean_md' ,'area','vol','adjusted','delta',"_BL","PC",'reference'),
+        exclusions=c("fcnxpro134","fcnxpro122",'mean_md' ,'area','adjusted','delta',"_BL","PC",'reference'),
         returnidps=FALSE,
+        path_modeling = simlr_path_models( 6, 0 ),
         verbose=T )
 #    myvars=rep(NA,length(mysimN))
 #    for ( k in 1:length(myvars)) myvars[k]=var(temp[,mysimN[k]],na.rm=T)
@@ -2000,11 +2022,11 @@ qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
 #########################################################
 coggersAll = c("ess", "gds", "lns", "MOCA", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
 coggers = c("ess",  "MOCA", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
-coggers = c(  "MOCA", "NP1APAT", "NP1DPRS", "pigd", "rem",   "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
+coggers = c(  'MOCA',  "NP1APAT", "NP1DPRS", "pigd", "rem", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
 presim=read_simlr_data_frames( path.expand(simfile), 
     c("t1","t1a", "dt", "dta", "rsf" ), verbose=TRUE )
 npc = ncol(presim[[1]])
-# npc = 10
+#npc = 5
 # coggers = c( 'MOCA',  "updrs1_score", "updrs2_score", "updrs3_score"  )
 mydogp = apply_simlr_matrices(  ppmitrim, presim, robust=FALSE, 
   center = TRUE, scale = TRUE,
@@ -2023,7 +2045,8 @@ mydogp = fillBaselineColumn( mydogp,
 stadnnh=data.frame()
 cogglist=list()
 nnhqth = 0.05 / ( npc * length(coggers) )
-nnhqth = 1e-5
+nnhqth = 1e-4
+#########################
 for ( voi in (1:npc) ) {
   for ( cog in sample(coggers) ) {
     n = nrow(stadnnh)+1
@@ -2037,14 +2060,15 @@ for ( voi in (1:npc) ) {
     covarsX=" imaging_protocol + commonEdu + LEDD + duration_yrs + age_BL + commonSex + ( yearsbl )"
     covarsX=" commonEdu + LEDD + duration_yrs + age_BL + commonSex + ( yearsbl )"
     redspns=paste0(cog,"_delta")
-    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+joinedDX+(1|commonID)+(1|SITE2)+ ", covarsX )
+    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+(1|SITE2)+ ", covarsX )
 #    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+ ", covarsX )
     newform = paste( cogformcommon, " * ", vars3f )
     severity_selection = na2f( mydogp$updrs_totscore_BL <= 30 )
     severity_selection = na2f( mydogp$hy_BL %in% c(0, 1, 2) )
     mydogpnna=mydogp[ complete.cases( mydogp[,all.vars(as.formula(newform))] ) & 
       na2f( mydogp$DTI_dti_FD_mean <= 5 & mydogp$rsfMRI_fcnxpro129_FD_mean <= 0.5 ) &
-      (mydogp$joinedDX %in% dxsel ) & severity_selection &
+      mydogp$imaging_protocol %in% c(1,2) & # no ADNI
+#      (mydogp$joinedDX %in% dxsel ) & severity_selection &
       mydogp$yearsbl <= maxy, ]
     topkval = round( 0.95 * nrow(mydogpnna) )
     mydogpnna = mydogpnna[ topk( mydogpnna, "T1Hier_resnetGrade", topkval), ] # quality selection
@@ -2118,20 +2142,22 @@ for ( voi in (1:npc) ) {
         anvpx = insight::format_p( anvpx, digits=4 )
         voix=paste0("SiMLR",voi)
         ttl=( paste(  voix, myrez, " + ", cog,  " X: o", anvpx,  " L: o", anvp ) )
+        m1=compare_model_predictions( resultsX$base_model, resultsX$full_model, mydogpnnaBase, cog, annot_size=3 )
+        m2=compare_model_predictions( bmdl, mdl, mydogpnnaLong, redspns, annot_size=3 )
         gglist=list()
         for ( k in 1:length(vars3)) 
             gglist[[length(gglist)+1]]=jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]), 
-              interval=T, facet.modx=F, plot.points = T ) + ggtitle(paste("X:",vars3[k])) + theme(legend.position = "none") 
+              interval=T, facet.modx=F, plot.points = F ) + ggtitle(paste("X:",vars3[k])) + theme(legend.position = "none") 
+        gglist[[length(gglist)+1]]=m1[[2]]
         for ( k in 1:length(vars3)) 
             gglist[[length(gglist)+1]]=( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), 
-              interval=T, facet.modx=F , plot.points = T ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
-        mlist = lappend( 
-          compare_model_predictions( resultsX$base_model, resultsX$full_model, mydogpnnaBase, cog ),
-          compare_model_predictions( bmdl, mdl, mydogpnnaLong, redspns  )
-        )
-#        cogglist[[length(cogglist)+1]] = ggplotify::as.ggplot( arrangeGrob( grobs=gglist , nrow=2, top=ttl ) )
-        cogglist[[length(cogglist)+1]] = ggplotify::as.ggplot( arrangeGrob( grobs=mlist , nrow=2, top=ttl ) )
+              interval=T, facet.modx=F , plot.points = F ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
+        gglist[[length(gglist)+1]]=m2[[2]]
+        mlist = lappend( m1, m2 )
+        cogglist[[length(cogglist)+1]] = ggplotify::as.ggplot( arrangeGrob( grobs=gglist , nrow=2, top=ttl ) )
+#        cogglist[[length(cogglist)+1]] = ggplotify::as.ggplot( arrangeGrob( grobs=mlist , nrow=2, top=ttl ) )
         print( cogglist[[length(cogglist)]]  )
+        print( resultsX$coefficients )
         print( mycoffs )
         print(stadnnh[n,] )
     }
