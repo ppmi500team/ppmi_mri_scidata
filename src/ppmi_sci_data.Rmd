@@ -711,7 +711,7 @@ The PPMI IDPs for T1w, rsfMRI and DTI are located at [@avants_ppmi_2024]. The ne
 
 We attach the neuroimaging IDPs to the PPMI Curated Data Cut (v.2024-01-29 `PPMI_Curated_Data_Cut_Public_20240129`) from the LONI IDA.  Code for this merging process is within the [subtyper package](https://stnava.github.io/subtyper/) specifically the function [merge_ppmi_imaging_clinical_demographic_data](https://stnava.github.io/subtyper/reference/merge_ppmi_imaging_clinical_demographic_data.html).  The M3RI IDPs are described in detail [here](http://htmlpreview.github.io/?https://github.com/stnava/ANTsPyMM/blob/main/docs/make_dict_table.html) and are in a data table within the `ANTsPyMM` repository (csv format).  The full tabular IDPs for both OR and SR outputs are at [this location](https://figshare.com/articles/dataset/PPMI_MR_IDPs/25361071).
 
-We supplement these PPMI data with subjects from ADNI due to the relative dearth of longitudinal control data in PPMI.  An additional advantage is the ability to compare PD subgroups with mild cognitive impairment (MCI) in terms of IDP effects both longitudinally and cross-sectionally relative to controls.  As with PPMI, we attach ANTsPyMM IDPs to `ADNIMERGE_10Feb2024` using the `subtyper` function `merge_ADNI_antspymm_by_closest_date`.  Subjects from ADNI are included if they are controls or MCI with acceptable quality neuroimaging. The `subtyper` function `match_data_frames` is used to balance the PPMI and ADNI cohorts for the purposes of statistical testing.  The function selects n=2150 subjects from the 'ADNI' cohort to match the 'PPMI' cohort based on subject age at baseline, sex and the Montreal Cognitive Assessment (MOCA).  ADNI subjects included here were no older than 71 years at baseline.  The ADNI cohort remained slightly older (mean of 64.1 years versus 63.7 in PPMI $p=0.05$ two sample $t$-test) even after matching.
+We supplement these PPMI data with subjects from ADNI due to the relative dearth of longitudinal control data in PPMI.  An additional advantage is the ability to compare PD subgroups with mild cognitive impairment (MCI) in terms of IDP effects both longitudinally and cross-sectionally relative to controls.  As with PPMI, we attach ANTsPyMM IDPs to `ADNIMERGE_10Feb2024` using the `subtyper` function `merge_ADNI_antspymm_by_closest_date`.  Subjects from ADNI are included if they are controls or MCI with acceptable quality neuroimaging. ADNI subjects included here were no older than 70 years at baseline.  The ADNI cohort remained slightly older (mean of 64.6 years versus 63.7 in PPMI) even after matching.
 
 We also train a regression model on the matched subjects to adjust imaging variables for systematic differences across the studies via MRI manufacturers ('GE', 'Philips', 'Siemens') and magnetic field strength. Control subjects aged between 50 and 70 are designated as training samples.  The regression map is learned and applied to each IDP throughout the full cohort using the `subtyper` function `adjustByCovariates`.  The purpose of this process is to mitigate the influence of different imaging protocols, ensuring that subsequent analyses are less confounded by these factors.  This approach has been used in practical studies of ADNI MRI data [@Risacher2017].  These merged and adjusted IDP data records are included in the file `ppmi_idps_trim_v1.4.0_SRF.csv`. SiMLR derived variables are denoted `t1PC*` (left-right averaged T1w derived feature sets), `t1aPC*` (asymmetry-related T1w derived feature sets), `dtPC*` (left-right averaged DTI derived feature sets), `dtaPC*` (asymmetry-related DTI derived feature sets) and `rsfPC*` (resting connectivity) where the `*` varies from 1 to 100.  These SiMLR derived variables limit the multiple testing considerations to 100 variables because these are typically grouped together.  That is, a given PC set (referred to as $IDP^k_\text{M3RI}$) is included in a single model (e.g. if $k=1$, then $age \approx t1PC1 + t1aPC1 + dt1PC1 + dtaPC1 + rsfPC1$).  We use this approach in a technical validation section below.
 
@@ -1245,6 +1245,7 @@ mydog=highestQualityRepeat(mydog,'commonID','yearsbl','T1Hier_resnetGrade')
 ysel = mydog$yearsbl <= 4.5 # & mydog$age_BL <= 75
 mydog = mydog[ mydog$studyName %in% c('PPMI','ADNI') & ysel, ]
 mydog = normalizersfmri( mydog )
+mydog = highestQualityRepeat( mydog, 'commonID','yearsbl','T1Hier_resnetGrade' )
 mydog$joinedDX <- fct_relevel(mydog$joinedDX, "CN")
 mydog$DXSubAsyn <- fct_relevel(mydog$DXSubAsyn, "CNNegative")
 ###############################################
@@ -1463,18 +1464,21 @@ print(myregionszRSFz, type = "latex",size=4,caption=rsfcap,sidewaystable=FALSE,z
 ```
 
 ```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=8,fig.height=7,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+areunique = function( x ) {
+  x[ !duplicated( x[,c("studyName","commonID","age_BL","T1Hier_resnetGrade")]), ]
+}
 ###################
 ###################
 mydog$TDX[ mydog$joinedDX %in% c("CN")]='CN'
 mydog$TDX[ mydog$joinedDX %in% c("MCI")]='MCI'
-mydogU <- subset_and_combine_studies(
+mydogU <- dplyr::distinct( subset_and_combine_studies(
   df = mydog, 
   study_column = "studyName", 
   study_names = c("ADNI", "PPMI"), 
   grade_column = "T1Hier_resnetGrade", 
   k_values = rgT1[1:2]
-)
-
+) )
+mydogU=areunique( mydogU )
 #############################################
 mydogU$age_BL=antsrimpute(mydogU$age_BL)
 mydogU$MOCA=antsrimpute(mydogU$MOCA)
@@ -1482,14 +1486,10 @@ mydogU$studyNameNum=0
 mydogU$studyNameNum[mydogU$studyName=='ADNI']=1
 matchByAge=TRUE
 if ( matchByAge ) {
-# summary(glm( studyNameNum ~ age_BL * commonSex, data=mydogU))
-# print( paste("Before matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + 
-# commonSex + MOCA, data=mydogU)) ))
-# t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
-#    mydogU$age_BL[mydogU$studyName=='PPMI'] )
-  mydogUa=mydogU[ mydogU$studyName == 'ADNI' & mydogU$age_BL <= 71.0, ]
-  mydogUp=mydogU[ mydogU$studyName == 'PPMI', ]
-  mydogUa=match_data_frames( mydogUp, mydogUa, c("age_BL",'commonSex','MOCA'))
+  mydogUa=mydogU[ na2f(mydogU$studyName == 'ADNI' & mydogU$age_BL <= 70.0), ]
+  mydogUp=mydogU[ na2f(mydogU$studyName == 'PPMI'), ]
+#  mydogUa=match_data_frames( mydogUp, mydogUa, c("age_BL",'commonSex','MOCA'))
+#  mydogUa2=balanceDataMultiClass()
   mydogU=rbind(mydogUa,mydogUp)
 }
 mydogU$roundyears = round( mydogU$yearsbl )
@@ -1504,8 +1504,8 @@ dxform="  (1|commonID) + stats::poly(age_BL,2) + commonSex  + yearsbl "
 dxform=" (1|SITE2) + (1|commonID) + age_BL + commonSex  + yearsbl "
 ##############
 for ( y in 0:4 ) {
-  print( y)
-  print(table( mydogU$TDX[ mydogU$roundyears==y ], mydogU$imaging_protocol[ mydogU$roundyears==y ] ))
+#  print( y)
+#  print(table( mydogU$TDX[ mydogU$roundyears==y ], mydogU$imaging_protocol[ mydogU$roundyears==y ] ))
   }
 dxform=" (1|commonID) + (1|SITE2) + age_BL + commonSex  + yearsbl "
 simplerlm=FALSE
@@ -1579,6 +1579,7 @@ for ( voi in apriori_targets ) {
   mycoffs = coefficients( summary( mdl ) )
   anvp = min( mycoffs[ grep("PD",rownames(mycoffs)) ,5])
   # suppressMessages( anova(bmdl,mdl)$Pr[2] )
+# deookoo
   dxdfT1[n,'voiraw']=voi
   dxdfT1[n,'voi']=voi
   dxdfT1[n,'n.base']=as.character(count_unique_subjects_per_diagnosis( mydogUbl, 'TDX','commonID', format_counts=T ))
@@ -2056,7 +2057,7 @@ npc = ncol(presim[[1]])
 # coggers = c( 'MOCA',  "updrs1_score", "updrs2_score", "updrs3_score"  )
 mydogp = apply_simlr_matrices(  ppmitrim, presim, robust=FALSE, 
   center = TRUE, scale = TRUE,
-  absolute_value=rep(TRUE,length(presim)) )[[1]]
+  absolute_value=rep(TRUE,length(presim)) )[[1]]  %>% distinct()
 mydogp$SITE2=factor(paste0(mydogp$SITE,mydogp$studyName))
 nnhnames = apply_simlr_matrices(  mydogp, presim, robust=FALSE, absolute_value=rep(TRUE,length(presim)) )[[2]]
 mydogp$roundyears = round( mydogp$yearsbl )
