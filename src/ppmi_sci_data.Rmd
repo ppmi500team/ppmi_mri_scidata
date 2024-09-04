@@ -708,7 +708,8 @@ Due to the relatively diverse needs of researchers and the variety of rsfMRI tha
 
 ## Dimensionality reduction with SiMLR 
 
-Statistical power in cohorts with diverse composition may be challenged by the number of individual predictors (here, `r length(nmstotest2)`). To address this, we adopt similarity-driven multi-view linear reconstruction (SiMLR) for dimensionality reduction and apply the default settings recommended in prior work [@avants_similarity-driven_2021; @stone_neurological_2023]. SiMLR provides a reduced number of predictors by creating "sparse feature sets" that are linked across modalities, allowing for their combined use in joint prediction models. As an unsupervised method, SiMLR identifies a joint low-dimensional space that captures the common variability across these diverse modalities. This enables integrated analyses of MRI and acquired non-imaging data (represented as standard tabular outcomes) within the analytical framework of classical regression. Importantly, this approach can be applied even when only a subset of the variables is present.
+Statistical power in cohorts with diverse composition may be challenged by the number of individual predictors (here, `r length(nmstotest2)`). To address this, we adopt similarity-driven multi-view linear reconstruction (SiMLR) for dimensionality reduction and apply the default settings recommended in prior work [@avants_similarity-driven_2021; @stone_neurological_2023]. SiMLR provides a reduced number of predictors by creating "sparse feature sets" that are linked across modalities, allowing for their combined use in joint prediction models. As an unsupervised method, SiMLR identifies a joint low-dimensional space that captures the common variability across these diverse modalities. This enables integrated analyses of MRI and acquired non-imaging data (represented as standard tabular outcomes) within the analytical framework of classical regression. Importantly, this approach can be applied even when only a subset of the variables is present.  Here, the SiMLR decomposition is applied to ADNI subjects with T1w, DTI, rsfMRI and clinical scores.  Six matrices were decomposed into 100 joint components.  The matrices included one for tabular clinical data and five for neuroimaging including T1w related measurements averaged across left and right,  T1w related asymmetry measurements, DTI related measurements averaged across left and right,  DTI related asymmetry measurements and resting state connectivity measurements.  Although cognition and functionally related clinical scores were employed during decomposition, these were not retained for further application to PPMI.
+
 
 # Data Records
 
@@ -718,8 +719,7 @@ We attach the neuroimaging IDPs to the PPMI Curated Data Cut (v.2024-01-29 `PPMI
 
 We supplement these PPMI data with subjects from ADNI due to the relative dearth of control longitudinal neuroimaging in PPMI.  As with PPMI, we attach ANTsPyMM IDPs to `ADNIMERGE_10Feb2024` using the `subtyper` function `merge_ADNI_antspymm_by_closest_date`.  Select subjects from ADNI are considered for merging with PPMI if they are not diagnosed wtih Alzheimer's disease or mild cognitive impairment (MCI) and have acceptable quality neuroimaging. The ADNI cohort is significantly older (mean of 72.3 years versus 63.9 in PPMI).
 
-We also train a regression model on the matched subjects to adjust imaging variables for systematic differences across the studies via MRI manufacturers ('GE', 'Philips', 'Siemens') and magnetic field strength. Control subjects aged between 50 and 70 are designated as training samples.  The regression map is learned and applied to each IDP throughout the full cohort using the `subtyper` function `adjustByCovariates`.  The purpose of this process is to mitigate the influence of different imaging protocols, ensuring that subsequent analyses are less confounded by these factors.  This approach has been used in practical studies of ADNI MRI data [@Risacher2017].  These merged and adjusted IDP data records are included in the file `ppmi_idps_trim_v1.4.0_SRF.csv`. SiMLR derived variables are denoted `t1PC*` (left-right averaged T1w derived feature sets), `t1aPC*` (asymmetry-related T1w derived feature sets), `dtPC*` (left-right averaged DTI derived feature sets), `dtaPC*` (asymmetry-related DTI derived feature sets) and `rsfPC*` (resting connectivity) where the `*` varies from 1 to 100.  These SiMLR derived variables limit the multiple testing considerations to 100 variables because these are typically grouped together.  That is, a given PC set (referred to as $IDP^k_\text{M3RI}$) is included in a single model (e.g. if $k=1$, then $age \approx t1PC1 + t1aPC1 + dt1PC1 + dtaPC1 + rsfPC1$).  We use this approach in a technical validation section below.
-
+We also train a regression model on the matched subjects to adjust imaging variables for systematic differences across the studies via MRI manufacturers ('GE', 'Philips', 'Siemens') and magnetic field strength. Control subjects aged between 50 and 70 are designated as training samples.  The regression map is learned and applied to each IDP throughout the full cohort using the `subtyper` function `adjustByCovariates`.  The purpose of this process is to mitigate the influence of different imaging protocols, ensuring that subsequent analyses are less confounded by these factors.  This approach has been used in practical studies of ADNI MRI data [@Risacher2017].  These merged and adjusted IDP data records are included in the file `ppmi_idps_trim_v1.4.0_SRF.csv`. SiMLR derived variables are denoted `t1PC*` (left-right averaged T1w derived feature sets), `t1aPC*` (asymmetry-related T1w derived feature sets), `dtPC*` (left-right averaged DTI derived feature sets), `dtaPC*` (asymmetry-related DTI derived feature sets) and `rsfPC*` (resting connectivity) where the `*` varies from 1 to 100.  These SiMLR derived variables limit the multiple testing considerations to 100 variables because these are typically grouped together.  That is, a given PC set (referred to as $simIDP_i^k$) is included in a single model (e.g. if $k=1$, then $age \approx t1PC1 + t1aPC1 + dt1PC1 + dtaPC1 + rsfPC1$) where $simIDP_1=t1, simIDP_2=t1a$, etc.  We use this approach in a technical validation section below.
 
 # Technical Validation
 
@@ -1466,7 +1466,7 @@ print(myregionszDTIz, type = "latex",size=4,caption=dticap,sidewaystable=FALSE,z
 print(myregionszRSFz, type = "latex",size=4,caption=rsfcap,sidewaystable=FALSE,zebra=TRUE)
 ```
 
-```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=8,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level significant differences from controls.'}
+```{r quicklmdx,echo=FALSE,eval=!exists("mydogU"),fig.width=8,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example significant IDPs illustrate the trends of differences from controls.  The bar plots at left show 95 percent confidence intervals along with estimated means for each group.  The line plots at right show the estimated change over time (0 to 4 years) along with 95 percent confidence intervals.  Table 6 and 7 detail the associated significance levels and effect sizes.'}
 ###################
 
 library(lme4)
@@ -1533,7 +1533,7 @@ dxglist=list()
 dxdfT1=data.frame()
 nms2viz = c("t1.vol.sncdp.", "t1.vol.bn.gp.gpidp.","dti.fa.lateral.occipital","dti.mean.md.uncinate.fasciculus.asym","t1.vol.asym.insula.ctx")
 nms2viz = c("t1.vol.sncdp.", "t1.vol.bn.gp.gpidp.","t1.vol.bn.str.pu.asymdp.","dti.fa.sup.cor.rad","rsf.p2.sommotb.2.striatum")
-nms2viz = c("t1.vol.sncdp.", "t1.vol.bn.str.pu.asymdp.", "dti.fa.deep.snc", "rsf.p2.sommotb.2.striatum")
+nms2viz = c("t1.vol.sncdp.", "t1.vol.bn.str.pudp.", "dti.fa.deep.snc", "rsf.p2.sommotb.2.striatum")
 for ( voi in apriori_targets ) {
   n=nrow(dxdfT1)+1
   if ( n %% 20 == 0 ) gc()
@@ -1701,7 +1701,7 @@ if ( TRUE ) {
 ```
 
 
-```{r quicklmdxsetdown,echo=FALSE,eval=TRUE,fig.width=12,fig.height=14,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r quicklmdxsetdown,echo=FALSE,eval=TRUE,fig.width=12,fig.height=14,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example significant IDPs illustrate the trends of differences from controls.  The bar plots at left show 95 percent confidence intervals along with estimated means for each group.  The line plots at right show the estimated change over time (0 to 4 years) along with 95 percent confidence intervals.  Table 5 and 6 detail the associated significance levels and effect sizes.'}
 if ( length(dxglist) > 0  )
   grid.arrange( grobs = dxglist, ncol=2, top='Group differences in IPDs from controls.' )
 ```
@@ -1732,9 +1732,9 @@ $$
 \end{split}
 $$
 
-where IDP is the imaging outcome, $ID$ is a random effect for subject ID, $Site$ is a random effect for data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment and $modality\_specific\_covariates$ covaries for modality-specific variability due to site and related effects.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD subjects in addition to controls and MCI.  The cross-sectional/longitudinal sample sizes and results for each group within the $DX$ variable are denoted in Table 5 (cross-sectional) and 6 (longitudinal) where a postfix of ".x" indicates a cross-sectional estimate and ".y" a longitudinal one.  The columns `anv.x` and `anv.y` reflect omnibus model $p$-values; `d` indicates effect size for the corresponding group either cross-sectionally or longitudinally. The `sig` column indicates whether the corrected $p$-value survives family-wise error (fwe) or false discovery rate (fdr) correction.
+where IDP is the imaging outcome, $ID$ is a random effect for subject ID, $Site$ is a random effect for data collection site, $\text{BV}_\text{bl}$ is baseline brain volume, $Edu$ is educational attainment and $modality\_specific\_covariates$ covaries for modality-specific variability due to site and related effects.  Age at baseline and biological sex are additional covariates.  The primary predictors of interest are $years_\text{bl}   *  \text{DX}$ i.e. the interaction between time from baseline of the IDP measurement (in years) and the diagnostic group which includes SAA positive and negative PD subjects in addition to controls and MCI.  The cross-sectional/longitudinal sample sizes and results for each group within the $DX$ variable are denoted in Table 5 (cross-sectional) and 6 (longitudinal) where a postfix of ".x" indicates a cross-sectional estimate and ".y" a longitudinal one.  The columns `anv.x` and `anv.y` reflect omnibus model $p$-values; `d` indicates effect size for the corresponding group either cross-sectionally or longitudinally. The `sig` column indicates whether the corrected $p$-value survives family-wise error (fwe) or false discovery rate (fdr) correction.  In the longitudinal cohort, subjects are required to have two or more visits.
 
-Cross-sectional models used standard linear regression (`lm` in `R`) with the same structure as described above but without random effects.  Linear mixed-effects models (LMMs) were constructed using the `lmer` function from the `lme4` package and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table 5 (for the $DX$ term) and Table 6 (for the longitudinal term).  Effect sizes (d.x and d.y) for each term are estimated from the $t-$value and degrees of freedom for each cross-sectional and longitudinal model.  Very small effect sizes are represented by empty cells. The effects of $DX$ on these IDPs are visualized through partial residual plots [@larsen_use_1972] of diagnosis by time generated for each diagnostic category as in Figure 8.  These IDPs are significant under family wise error (fwe) multiple comparisons correction at $p$-value $\le$ 0.05 (after correction based on the above-mentioned `anova`).  These plots and other regression plots are displayed with the `R` packages [`jtools`](https://jtools.jacob-long.com) and [`interactions`](https://interactions.jacob-long.com).
+Cross-sectional models used standard linear regression (`lm` in `R`) with the same structure as described above but without random effects.  Linear mixed-effects models (LMMs) were constructed using the `lmer` function from the `lme4` package and fitted to the data. This process included the standardization of variables within the equation, a critical step given the varying scales and distributions of neuroimaging metrics. Comparative model analysis was conducted to ascertain the significance of various predictors, employing the `anova` function to contrast models with and without $DX$ and the interaction between $DX$ and $years_\text{bl}$. This `anova` assesses the "omnibus" model improvement due to the joint addition of both $DX$ and the interaction between $DX$ and $years_\text{bl}$.  As we are only reporting high level results here, we do not investigate $p$-values within individual diagnostic groups.  These results are shown in Table 5 (for the $DX$ term) and Table 6 (for the longitudinal term).  Effect sizes (d.x and d.y) for each term are estimated from the $t-$value and degrees of freedom for each cross-sectional and longitudinal model.  Very small effect sizes are those with absolute value less than 0.2. The effects of $DX$ on these IDPs are visualized through partial residual plots [@larsen_use_1972] of diagnosis by time generated for each diagnostic category as in Figure 8.  These IDPs are significant under family wise error (fwe) multiple comparisons correction at $p$-value $\le$ 0.05 (after correction based on the above-mentioned `anova`).  These plots and other regression plots are displayed with the `R` packages [`jtools`](https://jtools.jacob-long.com) and [`interactions`](https://interactions.jacob-long.com).
 
 ```{r dxresults,echo=FALSE,eval=buildsci,warning=FALSE,message=FALSE,results='asis'}
 if ( length( grep("snseg",dxdfT1$voi) ) > 0 ) {
@@ -1972,7 +1972,7 @@ for ( voi in (1:npc) ) {
     covarsX=" commonEdu + LEDD + duration_yrs + age_BL + commonSex + ( yearsbl )"
     redspns=paste0(cog,"_delta")
     cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+(1|SITE2)+ ", covarsX )
-#    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+ ", covarsX )
+    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+ ", covarsX )
     newform = paste( cogformcommon, " * ", vars3f )
     severity_selection = na2f( mydogp$updrs_totscore_BL <= 30 )
     severity_selection = na2f( mydogp$hy_BL %in% c(0, 1, 2) )
@@ -2053,7 +2053,7 @@ for ( voi in (1:npc) ) {
       }
 #      if ( anvp <= nnhqth | anvpx <= nnhqth ) {
       c2viz = c( "updrs1_score48", "updrs3_score64","updrs2_score76")
-      c2viz = c("NP1DPRS23","updrs1_score48", "updrs3_score60")
+      c2viz = c("NP1DPRS48", "updrs3_score55","updrs2_score50")
       if ( paste0(cog,voi) %in% c2viz ) {
         cogdel = paste0(cog,"_delta")
         anvp = insight::format_p( anvp, digits=4 )
@@ -2086,7 +2086,7 @@ for ( voi in (1:npc) ) {
 stadnnh = stadnnh[!stadnnh$singular,]
 ```
 
-```{r quicknnhpost,echo=FALSE,eval=TRUE,fig.width=12,fig.height=14,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for SiMLR mapping between M3RI and PD symptomology.'}
+```{r quicknnhpost,echo=FALSE,eval=TRUE,fig.width=12,fig.height=14,warning=FALSE,message=FALSE,fig.cap='Select partial regression plots for SiMLR mapping between M3RI and PD symptomology.  Darker lines indicate the relationship of higher values in the given imaging score with the change in the outcome.  Lighter dashed lines indicate the relationship of lower values in the given imaging score with the change in the outcome.  For example, lower values in dtPC23 are associated with increase in NP1DPRS over time.  Higher values are related to less (or no) change.  Similarly for rsPC23.  Increased asymmetry in DTI-related scores (dtaPC23) are associated with higher NP1DPRS over time.'}
 if ( length(cogglist) >= 3 )
   grid.arrange(grobs=list( 
     cogglist[[3]], cogglist[[2]], cogglist[[1]] 
@@ -2143,209 +2143,31 @@ colnames(simlrviz)=gsub("_",".",colnames(simlrviz),fixed=TRUE)
 svnames=c("cog","voi","n.x","n.long","d.b","d.y","S.m1.1","S.m2.1",'sig')
 svnames=c("cog","voi","n.x","n.long","anv.x","anv","S.m1.1","S.m2.1",'sig')
 svnames2=c("cog","voi","n.x","n.y","anv.x","anv.y","S.m1.1","S.m2.1",'sig')
-svnames=c("cog","voi","n.x","n.long","d.b","d.y","S.m1.1","S.m2.1",'sig')
-svnames2=c("cog","voi","n.x","n.y","d.x","d.y","S.m1.1","S.m2.1",'sig')
+svnames=c("cog","voi","n.x","n.long", "anv.x","anv", "d.b","d.y","S.m1.1","S.m2.1",'sig')
+svnames2=c("cog","voi","n.x","n.y", "anv.x","anv.y", "d.x","d.y","S.m1.1","S.m2.1",'sig')
+# svnames=c("cog","voi","n.long",'anv',"d.y","S.m1.1","S.m2.1",'sig')
+# svnames2=c("cog","voi","n.y",'anv.y',"d.y","S.m1.1","S.m2.1",'sig')
 simlrviz[,svnames2]=simlrviz[,svnames]
 qdfsigzNNH=ztable( simlrviz[,svnames2], zebra=2,tabular=F)
-mycap=paste0('Table 7. Significant SiMLR IDP to clinical measurements: top-k for each score.')
+mycap=paste0('Table 7. Significant SiMLR IDP to clinical measurements: top five for each score.')
 print(qdfsigzNNH, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 ```
 
 
-We use LMMs to estimate the relationship of IDP values to clinical decline as evaluated by MDS-UPDRS 1, 2, 3 (off) and total scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on PPMI subjects as these measurements are absent in ADNI.  These models are of the form:
+We use LMMs to estimate the relationship of IDP values to clinical decline as evaluated by MDS-UPDRS 1, 2, 3, total (off) and sub scores.  While these clinical measurements have well-documented limitations in terms of reliability and interpretability [@on_behalf_of_the_parkinsons_progression_markers_initiative_parkinsons_2023], they are consistently available in PPMI.  These exemplar assessments differ from the prior section in that they focus only on PPMI subjects as these measurements are absent in ADNI.  These models are of the form:
 
 $$
 \begin{split}
-\text{UPDRSX}_{delta} \approx (1|ID) + (1|Site) + \text{UPDRSX}_{bl} + \\ \text{BV}_\text{bl} + Edu + LEDD + duration_\text{yrs}  + \\ 
-  age_\text{bl} + Sex_\text{bio} + years_\text{bl}  *  IDP^k_\text{M3RI}
+\text{UPDRSX}_{delta} \approx (1|ID) + \text{UPDRSX}_{bl} + \\ \text{BV}_\text{bl} + Edu + LEDD + duration_\text{yrs}  + \\ 
+  age_\text{bl} + Sex_\text{bio} + years_\text{bl}  *  ( \sum_{i=1}^5 simIDP_i^k )
 \end{split}
 $$
 
-The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given MDS-UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for disease duration, treatment effects (Levodopa Equivalent Daily Dose, LEDD) as well as baseline values of the given score.  This latter variable approximates a control for subject and domain-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to  IDP values.  The predictor of interest, here, is $years_\text{bl}  *  IDP^k_\text{M3RI}$ which estimates change in the given MDS-UPDRS score (or derived score / subscore) in relation to brain structure (including asymmetry) and function as measured by three modalities.  These models are assessed in the range of baseline to `r maxy` years change.  The effects are visualized through partial residual plots for select IDPs of interest.  Effect sizes for each significant (fdr or fwe) pair of outcomes and IDPs in Table 7 where S.m1.1 indicates the top IDP feature contributing to the model.  If S.m2.1 is present, this means that a second predictor also contributes significantly to the association with the clinical measurement and its most highly weighted IDP is listed.  In several cases, two distinct modalities contribute effectively.  
+The outcome is $\text{UPDRSX}_{delta}$ indicating change in a given MDS-UPDRS score.  The majority of these variables are as defined previously.  However, we introduce control for disease duration, treatment effects (Levodopa Equivalent Daily Dose, LEDD) as well as baseline values of the given score.  This latter variable approximates a control for subject and domain-specific disease severity.  As such, these models are relatively conservative in terms of their attribution of variance to  IDP values.  The predictor of interest, here, is $years_\text{bl}  *  ( \sum_{i=1}^5 simIDP_i^k )$ which estimates change in the given MDS-UPDRS score (or derived score / subscore) in relation to brain structure (including asymmetry) and function as measured by three modalities.  The $p$-value associated with each of the $k$ in $1 \cdots 100$ models is determined by the amount of additional variance that is explained by the SiMLR IDPs (`R` `anova` function).  We determine significance from the omnibus $p$-value returned by `anova`.  The effect sizes are derived from the single most predictive SiMLR IDP in each model.  These models are assessed in the range of baseline to `r maxy` years change.  As in the prior section, cross-sectional results are derived with standard regression (`lm`); the outcome in this case, however, is the raw score, not its change.  
 
-This SiMLR study demonstrates that brain state -- as measured jointly by these modalities -- may contribute to acceleration/deceleration of changes in MDS-UPDRS scores.  However, we accentuate that these models are relatively simple and linear; as such, they yield only rough suggestions that additional modeling effort may be warranted to understand the differential value of these IDPs across the spectrum of PD symptomology.  Furthermore, this analysis grouped all PPMI subjects together, includign controls; as such, it lacks the specificity that may be needed to parse subgroup specific relationships or those that only occur within specific stages of PD.  Despite these limitations, Table 7 demonstrates that all three modalities studied here influence symptom progression.  Furthermore, several of these models indicate that multiple IDPs are changing in concert with symptom progression in particular for NP1DPRS (presence of depressed moods from MDS-UPDRS I) and the MDS-UPDRS III total score.  Change in both of these associate with IDPs across all three modalities.  Variables assessed but not reaching significance include MOCA, NP1APAT (apathy) and REM sleep disturbance.  The subjects comprising these results span a variety of PD-related subgroups: `r mycogn` (median across results).
+The effects are visualized, in Figure 9, through partial residual plots for select IDPs of interest.  Effect sizes for each significant (fdr or fwe) pair of outcomes and IDPs in Table 7 where S.m1.1 indicates the top IDP feature contributing to the model.  If S.m2.1 is present, this means that a second predictor also contributes significantly (uncorrected $p \le 0.05$ based on the  $t$-value for a given $simIDP_i^k$ where $i$ indexes the individual type of measurement and $k$ indicates the $k^\text{th}$ component) to the association with the clinical measurement and its most highly weighted IDP is listed.  In several cases, two distinct modalities contribute effectively.  
 
-<!--
-
-### Multi-view example: M3RI predicts change in MDS-UPDRS1 in 2 to 4 year followup
-
-Here, we dissect the influence of M3RI neuroimaging biomarkers on the progression of MDS-UPDRS Part I, II and III scores [@chahine_predicting_2019]. The analysis focuses on three neuroimaging biomarkers indicative of structural and functional brain integrity: asymmetry in the putamen volume as derived from T1-weighted images, motor cortex connectivity metrics from resting-state fMRI, and mean diffusivity measures from DTI in the superior longitudinal fasciculus. We construct three linear regression models that predict change in MDS-UPDRS1 from baseline data.  The base model uses only clinical information.  We build two additional IDP models: the first includes only the putamen IDP; the second includes IDPs from each modality. This last model extended the clinical reference model by incorporating all three neuroimaging biomarkers simultaneously, allowing for the assessment of their improvement in predicting motor symptom progression in the 2 to 4 year range of the followup data. The models include covariates such as LEDD, disease duration, baseline motor function, and demographic information.
-
-
-```{r multiview,echo=FALSE,eval=FALSE,fig.width=10,fig.height=5,message=FALSE,warning=FALSE,fig.cap="Resampled estimates of multi-view regression for predicting change in MDS-UPDRS1 scores based on three different modalities demonstrate improved expected peformance.  Vertical dashed lines show median performance.",cache=TRUE}
-# this is so-so silly-ish
-library(groupdata2)
-library(xpectr)
-cog='updrs_totscore'
-cog='updrs1_score'
-vois = c(
-  "DTI_mean_md.fornix_.cres..stria_terminalis_.can_not_be_resolved_with_current_resolution..Asym.jhu_icbm_labels_1mm_adjusted_BL",
-  "rsfMRI_fcnxpro129_BasalGanglia_2_VisPeri_adjusted_BL",
-  "T1w_mean_Asym_posterior_cingulate_adjusted_BL"
-)
-#  "DTI_mean_md.superior_longitudinal_fasciculus.LRAVG.jhu_icbm_labels_1mm" )
-#  "DTI_mean_md.anterior_limb_of_internal_capsule.LRAVG.jhu_icbm_labels_1mm" )
-  #  "DTI_mean_md.anterior_limb_of_internal_capsule.Asym.jhu_icbm_labels_1mm" )
-voisx=vois
-for ( x in 1:length(vois) ) {
-  voisx[x]= shorten_pymm_names(voisx[x])
-}
-# voisx[2]=paste0(voisx[2],'.avg')
-# voisx[3]=paste0(voisx[3],'.asym')
-cogv=paste0(cog,c("_BL","_delta"))
-raneffstr=''
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs + DTI_dti_FD_max_BL+ rsfMRI_fcnxpro129_FD_max_BL  + LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl ) + ( yearsbl )  ")
-bform =paste( cogv[2], " ~ ", cogv[1], " + ", raneffstr, "  + duration_yrs +  LEDD + commonEdu + age_BL + commonSex + brainVolume_BL + ( yearsbl )   ")
-uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
-mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
-temp2 = mydogp[ !is.na( mydogp[,vois[3]]) & !is.na( mydogp[,vois[2]]) &
-#  mydogp$yearsbl <= maxy, ]
-  mydogp$TDX == "PDSp+" & mydogp$yearsbl <= maxy & 
-  mydogp$T1Hier_resnetGrade_BL > 1.02, ]
-#  mydogp$TDX != "CN" & mydogp$yearsbl <= maxy, ]
-for ( x in 1:length(vois) ) {
-  temp2[,voisx[x]]=temp2[,vois[x]]
-}
-# temp2[,paste0(cog,"_delta")]=psych::winsor( temp2[,paste0(cog,"_delta")], 0.02 )
-# temp2 = scale_variables_in_equation( temp2, mvform )
-temp2$commonID = factor( temp2$commonID )
-n=200
-mypartrate=0.75
-cvdf=data.frame(  )
-for ( jj in 1:n ) {
-  train_test = groupdata2::partition( temp2, p = mypartrate, id_col = "commonID") 
-  bmdl=suppressMessages(lm( bform, data=train_test[[1]] ))
-  mdlu=suppressMessages(lm( uvform, data=train_test[[1]] ))
-  mdl=suppressMessages(lm( mvform, data=train_test[[1]] ))
-  highy=train_test[[2]]$yearsbl >= 0.80 & train_test[[2]]$yearsbl < 2.2
-#  highy=train_test[[2]]$yearsbl >= 1.80 & train_test[[2]]$yearsbl < 5
-  train_test[[2]]=train_test[[2]][highy,]
-  if ( nrow(train_test[[2]]) > 5 ) {
-#    print( range( train_test[[2]]$yearsbl ) )
-  #  print( length( fixef(bmdl)))
-    mypredb = predict( bmdl, newdata=train_test[[2]])#, allow.new.levels = TRUE )
-    mypredu = predict( mdlu, newdata=train_test[[2]])#, allow.new.levels = TRUE )
-    mypred = predict( mdl, newdata=train_test[[2]])#, allow.new.levels = TRUE )
-  #  plot( train_test[[2]][,paste0(cog,"_delta")], mypred )
-    jjj=nrow(cvdf)+1
-    cvdf[jjj,'nte']=length(unique(train_test[[2]]$commonID))
-    cvdf[jjj,'ntr']=length(unique(train_test[[1]]$commonID))
-    cvdf[jjj,'model']='clin'
-    cvdf[jjj,'corr']=cor.test( train_test[[2]][,paste0(cog,"_delta")], mypredb )$est
-    cvdf[jjj,'err']=mean(abs(train_test[[2]][,paste0(cog,"_delta")]- mypredb ),na.rm=T)
-    jjj=nrow(cvdf)+1
-    cvdf[jjj,'model']='idp1'
-    cvdf[jjj,'corr']=cor.test( train_test[[2]][,paste0(cog,"_delta")], mypredu )$est
-    cvdf[jjj,'err']=mean(abs(train_test[[2]][,paste0(cog,"_delta")]- mypredu ),na.rm=T)
-    jjj=nrow(cvdf)+1
-    cvdf[jjj,'model']='idp3'
-    cvdf[jjj,'corr']=cor.test( train_test[[2]][,paste0(cog,"_delta")], mypred )$est
-    cvdf[jjj,'err']=mean(abs(train_test[[2]][,paste0(cog,"_delta")]- mypred ),na.rm=T)
-    if ( jj > 9 & jj %% 10 == 0 ) {
-      g1=cvdf$model =='clin'
-      g2=cvdf$model =='idp3'
-#      print(t.test(  cvdf[g1,'corr'] ,   cvdf[g2,'corr'] ,  paired=TRUE ))
-#      print(t.test(  cvdf[g1,'err'] ,   cvdf[g2,'err'] ,  paired=TRUE ))
-    }
-  }
-}
-mediann=median( cvdf$nte, na.rm=TRUE)
-mediann2=median( cvdf$ntr, na.rm=TRUE)
-####################################################
-m='corr'
-g1=cvdf$model =='clin'
-g2=cvdf$model =='idp3'
-mvanvp3 = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-g1=cvdf$model =='clin'
-g2=cvdf$model =='idp1'
-mvanvp1 = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-g1=cvdf$model =='idp1'
-g2=cvdf$model =='idp3'
-mvanvpu = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-ttl=paste( sum( cvdf$model == 'clin',na.rm=T), 'cross-validation runs with a median of', mediann,'subjects in test data and',mediann2,'in train data.')
-print( gghistogram(cvdf[cvdf$model %in% c("clin","idp3"),], 
-  x = m, add = "median", rug = TRUE,
-  color = "model", fill = "model", palette='jco', title=ttl, xlab='correlation of real to predicted change' ) )
-mvanvp3 
-####################################################
-####################################################
-if ( FALSE ) {
-  m='err'
-  g1=cvdf$model =='clin'
-  g2=cvdf$model =='idp3'
-  mvanvp = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-  g1=cvdf$model =='clin'
-  g2=cvdf$model =='idp1'
-  mvanvp = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-  g1=cvdf$model =='idp1'
-  g2=cvdf$model =='idp3'
-  mvanvpu = t.test(  cvdf[g1,m] ,   cvdf[g2,m] ,  paired=TRUE )$p.value
-  print( gghistogram(cvdf[cvdf$model %in% c("clin","idp3"),], 
-    x = m, add = "mean", rug = TRUE,
-    color = "model", fill = "model", palette='jco', xlab='MAE: real to predicted change' ) )
-}
-####################################################
-
-if ( FALSE ) {
-gglist = list() 
-gglist2 = list() 
-for ( x in 1:length(vois) ) {
-  gglist[[x]] = ( jtools::effect_plot( mdl, 
-        !!sym(voisx[x]), # mod2='TDX',  
-        # main.title=paste('mv base', voisx[x]), 
-        interval=TRUE, 
-        plot.points = F, facet.modx=T, 
-        int.type = c("confidence", "prediction")[1], 
-        partial.residuals=F  ) + theme(legend.position = "top")  )
-  gglist2[[x]] = interactions::interact_plot( mdl, 
-        'yearsbl',
-        modx=!!sym(voisx[x]),
-        # main.title=paste('mv time', voisx[x]), 
-        interval=TRUE, 
-        plot.points = F, facet.modx=T, 
-        int.type = c("confidence", "prediction")[1], 
-        partial.residuals=F  ) + theme(legend.position = "top")
-  }
-# grid.arrange( grobs=gglist, nrow=1, top='MV base 3 modality')
-# grid.arrange( grobs=gglist2, nrow=3, top='MV long 3 modality')
-
-if ( FALSE ) {
-  gglist=list()
-  for ( x in 1:length(vois) ) {
-    gglist[[length(gglist)+1]]=visreg::visreg(  mdl, 'yearsbl' , voisx[x], gg=TRUE)
-  }
-  vtoadd=all.vars(as.formula(mvform))[ -c(1) ]
-  visglm( temp2, mdl, 'yearsbl', paste0(cog,"_delta"), group='all', 'hey', groupvar='TDX' , varstoadd=vtoadd, verbose=TRUE )
-}
-
-iplot1=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[1]),, interval = F)$interactplot
-iplot2=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[2]),, interval = F)$interactplot
-iplot3=interactions::probe_interaction(mdl, pred = 'yearsbl', modx = !!sym(voisx[3]),confint=F, interval = F)$interactplot
-ii=list(iplot1,iplot2,iplot3)
-grid.arrange( grobs=ii, nrow=3, top='MV long 3 modality: Johnson Neyman plots.')
-
-}
-```
-
-The effects of neuroimaging biomarkers on MDS-UPDRS Part I score changes are predictive both independently and even more so in combination. This can be quantified in several ways;  here, we use a resampling approach to generate many runs of this modal comparison in different subsets of the data.  Each independent train-test run uses `r 100*mypartrate`\% of subjects in training with a minimum of 6 left out subjects in each test set.  Aggregating across many simulations provides the opportunity to estimate the expected additional value of the 3 IDP vs 1 IDP vs baseline clinical model.  The 1 IDP model is:
-$$
-\begin{split}
-\text{UPDRS1}_{delta} \approx  \text{MDS-UPDRS1}_\text{bl} + duration_\text{yrs} \\
-+ DTI_\text{FD} + rsfMRI_\text{FD}  + LEDD + Edu + age_\text{bl} + Sex + \text{BV}_\text{bl} \\ 
-+ years_\text{bl}~*~DX + years_\text{bl}  * t1.vol.bn.str.pu.asym.bl;
-\end{split}
-$$
-The most prominent predictors in this model include interaction of diagnostic group with years from baseline, LEDD and the baseline score as well as the IDP. The 3 IDP model adds rsfMRI connectivity between motor and cognitive control regions and mean diffusion:
-$$
-\begin{split}
-\text{MDS-UPDRS1}_{delta} \approx  \cdots + years_\text{bl}  * \\
- (  \cdots ~+~rsf.sommota.2.contc.bl~+~dti.mean.md.fornix.asym.bl )
-\end{split}
-$$
-Paired $t$-test show the 3 IDP model improves correlation between real and predicted MDS-UPDRS1 change scores versus both the baseline (`r insight::format_p(mvanvp3,digits=4)`) and 1 IDP model (`r insight::format_p(mvanvpu,digits=4)`). Figure 10 demonstrates the distribution of performance between the clinical and 3 IDP models over all of the simulations.  
-
--->
-
+This SiMLR study demonstrates that brain state -- as measured jointly by these modalities -- may contribute to acceleration/deceleration of changes in MDS-UPDRS scores.  However, we accentuate that these models are relatively simple and linear; as such, they yield only rough suggestions that additional modeling effort may be warranted to understand the differential value of these IDPs across the spectrum of PD symptomology.  Furthermore, this analysis grouped all PPMI subjects together, including controls; as such, it lacks the specificity that may be needed to parse subgroup relationships or those that only occur within specific stages of PD.  Despite these limitations, Table 7 demonstrates that all three modalities studied here influence symptom progression.  Furthermore, several of these models indicate that multiple IDPs are changing in concert with symptom progression in particular for NP1DPRS (presence of depressed moods from MDS-UPDRS I) and the MDS-UPDRS III total score.  Change in both of these associate with IDPs across all three modalities.  Variables assessed but not reaching significance include MOCA and REM sleep disturbance.  The subjects comprising these results span a variety of PD-related subgroups: `r mycogn` (median across results for the longitudinal cohort where subjects are required to have two or more visits).
 
 In summary, these data and reference results demonstrate the potential of multimodal neuroimaging and integrative statistical approaches in PD and neurodegenerative disease research more generally.  This tabulated multi-modality MR IDP dataset for PPMI -- derived from deeply validated open source methods -- represents a valuable opportunity to help standardize as well as advance PD M3RI research. It simplifies -- to the extent that is currently possible -- the analysis of complex imaging data and potentially accelerates the discovery of novel insights into PD progression and effects.  The timing of this data release is critical given the newly available SAA biomarker. Additionally, this methodology holds promise for broader applications, potentially benefiting research into other neurological conditions.
 
