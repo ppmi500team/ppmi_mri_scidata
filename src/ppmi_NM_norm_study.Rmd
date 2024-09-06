@@ -1,0 +1,186 @@
+---
+title: Template normalized NM analysis for PPMI
+output: html_document
+---
+
+
+```{r setup}
+library(magrittr)
+library(dplyr)
+library(ANTsR)
+library(stringr)
+
+match_indices <- function(fns, ppmi) {
+  # Create a key vector to match
+  key <- paste(fns$subjectID, fns$date)
+  
+  # Create a lookup vector
+  lookup <- paste(ppmi$commonID, ppmi$date)
+  
+  # Find the indices of the matched rows in ppmi
+  indices <- match(key, lookup)
+  
+  # Return the indices
+  return(indices)
+}
+
+parse_filename <- function(fns) {
+  # Split the filename into components
+  components <- strsplit(basename(fns$fn), "-")
+  
+  # Create a data frame with the extracted components
+  parsed_fns <- data.frame(
+    studyName = sapply(components, function(x) x[1]),
+    subjectID = sapply(components, function(x) x[2]),
+    date = sapply(components, function(x) x[3]),
+    modality = sapply(components, function(x) x[4]),
+    remainder = sapply(components, function(x) paste(x[5:length(x)], collapse = "-")),
+    stringsAsFactors = FALSE
+  )
+  
+  # Add the original filename and root directory to the data frame
+  parsed_fns$fn <- fns$fn
+  parsed_fns$root_dir <- dirname(fns$fn)
+  
+  return(parsed_fns)
+}
+
+```
+
+```{r start}
+img=antsImageRead("../data/ppmi_NM_multichannel.mha")
+nc=img@components
+nnz=rep(NA,nc)
+zz=splitChannels(img)
+for ( k in 1:nc ) {
+    temp = cropIndices( zz[[k]], c(1,1,12), c(94,69,17) )
+    nnz[k]=sum( temp == 0 )
+}
+hist( nnz )
+table( nnz == 0 )
+```
+
+
+```{r filter}
+zz=zz[nnz==0]
+fns=read.csv("../data/ppmi_NM_filenames.csv")
+colnames(fns)=c("count","fn")
+names(fns)
+fns=fns[nnz==0,]
+head(parse_filename(fns))
+# fix fns
+fns = fns %>% 
+  parse_filename() %>% 
+  filter(studyName == "PPMI") %>% 
+  select(subjectID, date, modality)
+
+zztest = zz[[1272]]
+zzavg = antsAverageImages( zz )
+# get mask
+zzavgmask = antsImageRead("~/.antspymm/PPMI_NM_template_crop_mask.nii.gz")
+```
+
+
+```{r match}
+if ( ! exists( "ppmi" ) ) {
+    ppmi = read.csv( "~/Downloads/ppmi_pym_data/ppmi_idps_trim_v1.4.0_SRF.csv")
+}
+
+ppmi2nm = match_indices( fns, ppmi )
+zz=zz[!is.na(ppmi2nm)]
+fns=fns[ !is.na(ppmi2nm),]
+ppmi2nm=na.omit(ppmi2nm)
+ppmiMatched=ppmi[ppmi2nm,]
+```
+
+```{r reflection}
+if ( ! exists( "zzr" ) ) {
+    zzavgsmall=resampleImage(zzavg,rep(1,3))
+    zzavgrTx = reflectImage( zzavgsmall, axis=0, tx='SyN', verbose=TRUE )
+    zzr=list()
+    for ( k in 1:length(zz)) {
+        zzr[[k]]=antsApplyTransforms( zzavg, zz[[k]],zzavgrTx$fwdtransforms )
+    }
+}
+```
+
+
+```{r imat}
+library(subtyper)
+mask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
+maskrr = maskImage( mask, mask, level = c( 2, 6 ), binarize=TRUE )
+maskb = maskImage( mask, mask, level = c( 1 ), binarize=TRUE ) %>% iMath("MD",2)
+mysig=0.5
+imato = imageListToMatrix( zz, maskb, sigma=mysig )
+imatreflect = imageListToMatrix( zzr, maskb, sigma=mysig )
+if ( ! exists( "doAsym" ) ) doAsym=FALSE
+if ( doAsym ) {
+    pp='_asym'
+    imat = abs( imato  -  imatreflect )
+} else {
+    pp='_avg'
+    imat = imato * 0.5 + imatreflect * 0.5
+}
+imatrr = imageListToMatrix( zz, maskrr )
+imata=rowMeans(imato)
+imatrra=rowMeans(imatrr)
+library(lmerTest)
+myeq = as.formula( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' )
+ppmiMatchedScl = scale_variables_in_equation( ppmiMatched, myeq, variables_to_exclude=c('yearsbl', 'nmrr', 'nmscl'))
+ppmiMatchedScl=cbind(ppmiMatchedScl, nmsnc=imata, nmrr=imatrra )
+lsel=ppmiMatchedScl$nmsnc<700
+ppmiMatchedScl=ppmiMatchedScl[lsel,]
+mdl = lmer( myeq, data=ppmiMatchedScl)
+summary( mdl )
+mycoef = coefficients( summary( mdl ) )
+```
+
+
+
+
+```{r imat2,fig.width=14,fig.height=6}
+library(ggplot2)
+library(visreg)
+ppmiMatchedScl = scale_variables_in_equation( ppmiMatched, myeq, variables_to_exclude=c('yearsbl', 'nmrr', 'nmscl'))
+ppmiMatchedScl=cbind(ppmiMatchedScl, nmrr=imatrra, nmsnc=imata, nmsnc=imat )
+lsel=ppmiMatchedScl$nmsnc<700 & !( ppmiMatchedScl$joinedDX %in% c("ProdromalSNCA","PDSNCA","PDPRKN"))
+myeq = as.formula( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' )
+ppmiMatchedScl=ppmiMatchedScl[lsel,]
+mdl = lmer( myeq, data=ppmiMatchedScl)
+mycoef = coefficients( summary( mdl ) )
+gg=grep("joinedDX",rownames(mycoef))
+sncnames = getNamesFromDataframe( "nmsnc", ppmiMatchedScl )
+coefmat=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
+coefmatpv=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
+rownames(coefmat)=rownames(coefmatpv)=rownames(mycoef)[gg]
+ct=1
+sncnamestest=sncnames[-1]
+#########################
+for ( vox in sncnamestest ) {
+    myeq = as.formula( paste( vox, ' ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' ))
+    mdl = lmer( myeq, data=ppmiMatchedScl )
+    mycoef = coefficients( summary( mdl ) )
+    if ( vox == sncnamestest[1] ) gg=grep("joinedDX",rownames(mycoef))
+    coefmat[,ct]=mycoef[gg,"t value"]
+    coefmatpv[,ct]=mycoef[gg,"Pr(>|t|)"]
+    ct=ct+1
+    if ( any( mycoef[gg,5] < 1e-4 ) ) {
+        mygg=visreg::visreg(mdl,'joinedDX', gg=TRUE ) +  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) + ggtitle( vox ) + theme_minimal()
+        print(mygg)
+        print(mycoef[,-c(1:3)])
+        print(myeq)
+    }
+}
+###############
+timglist=list()
+for ( k in 1:nrow(coefmat) ) {
+    timg = makeImage( maskb, coefmat[k,]*(-1.0) )
+    timglist[[length(timglist)+1]]=timg
+    nsig=sum( p.adjust( coefmatpv[k,], 'BH' ) <= 0.05 )
+    print( paste( rownames(coefmat)[k], nsig ) )
+    antsImageWrite( timg, paste0('/tmp/tvalue',pp,"_",rownames(coefmat)[k],'.nii.gz'))
+    }
+names(timglist)=rownames(coefmat)
+###############
+```
+
