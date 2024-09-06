@@ -37,6 +37,37 @@ def load_images_to_list( image_filenames, mask ):
 
     return cropped_images
     
+import ants
+
+def normalize_images_by_mean(image_list):
+    """
+    Normalize each ANTsImage in the list by dividing each image by its mean value.
+    
+    Parameters:
+    - image_list: list of ants.ANTsImage
+        A list of ANTsImage objects to normalize.
+    
+    Returns:
+    - normalized_images: list of ants.ANTsImage
+        A list of normalized ANTsImage objects.
+    """
+    normalized_images = []
+
+    for img in tqdm(image_list, desc="normalizing images"):
+        # Compute the mean of the image
+        img_mean = img.mean()
+        
+        if img_mean == 0:
+            continue
+        
+        # Divide the image by its mean
+        normalized_img = img / img_mean
+        
+        # Append the normalized image to the list
+        normalized_images.append(normalized_img)
+    
+    return normalized_images
+   
 
 # Define the list of image filenames
 image_filenames = glob.glob("processedCSVSRFIRST/PPMI/*/*/NM2DMT/*/PPMI-*-NM_norm.nii.gz")
@@ -56,3 +87,7 @@ print("Image matrix shape:", image_matrix.shape)
 ants.image_write( ants.from_numpy(image_matrix), '/tmp/ppmi_NM_matrix.mha' )
 ants.image_write( maskc, '/tmp/ppmi_NM_matrix_mask.mha' )
 ants.image_write( ants.merge_channels(image_list), '/tmp/ppmi_NM_multichannel.mha' )
+
+ants.image_write( ants.merge_channels( normalize_images_by_mean(image_list) ), '/tmp/ppmi_NM_norm_multichannel.mha' )
+
+
