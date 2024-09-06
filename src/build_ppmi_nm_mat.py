@@ -2,7 +2,7 @@ import ants
 import glob
 from tqdm import tqdm  # For the progress bar
 
-def load_images_to_matrix( image_filenames, mask ):
+def load_images_to_list( image_filenames, mask ):
     """
     Load a list of images from a given set of filenames, crop them, and convert them to a matrix.
     
@@ -34,13 +34,9 @@ def load_images_to_matrix( image_filenames, mask ):
         
         # Append the cropped image to the list
         cropped_images.append(cropped_img)
-    
-    # Step 3: Convert the list of cropped images to a matrix
-    if not isinstance(mask, ants.ANTsImage):
-        raise ValueError("The provided mask must be an ants.ANTsImage object.")
-    image_matrix = ants.image_list_to_matrix(cropped_images, ants.crop_image(mask,mask) )
-    return image_matrix
 
+    return cropped_images
+    
 
 # Define the list of image filenames
 image_filenames = glob.glob("processedCSVSRFIRST/PPMI/*/*/NM2DMT/*/PPMI-*-NM_norm.nii.gz")
@@ -49,5 +45,10 @@ image_filenames = glob.glob("processedCSVSRFIRST/PPMI/*/*/NM2DMT/*/PPMI-*-NM_nor
 mask_image = ants.image_read("~/.antspymm/PPMI_NM_template_mask.nii.gz")
 
 # Load images and convert to matrix
-image_matrix = load_images_to_matrix(image_filenames, mask=mask_image)
+image_list = load_images_to_list(image_filenames, mask=mask_image)
+
+maskc = ants.crop_image(mask_image,mask_image)
+
+image_matrix = ants.image_list_to_matrix( image_list, maskc )
+
 print("Image matrix shape:", image_matrix.shape)
