@@ -1,6 +1,7 @@
 import ants
 import glob
 from tqdm import tqdm  # For the progress bar
+import pandas as pd
 
 def load_images_to_list( image_filenames, mask ):
     """
@@ -71,6 +72,8 @@ def normalize_images_by_mean(image_list):
 
 # Define the list of image filenames
 image_filenames = glob.glob("processedCSVSRFIRST/PPMI/*/*/NM2DMT/*/PPMI-*-NM_norm.nii.gz")
+image_series = pd.Series(image_filenames)
+image_series.to_csv("/tmp/ppmi_NM_filenames.csv")
 
 # Optional: Define the mask (can be None if not using a mask)
 mask_image = ants.image_read("~/.antspymm/PPMI_NM_template_mask.nii.gz")
