@@ -52,3 +52,7 @@ maskc = ants.crop_image(mask_image,mask_image)
 image_matrix = ants.image_list_to_matrix( image_list, maskc )
 
 print("Image matrix shape:", image_matrix.shape)
+
+ants.image_write( ants.from_numpy(image_matrix), '/tmp/ppmi_NM_matrix.mha' )
+ants.image_write( maskc, '/tmp/ppmi_NM_matrix_mask.mha' )
+ants.image_write( ants.merge_channels(image_list), '/tmp/ppmi_NM_multichannel.mha' )
