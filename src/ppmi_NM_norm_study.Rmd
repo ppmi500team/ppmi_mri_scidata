@@ -9,6 +9,117 @@ library(magrittr)
 library(dplyr)
 library(ANTsR)
 library(stringr)
+library(subtyper)
+
+library(lme4)
+library(progress)
+library(jtools)
+library(ggplot2)
+library(gridExtra)
+
+#' Fit Mixed-Effects Models and Analyze Asymmetry with Progress Bar
+#'
+#' This function fits mixed-effects models for each voxel, computes coefficients, p-values,
+#' and optionally generates effect plots if significant. Progress is tracked using a progress bar.
+#'
+#' @param sncnames Character vector of voxel names to iterate over.
+#' @param coefmat Matrix to store t-values of the coefficients.
+#' @param coefmatpv Matrix to store p-values of the coefficients.
+#' @param coefmatA Matrix to store t-values for asymmetry.
+#' @param coefmatpvA Matrix to store p-values for asymmetry.
+#' @param ppmiMatchedScl Data frame containing the data for fitting the model.
+#' @param dxvar Character string specifying the dependent variable.
+#' @param covariates covariate part of equation eg \code{~ (1|commonID)+(1|SITE)+age}
+#' @param show_plots Logical, if TRUE, significant effect plots will be printed.
+#' @param threshold Numeric, p-value threshold for considering significant results (default is 1e-4).
+#'
+#' @return coefficient matrices (list of)
+#'
+#' @examples
+#' run_voxel_analysis(sncnames, coefmat, coefmatpv, coefmatA, coefmatpvA, ppmiMatchedScl, "dxvar")
+#'
+#' @export
+run_voxel_analysis <- function(sncnames, coefmat, coefmatpv, coefmatA, coefmatpvA, ppmiMatchedScl, dxvar, covariates, show_plots = TRUE, threshold = 1e-4) {
+  
+  # Initialize a progress bar
+  pb <- progress_bar$new(
+    format = "  Processing [:bar] :percent in :elapsed",
+    total = length(sncnames), clear = FALSE, width = 60
+  )
+  effectsX=coefmatpv*0
+  effectsA=coefmatpv*0
+  
+  # Loop over the voxel names
+  for (vox in sample(sncnames)) {
+    pb$tick()  # Update progress bar
+    
+    ct <- as.integer(gsub("nmavgsnc.", "", vox, fixed = TRUE))
+    voxa <- gsub("nmavgsnc", "nmasmsnc", vox, fixed = TRUE)
+    
+    if (is.na(coefmat[1, ct])) {
+      # Create formulas
+      myeq <- as.formula(paste(vox, covariates, dxvar))
+      myeqa <- as.formula(paste(voxa, covariates, dxvar))
+      
+      # Fit mixed models
+      mdl <- lmer(myeq, data = ppmiMatchedScl)
+      mdla <- lmer(myeqa, data = ppmiMatchedScl)
+      
+      # Extract coefficients
+      mycoef <- coefficients(summary(mdl))
+      mycoefA <- coefficients(summary(mdla))
+      gg <- grep(dxvar, rownames(mycoef))
+      
+      # Store coefficients and p-values
+      coefmat[, ct] <- mycoef[gg, "t value"]
+      coefmatpv[, ct] <- mycoef[gg, "Pr(>|t|)"]
+      coefmatA[, ct] <- mycoefA[gg, "t value"]
+      coefmatpvA[, ct] <- mycoefA[gg, "Pr(>|t|)"]
+      ndf <- round( mycoef[gg, "df"] )
+      effectsX[,ct] = effectsize::t_to_d(mycoef[gg, "t value"], ndf )[,1]
+      ndf <- round( mycoefA[gg, "df"] )
+      effectsA[,ct] = effectsize::t_to_d(mycoefA[gg, "t value"], ndf )[,1]
+      
+      # Check if any p-value is significant and plot if true
+      if (any(mycoef[gg, 5] < threshold) | any(mycoefA[gg, 5] < threshold)) {
+        if (show_plots) {
+          # Create and customize plots
+          mygg <- jtools::effect_plot(mdl, !!sym(dxvar)) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 0.13)) +
+            ggtitle(vox)
+          
+          myggA <- jtools::effect_plot(mdla, !!sym(dxvar)) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 0.33)) +
+            ggtitle(voxa)
+          
+          # Print the plots side by side
+          print(grid.arrange(grobs = list(mygg, myggA), nrow = 2))
+        }
+        
+        # Print coefficients and equations
+        print(mycoef[, -c(1:3)])
+        print(mycoefA[, -c(1:3)])
+        print(myeq)
+        
+        # Check significant results
+        for (k in 1:nrow(coefmat)) {
+          nsig <- sum(p.adjust(na.omit(coefmatpv[k, ]), 'BH') <= 0.05)
+          nsig2 <- sum(p.adjust(na.omit(coefmatpvA[k, ]), 'BH') <= 0.05)
+          print(paste(rownames(coefmatpvA)[k], nsig, nsig2))
+        }
+      }
+    }
+  }
+
+  return( list( 
+    coefmat=coefmat,
+    coefmatpv=coefmatpv,
+    coefmatA=coefmatA,
+    coefmatpvA=coefmatpvA,
+    effects=effectsX,
+    effectsA=effectsA
+  ))
+}
 
 match_indices <- function(fns, ppmi) {
   # Create a key vector to match
@@ -62,11 +173,12 @@ table( nnz == 0 )
 
 
 ```{r filter}
-zz=zz[nnz==0]
 fns=read.csv("../data/ppmi_NM_filenames.csv")
 colnames(fns)=c("count","fn")
 names(fns)
-fns=fns[nnz==0,]
+nnzthresh = quantile( nnz[nnz>0],0.5)
+fns=fns[nnz <= nnzthresh,]
+zz=zz[nnz <= nnzthresh ]
 head(parse_filename(fns))
 # fix fns
 fns = fns %>% 
@@ -75,9 +187,10 @@ fns = fns %>%
   select(subjectID, date, modality)
 
 zztest = zz[[1272]]
-zzavg = antsAverageImages( zz )
+zzavgImg = antsAverageImages( zz )
 # get mask
 zzavgmask = antsImageRead("~/.antspymm/PPMI_NM_template_crop_mask.nii.gz")
+zzavgmask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
 ```
 
 
@@ -85,22 +198,36 @@ zzavgmask = antsImageRead("~/.antspymm/PPMI_NM_template_crop_mask.nii.gz")
 if ( ! exists( "ppmi" ) ) {
     ppmi = read.csv( "~/Downloads/ppmi_pym_data/ppmi_idps_trim_v1.4.0_SRF.csv")
 }
-
 ppmi2nm = match_indices( fns, ppmi )
 zz=zz[!is.na(ppmi2nm)]
-fns=fns[ !is.na(ppmi2nm),]
 ppmi2nm=na.omit(ppmi2nm)
 ppmiMatched=ppmi[ppmi2nm,]
+# now filter based on standard criteria: NM volume >= 200 & signal <= 2000
+volfilt=na2f( ppmiMatched$NM2DMT_NM_volume_substantianigra >= 200 )
+sigfilt=na2f(ppmiMatched$NM2DMT_NM_avg_substantianigra <= 2000)
+ppmiMatched=ppmiMatched[ volfilt & sigfilt , ]
+zz=zz[  volfilt & sigfilt  ]
 ```
 
 ```{r reflection}
-if ( ! exists( "zzr" ) ) {
-    zzavgsmall=resampleImage(zzavg,rep(1,3))
-    zzavgrTx = reflectImage( zzavgsmall, axis=0, tx='SyN', verbose=TRUE )
-    zzr=list()
+if ( ! exists( "doAsym" ) ) doAsym='asymmetry_index'
+if (  !exists("zzaind") |  !exists("zzavg") ) {
+#    zzavgsmall=resampleImage(zzavgmask,rep(1,3))
+#    zzavgrTx = reflectImage( zzavgsmall, axis=0, tx='SyN', verbose=TRUE )
+#    antsImageMutualInformation( zzavgrTx$warpedmovout, zzavgsmall )
+    binarized = maskImage( mask, mask, level = c( 1, 5 ), binarize=TRUE ) * 2 + 
+        maskImage( mask, mask, level = c( 2, 6 ), binarize=TRUE )
+    zzavgrTx = reflectImage( binarized, axis=0, tx='antsRegistrationSyNRepro[s]', verbose=TRUE )
+    zzaind = list()
+    zzavg = list()
+    zzmi = list()
     for ( k in 1:length(zz)) {
-        zzr[[k]]=antsApplyTransforms( zzavg, zz[[k]],zzavgrTx$fwdtransforms )
+        temp=antsApplyTransforms( zzavgImg, zz[[k]],zzavgrTx$fwdtransforms )
+        zzaind[[k]]=smoothImage( asymmetry( zz[[k]], temp, doAsym  ), 0.5 )
+        zzavg[[k]]=smoothImage(zz[[k]]*0.5+temp*0.5,0.5)
+        zzmi[[k]] = antsImageMutualInformation( zzavgImg, zz[[k]] )
     }
+    zzmi=unlist(zzmi)
 }
 ```
 
@@ -108,27 +235,24 @@ if ( ! exists( "zzr" ) ) {
 ```{r imat}
 library(subtyper)
 mask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
-maskrr = maskImage( mask, mask, level = c( 2, 6 ), binarize=TRUE )
+maskrr = maskImage( mask, mask, level = c( 2 ), binarize=TRUE )
 maskb = maskImage( mask, mask, level = c( 1 ), binarize=TRUE ) %>% iMath("MD",2)
-mysig=0.5
-imato = imageListToMatrix( zz, maskb, sigma=mysig )
-imatreflect = imageListToMatrix( zzr, maskb, sigma=mysig )
-if ( ! exists( "doAsym" ) ) doAsym=FALSE
-if ( doAsym ) {
-    pp='_asym'
-    imat = abs( imato  -  imatreflect )
-} else {
-    pp='_avg'
-    imat = imato * 0.5 + imatreflect * 0.5
+mysig=0.0
+imato = imageListToMatrix( zzavg, maskb, sigma=mysig )
+imatAsym = imageListToMatrix( zzaind, maskb, sigma=mysig )
+imat = list( imato, imatAsym )
+for ( k in 1:length( imat ) ) {
+    iszero = imat[[k]] == 0
+    imat[[k]][ iszero ]= NA
 }
-imatrr = imageListToMatrix( zz, maskrr )
-imata=rowMeans(imato)
-imatrra=rowMeans(imatrr)
+imatrr = imageListToMatrix( zzavg, maskrr )
+imata=rowMeans(imato,na.rm=T)
+imatrra=rowMeans(imatrr,na.rm=T)
 library(lmerTest)
 myeq = as.formula( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' )
 ppmiMatchedScl = scale_variables_in_equation( ppmiMatched, myeq, variables_to_exclude=c('yearsbl', 'nmrr', 'nmscl'))
-ppmiMatchedScl=cbind(ppmiMatchedScl, nmsnc=imata, nmrr=imatrra )
-lsel=ppmiMatchedScl$nmsnc<700
+ppmiMatchedScl=cbind(ppmiMatchedScl, nmmi = zzmi, nmsnc=imata, nmrr=imatrra )
+lsel=ppmiMatchedScl$nmsnc < quantile(ppmiMatchedScl$nmsnc,0.995, na.rm=T) & ppmiMatchedScl$nmmi < quantile( ppmiMatchedScl$nmmi, 0.995,na.rm=T)
 ppmiMatchedScl=ppmiMatchedScl[lsel,]
 mdl = lmer( myeq, data=ppmiMatchedScl)
 summary( mdl )
@@ -142,45 +266,46 @@ mycoef = coefficients( summary( mdl ) )
 library(ggplot2)
 library(visreg)
 ppmiMatchedScl = scale_variables_in_equation( ppmiMatched, myeq, variables_to_exclude=c('yearsbl', 'nmrr', 'nmscl'))
-ppmiMatchedScl=cbind(ppmiMatchedScl, nmrr=imatrra, nmsnc=imata, nmsnc=imat )
-lsel=ppmiMatchedScl$nmsnc<700 & !( ppmiMatchedScl$joinedDX %in% c("ProdromalSNCA","PDSNCA","PDPRKN"))
-myeq = as.formula( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' )
+ppmiMatchedScl=cbind(ppmiMatchedScl, nmrr=imatrra, nmsnc=imata, nmavgsnc=imat[[1]], nmasmsnc=imat[[2]] )
+dxvar='joinedDX'
+dxvar='DXSubAsyn'
+mytbl = table(  ppmiMatchedScl[,dxvar ])
+dxsel = names(mytbl[mytbl>=9])
+if ( 'CNNegative' %in% names(mytbl) ) {
+    ppmiMatchedScl[,dxvar ]=forcats::fct_relevel( ppmiMatchedScl[,dxvar ], 'CNNegative' )
+} else ppmiMatchedScl[,dxvar ]=forcats::fct_relevel( ppmiMatchedScl[,dxvar ], 'CN' )
+# lsel=ppmiMatchedScl$nmsnc<700 & !( ppmiMatchedScl$joinedDX %in% c("ProdromalSNCA","PDSNCA","PDPRKN"))
+lsel=ppmiMatchedScl$nmsnc<700 & ( ppmiMatchedScl[,dxvar] %in% dxsel)
+myeq = as.formula(paste( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + ', dxvar ))
 ppmiMatchedScl=ppmiMatchedScl[lsel,]
 mdl = lmer( myeq, data=ppmiMatchedScl)
 mycoef = coefficients( summary( mdl ) )
-gg=grep("joinedDX",rownames(mycoef))
-sncnames = getNamesFromDataframe( "nmsnc", ppmiMatchedScl )
+gg=grep(dxvar,rownames(mycoef))
+
+sncnames = getNamesFromDataframe( "nmavgsnc", ppmiMatchedScl )
 coefmat=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
 coefmatpv=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
 rownames(coefmat)=rownames(coefmatpv)=rownames(mycoef)[gg]
-ct=1
-sncnamestest=sncnames[-1]
+coefmatA=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
+coefmatpvA=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
+rownames(coefmatA)=rownames(coefmatpvA)=rownames(mycoef)[gg]
 #########################
-for ( vox in sncnamestest ) {
-    myeq = as.formula( paste( vox, ' ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + joinedDX' ))
-    mdl = lmer( myeq, data=ppmiMatchedScl )
-    mycoef = coefficients( summary( mdl ) )
-    if ( vox == sncnamestest[1] ) gg=grep("joinedDX",rownames(mycoef))
-    coefmat[,ct]=mycoef[gg,"t value"]
-    coefmatpv[,ct]=mycoef[gg,"Pr(>|t|)"]
-    ct=ct+1
-    if ( any( mycoef[gg,5] < 1e-4 ) ) {
-        mygg=visreg::visreg(mdl,'joinedDX', gg=TRUE ) +  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) + ggtitle( vox ) + theme_minimal()
-        print(mygg)
-        print(mycoef[,-c(1:3)])
-        print(myeq)
-    }
-}
+dookoo
+output = run_voxel_analysis( sncnames, coefmat, coefmatpv, coefmatA, coefmatpvA, ppmiMatchedScl, dxvar,
+    covariates = '~ (1 | commonID) + (1 | SITE) + nmrr + NM2DMT_NM_substantianigra_z_coordinate + commonSex + age_BL + yearsbl + ',
+    show_plots = TRUE, threshold = 1e-4)
 ###############
-timglist=list()
-for ( k in 1:nrow(coefmat) ) {
-    timg = makeImage( maskb, coefmat[k,]*(-1.0) )
-    timglist[[length(timglist)+1]]=timg
-    nsig=sum( p.adjust( coefmatpv[k,], 'BH' ) <= 0.05 )
-    print( paste( rownames(coefmat)[k], nsig ) )
-    antsImageWrite( timg, paste0('/tmp/tvalue',pp,"_",rownames(coefmat)[k],'.nii.gz'))
+for ( k in 1:nrow(output$coefmat) ) {
+    outfn = paste0('/tmp/tvalue_',rownames(output$coefmat)[k],'.nii.gz')
+    nsig=sum( p.adjust( na.omit(output$coefmatpv[k,]), 'BH' ) <= 0.05 )
+    nsig2=sum( p.adjust( na.omit(output$coefmatpvA[k,]), 'BH' ) <= 0.05 )
+    print( paste(outfn, nsig, nsig2 ) )
+    timg = makeImage( maskb, antsrimpute( output$coefmat[k,] * (1.0) ) )
+    timgA = makeImage( maskb, antsrimpute(output$coefmatA[k,] ))
+    timgA1=antsApplyTransforms( zzavgImg, timgA, zzavgrTx$invtransforms )
+    timg=timg+timgA1
+    antsImageWrite( timg, outfn )
     }
-names(timglist)=rownames(coefmat)
 ###############
 ```
 
