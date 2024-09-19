@@ -413,6 +413,8 @@ for ( x in asymvars ) {
 }
 }
 doadj=TRUE
+ppmitrim = fill1col2another( ppmitrim, 'moca_BL', 'MOCA_bl' )
+ppmitrim = fill1col2another( ppmitrim, 'moca', 'MOCA' )
 ```
 
 
@@ -1416,22 +1418,22 @@ dtqc="+DTIQC1+DTIQC2+DTIQC3+DTIQC4"; dtqc='1+'
 rsqc="+rsfQC1+rsfQC2+rsfQC3+rsfQC4"; rsqc='1+'
 mydogU=mydog[ !is.na(mydog$TDX), ]
 mydogU$age_BL=antsrimpute(mydogU$age_BL)
-mydogU$MOCA=antsrimpute(mydogU$MOCA)
+mydogU$moca=antsrimpute(mydogU$moca)
 mydogU$studyNameNum=0
 mydogU$studyNameNum[mydogU$studyName=='ADNI']=1
 # summary(glm( studyNameNum ~ age_BL * commonSex, data=mydogU))
 print( paste("Before matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + 
-commonSex + MOCA, data=mydogU)) ))
+commonSex + moca, data=mydogU)) ))
 t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
     mydogU$age_BL[mydogU$studyName=='PPMI'] )
 mydogUa=mydogU[ mydogU$studyName == 'ADNI' & mydogU$age_BL <= 80.0, ]
 mydogUp=mydogU[ mydogU$studyName == 'PPMI', ]
 # temp=find_closest_subjects( mydogUp, mydogUa, 1, 'commonSex', 'age_BL')
-mydogUa=match_data_frames( mydogUp, mydogUa, c("age_BL",'commonSex','MOCA'))
+mydogUa=match_data_frames( mydogUp, mydogUa, c("age_BL",'commonSex','moca'))
 mydogU=rbind(mydogUa,mydogUp)
 
 cogs = getNamesFromDataframe( c("updrs","score"), mydogU, exclusions=c(4,'_BL',"_delta") )
-col2sbl = unique(c( nmstotest2, cogs ))
+col2sbl = unique(c( nmstotest2, cogs, 'moca'  ))
 mydogU = fillBaselineColumn( mydogU,
         col2sbl,
         'subjectID', 'yearsbl', 0, 
@@ -1442,7 +1444,7 @@ mydogU$yearsblr = round( mydogU$yearsbl )
 t.test( mydogU$age_BL[mydogU$studyName=='ADNI'], 
     mydogU$age_BL[mydogU$studyName=='PPMI'] )
 summary(glm( studyNameNum ~ age_BL * commonSex, data=mydogU))
-print( paste("After matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + commonSex+ MOCA, data=mydogU)) ))
+print( paste("After matching: ",rsq::rsq(glm( studyNameNum ~ age_BL + commonSex+ moca, data=mydogU)) ))
 dxform="  (1|commonID) + studyName*mrimfg + agebl1 + agebl2 + commonSex  + yearsbl "
 if ( any(grepl("adjusted",nmstotest2)) ) {
   dxform="  (1|commonID) + agebl1 + agebl2 + commonSex  + yearsbl "
@@ -1461,7 +1463,7 @@ for ( voi in nmstotest2 ) {
 #    ( mydogU$age_BL <= 70.0 & mydogU$studyName == 'ADNI' ) ) &
     mydogU$imaging_protocol %in% c("1","2","3") & 
     mydogU$yearsbl <= maxy &
-    mydogU$TDX %in% c( "CN", "PDSp-","PDSp+", "MCI-"  )
+    mydogU$TDX %in% c( "CN", "PDSp-","PDSp+", "MCI-","PDLRRK2-","PDLRRK2+"  )
 #    mydogU$TDX %in% c( "CN", "PDLRRK2-","PDLRRK2+", "MCI-", "MCI+" )
 # temp=mydogU[selector,]
 #    mydogU$TDX %in% c("PDLRRK2+","PDLRRK2-")
@@ -1518,6 +1520,12 @@ for ( voi in nmstotest2 ) {
 #  temp2 = mydogU[ !is.na( mydogU[,voi]) &  mydogU$studyName %in% c('PPMI'), ]
   temp2 = scale_variables_in_equation( temp2, newform, variables_to_exclude=c(voi,'yearsbl'))
   temp2L = scale_variables_in_equation( temp2L, newform, variables_to_exclude=c(voi,'yearsbl'))
+  for ( xxx in all.vars( as.formula(newform) )) {
+    if ( is.factor( temp2[,xxx])) {
+      contrasts(temp2[,xxx]) <- contr.sum
+      contrasts(temp2L[,xxx]) <- contr.sum
+      }
+    }
 #  temp2[,voi]=psych::winsor(temp2[,voi],tr=0.01)
   mdl=lmer( newform, data=temp2 )
   mdlL=lmer( newform, data=temp2L )
@@ -1573,6 +1581,10 @@ for ( voi in nmstotest2 ) {
   othercolsnm=gsub(":",".",othercolsnm)
   ndf = length(unique(temp2$commonID))
   chnd = effectsize::t_to_d( mycoffs[ othercols, 't value'], rep(ndf,length(othercols))  )
+  chnd2 = data.frame(effectsize::epsilon_squared(mdl))
+  rownames(chnd2)=chnd2[,'Parameter']
+  othercolsnm2=c("e2.b","e2.y")
+  dxdfT1[n,othercolsnm2]=chnd2[grep('TDX',rownames(chnd2)),'Epsilon2_partial']
   dxdfT1[n,paste0("d.",othercolsnm)]=chnd[,1]
   dxdfT1[n,paste0("p.",othercolsnm)]=as.numeric(mycoffs[ othercols, "Pr(>|t|)"])
   dxdfT1[n,'res']=myrez
@@ -1602,7 +1614,7 @@ for ( voi in nmstotest2 ) {
 #    mygg = plot( predictorEffects(mdl,'TDX*yearsbl')[[2]], main=ttl,ylab=shorten_pymm_names(voi) )
 #    dxglist[[length(dxglist)+1]]=mygg 
     manualColors = pal_futurama(palette = c("planetexpress"), alpha = 1)(4)
-    manualColors = pal_jco( alpha = 1)(4)
+    manualColors = pal_jco( alpha = 1)(length(table(temp2$TDX)))
     pd <- ggplot2::position_dodge( 0.05 ) # move them .05 to the left and right
     ww = 0.5
     print( ggplot( myem,
@@ -1630,8 +1642,10 @@ for ( voi in nmstotest2 ) {
 #    ( visreg::visreg( mdl, 'yearsbl' , 'TDX', main=ttl))
 #    Sys.sleep(1)
     print( mycoffs[-c(1:3),coffcols] )
+    print("simple slopes")
     print(myss[, c("statistic","p.value","modx.value", "estimate", "conf.low","conf.high")])
     print(paste(shorten_pymm_names(voi),insight::format_p(anvpMX),insight::format_p(anvpSS)))
+    print( dxdfT1[n,othercolsnm2] )
 #    print( interpret_simlr_vector(mysim$simlrX, mysim$mats,  gsub("_adjusted","",voi) ) )
 #    print( interactions::interact_plot( mdl, 'yearsbl',  'TDX', main.title=ttl, interval=TRUE, plot.points =FALSE, facet.modx=TRUE, int.type = c("confidence", "prediction")[1], partial.residuals=F,y.label ='') )
 #    print(prplot( mdl, 'yearsbl', dxvar, ttl, colorvar='commonSex', addpoints=1))
@@ -1715,7 +1729,7 @@ dxdfT1selY = dxdfT1sel[ order( prod1 ), ]
 prod1 = dxdfT1sel[,"p.PDSp-"] * dxdfT1sel[,"p.PDSp+"]
 dxdfT1selB = dxdfT1sel[ order( prod1 ), ]
 
-dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS", getNamesFromDataframe("CN",dxdfT1sel), getNamesFromDataframe("mean",dxdfT1sel), getNamesFromDataframe("change",dxdfT1sel)))]
+dxdfT1selcols = colnames(dxdfT1sel)[ !(colnames(dxdfT1sel) %in% c("res","singular","voiraw",'minpMX',"minpSS", getNamesFromDataframe("CN",dxdfT1sel), getNamesFromDataframe("LRRK",dxdfT1sel), getNamesFromDataframe("mean",dxdfT1sel), getNamesFromDataframe("change",dxdfT1sel)))]
 
 dxdfT1selcolsB = dxdfT1selcols[ -grep("d.year",dxdfT1selcols,fixed=TRUE ) ]
 dxdfT1selcolsB = dxdfT1selcolsB[ -grep("p.",(dxdfT1selcolsB),fixed=TRUE ) ]
@@ -1767,20 +1781,28 @@ mydogp2=mydogU
 mydogp2$roundyears = round( mydogp2$yearsbl )
 mydogp2=highestQualityRepeat( mydogp2, 'commonID', 'roundyears', 'T1Hier_resnetGrade' )
 # for ( cog in  cogs[ -grep("tot",cogs)]  ) {
+mydogp2[ is.na(mydogp2$LEDD),'LEDD']=0
+mydogp2[ is.na(mydogp2$duration_yrs),'duration_yrs']=0
+# mydogp2[ mydogp2$studyName =='ADNI','TDX'] = mydogp2[ mydogp2$studyName =='ADNI','joinedDX']
 cogtotest="updrs_totscore"
 cogtotest='updrs3_score' #  "updrs_totscore"
 # cogtotest='updrs2_score' #  "updrs_totscore"
-cogtotest=c('updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
-signames = sample(nmstotest2)
+cogtotest=c('updrs1_score','updrs3_score','updrs2_score','moca') #  "updrs_totscore"
 stadfrsf=data.frame()
 cogglist=list()
+signames = sample(nmstotest2)
 for ( voi in signames ) {
   voi = paste0(voi,"_BL")
   for ( cog in cogtotest ) {
     n = nrow(stadfrsf)+1
     maxy=2.5
-    selector = !is.na( mydogp2[,voi]) & (mydogp2$TDX %in% c("PDSp+")) & 
-      mydogp2$yearsbl <= maxy & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
+    if ( cog != 'moca') {
+      selector = !is.na( mydogp2[,voi]) & (mydogp2$TDX %in% c("PDSp+")) & 
+        mydogp2$yearsbl <= maxy & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
+    } else {
+      selector = !is.na( mydogp2[,voi]) &(mydogp2$TDX %in% c("PDSp+")) & 
+        mydogp2$yearsbl <= maxy & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
+    }
     if ( antspymm_vartype( voi ) == "T1" ) {
       motnameu=t1qc
       selector = selector & subtyper::fs( mydogp2$T1Hier_resnetGrade >= rgT1 )
@@ -1795,8 +1817,9 @@ for ( voi in signames ) {
       selector = selector & subtyper::fs( mydogp2$DTI1_ol_loop  <= 0.5 &
         mydogp2$DTI_dti_FD_mean <= 5 )
     }
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex + TDX * yearsbl + ( yearsbl )" )
-    cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex +  ( yearsbl )" )
+    if ( cog != 'moca') {
+      cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + duration_yrs + LEDD + commonEdu + age_BL + commonSex +  ( yearsbl )" )
+    } else cogformcommon=paste( paste0(cog,"_delta"), "~ ",paste0(cog,"_BL"),"+(1|commonID) + commonEdu + age_BL + commonSex +  ( yearsbl )" )
     longids = mydogp2$subjectID[  mydogp2$roundyears >= 1 & selector ]
     baseids = mydogp2$subjectID[  mydogp2$roundyears == 0 & selector ]
     bothids = intersect( longids, baseids )
@@ -1809,6 +1832,8 @@ for ( voi in signames ) {
     voix = gsub("_fcnxpro122", "",voix)
     voix = gsub("_fcnxpro134", "",voix)
     temp2[,voix]=temp2[,voi]
+#    print(voi)
+#    print( table( temp2$TDX ) )
     newform = paste( cogformcommon, " * TDX * ", voix )
     newform = paste( cogformcommon, " * ", voix )
     if ( nrow(temp2) > 10 ) {
@@ -1921,22 +1946,23 @@ for ( voi in signames ) {
 }
 #####################
 stadfrsf = stadfrsf[!stadfrsf$singular,]
+stadfrsf2 = stadfrsf[ stadfrsf$cog != 'moca', ]
 sigth=0.05
 # for ( cog in cogs ) 
 {
-  mypvs = stadfrsf$anv
+  mypvs = stadfrsf2$anv
 #  mypvs[ stadfrsf$cog != cog  ] = NA
   psel = subtyper::fs( p.adjust( mypvs, 'BY' ) <= sigth )
   psel2 = subtyper::fs( p.adjust( mypvs, 'BH' ) <= sigth )
-  stadfrsf[psel2,'sig']='fdr'
-  stadfrsf[psel,'sig']='fwe'
+  stadfrsf2[psel2,'sig']='fdr'
+  stadfrsf2[psel,'sig']='fwe'
   if ( sum(psel ) > 0 )
-    temp=stadfrsf[psel | psel2,]
+    temp=stadfrsf2[psel | psel2,]
     qdfsig=temp
 #    qdf = rbind( qdf, temp )
   }
 if ( !is.null( qdfsig ) ) {
-  qdfsig=stadfrsf
+  qdfsig=stadfrsf2
   qdfsig = qdfsig[ order( qdfsig$anv ), ]
   qdfsig$voi = shorten_pymm_names( qdfsig$voi )
   qdfsig$anv = insight::format_p(  qdfsig$anv, digits=4  )
@@ -1957,7 +1983,8 @@ if ( length( cogglist ) > 0 )
 ```{r updrsresults,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,results='asis'}
 # Print the ztable object, ensuring it's treated as LaTeX code
 qdfsigz=ztable(na.omit(qdfsig[subtyper::fs(qdfsig$sig == 'fwe'),]),zebra=2,tabular=F)
-mycap='Table 7. Significant (fwe) IDP-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
+qdfsigz=ztable(na.omit(qdfsig[,]),zebra=2,tabular=F)
+mycap='Table 7. Significant (fwe) IDP to MDS-UPDRS longitudinal effects for PD+: T1w, DTI and rsfMRI'
 print(qdfsigz, type = "latex",size=3,caption=mycap,sidewaystable=FALSE)
 ```
 
@@ -2214,7 +2241,7 @@ uvform =paste( bform, "   *  ( ", voisx[1] , ")" )
 mvform =paste( bform, " + ( yearsbl )  *  ( ", paste(voisx,collapse="+") , ")" )
 cogs = getNamesFromDataframe( c("updrs","score"), ppmitrim, exclusions=c(4,'_BL',"_delta") )
 temp2 = fillBaselineColumn( ppmitrim,
-        cogs,
+        c( cogs, 'moca' ),
         'subjectID', 'yearsbl', 0, 
         fast=T, verbose=F )[[1]]
 

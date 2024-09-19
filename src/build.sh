@@ -6,5 +6,7 @@ cd /Users/stnava/Documents/writing/ppmi_mri_scidata/src
 # "OR","SRF","SRP"
 Rscript -e 'myrez="OR"; ofn=paste0("ppmi_sci_data_",myrez,".pdf"); if ( ! file.exists(ofn) ) rmarkdown::render("ppmi_sci_data.Rmd", output_file=ofn, clean=FALSE )'
 Rscript -e 'myrez="SRF"; ofn=paste0("ppmi_sci_data_",myrez,".pdf");  if ( ! file.exists(ofn) )rmarkdown::render("ppmi_sci_data.Rmd", output_file=ofn, clean=FALSE)'
+Rscript -e 'myrez="SRF"; ofn=paste0("ppmi_sci_data_",myrez,"_supplemental.pdf");  if ( ! file.exists(ofn) )rmarkdown::render("ppmi_sci_data_supplemental.Rmd", output_file=ofn, clean=FALSE)'
+
 Rscript -e 'myrez="SRP"; ofn=paste0("ppmi_sci_data_",myrez,".pdf");  if ( ! file.exists(ofn) ) rmarkdown::render("ppmi_sci_data.Rmd", output_file=ofn )'
 cd $cdir

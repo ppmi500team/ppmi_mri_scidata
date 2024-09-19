@@ -72,7 +72,7 @@ if ( ! exists( "ppmitrim0" ) ) {
 
     ppmitrim = ppmitrim0
     siteadjustment = FALSE
-    covaradjustment = FALSE
+    covaradjustment = TRUE
     fixvars =  getNamesFromDataframe( "NM2DMT_NM_avg_", ppmitrim, exclusions="_pred" )
     nmvars2test=unique(c(fixvars,nmnames))
     ppmitrimNM=ppmitrim[ !is.na(ppmitrim$NM2DMT_NM_avg_substantianigra),  ]
@@ -203,7 +203,7 @@ print( prplot( mdl, 'yearsbl' , dxvar, colorvar=dxvar, addpoints=2 ) )
 ```
 
 
-```{r neuromelaninSetup,echo=FALSE,eval=TRUE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelaninSetup,echo=FALSE,eval=TRUE,fig.width=6,fig.height=4,warning=FALSE,message=FALSE,fig.cap='a1.'}
 shorten_nm_names = shorten_pymm_names
 ###################
 ###################
@@ -226,7 +226,7 @@ nmstotest2=unique( c("SN",nmnames,nmstotest2))
 nmstotest2=nmstotest2[-multigrep( c('refreg',"NM2DMT_NM_avg_mean" ,"NM2DMT_NM_avg_cropped_mean"), nmstotest2)]
 ```
 
-```{r neuromelanin,echo=FALSE,eval=TRUE,fig.width=6,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin,echo=FALSE,eval=TRUE,fig.width=6,fig.height=6,warning=FALSE,message=FALSE,fig.cap='a2.'}
 ######
 dxglist=list()
 dxdfNM=data.frame()
@@ -344,7 +344,7 @@ print(dxdfNM[dxdfNM$eta_p >= 0.01,c('voi','cog', 'eta_p','anv')])# anything smal
 
 
 
-```{r neuromelanin2,echo=FALSE,eval=TRUE,fig.width=6,fig.height=3.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin2,echo=FALSE,eval=TRUE,fig.width=6,fig.height=3.5,warning=FALSE,message=FALSE,fig.cap='a3.'}
 ###################
 ###################
 ppmitrimNM$SN = ppmitrimNM$T1Hier_vol_mtg_sn_snr_LRAVGdeep_cit168 +     
@@ -455,7 +455,7 @@ heatdfo=heatdf
 ##############
 ```  
 
-```{r neuromelanin2h,echo=FALSE,eval=TRUE,fig.width=6,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin2h,echo=FALSE,eval=TRUE,fig.width=6,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='xxxx.'}
 #############################################
 th=0.5
 heatdf[ abs(heatdf) < 0.01 ]=0
@@ -489,7 +489,7 @@ if ( FALSE ) {
 ```
 
 
-```{r neuromelaninQC,echo=FALSE,eval=TRUE,fig.width=6,fig.height=6,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelaninQC,echo=FALSE,eval=TRUE,fig.width=10,fig.height=8,warning=FALSE,message=FALSE,fig.cap='QC.'}
 library( fpc )
 covars=c("NM2DMT_NM_substantianigra_z_coordinate","NM2DMT_NM_avg_refregion",'mriSAR','NM2DMT_NM_evr','NM2DMT_NM_q0pt10','NM2DMT_NM_q0pt90')
 tempNM=ppmitrimNM[ !is.na(ppmitrimNM$NM2DMT_NM_substantianigra_z_coordinate), ]
@@ -516,7 +516,7 @@ grid.arrange( grobs=gglist, top='NM QC variables by SITE')
 ```
 
 
-```{r neuromelanin3,echo=FALSE,eval=TRUE,fig.width=8,fig.height=12,warning=FALSE,message=FALSE,fig.cap='Partial regression plots for example regions that show omnibus level fwe significant differences from controls.'}
+```{r neuromelanin3,echo=FALSE,eval=TRUE,fig.width=6,fig.height=4,warning=FALSE,message=FALSE,fig.cap='zzz.'}
 ###################
 ###################
 # stocheck2=c("24.S","25.S","26.S","36.S","41.S","70.S","72.P")

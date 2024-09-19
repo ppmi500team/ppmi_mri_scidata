@@ -48,6 +48,7 @@ run_voxel_analysis <- function(sncnames, coefmat, coefmatpv, coefmatA, coefmatpv
   )
   effectsX=coefmatpv*0
   effectsA=coefmatpv*0
+  issingular = issingularA = rep( NA, length( sncnames ) )
   
   # Loop over the voxel names
   for (vox in sample(sncnames)) {
@@ -64,6 +65,8 @@ run_voxel_analysis <- function(sncnames, coefmat, coefmatpv, coefmatA, coefmatpv
       # Fit mixed models
       mdl <- lmer(myeq, data = ppmiMatchedScl)
       mdla <- lmer(myeqa, data = ppmiMatchedScl)
+      issingular[ ct ] = isSingular( mdl )
+      issingularA[ ct ] = isSingular( mdla )
       
       # Extract coefficients
       mycoef <- coefficients(summary(mdl))
@@ -85,11 +88,11 @@ run_voxel_analysis <- function(sncnames, coefmat, coefmatpv, coefmatA, coefmatpv
         if (show_plots) {
           # Create and customize plots
           mygg <- jtools::effect_plot(mdl, !!sym(dxvar)) +
-            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 0.13)) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = -0.13)) +
             ggtitle(vox)
           
           myggA <- jtools::effect_plot(mdla, !!sym(dxvar)) +
-            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 0.33)) +
+            ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = -0.13)) +
             ggtitle(voxa)
           
           # Print the plots side by side
@@ -117,7 +120,9 @@ run_voxel_analysis <- function(sncnames, coefmat, coefmatpv, coefmatA, coefmatpv
     coefmatA=coefmatA,
     coefmatpvA=coefmatpvA,
     effects=effectsX,
-    effectsA=effectsA
+    effectsA=effectsA,
+    issingular=issingular,
+    issingularA=issingularA
   ))
 }
 
@@ -177,20 +182,15 @@ fns=read.csv("../data/ppmi_NM_filenames.csv")
 colnames(fns)=c("count","fn")
 names(fns)
 nnzthresh = quantile( nnz[nnz>0],0.5)
-fns=fns[nnz <= nnzthresh,]
-zz=zz[nnz <= nnzthresh ]
-head(parse_filename(fns))
 # fix fns
 fns = fns %>% 
   parse_filename() %>% 
   filter(studyName == "PPMI") %>% 
   select(subjectID, date, modality)
 
-zztest = zz[[1272]]
 zzavgImg = antsAverageImages( zz )
-# get mask
-zzavgmask = antsImageRead("~/.antspymm/PPMI_NM_template_crop_mask.nii.gz")
-zzavgmask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
+mask = antsImageRead("~/.antspymm/PPMI_NM_template_crop_mask.nii.gz")
+mask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
 ```
 
 
@@ -200,21 +200,23 @@ if ( ! exists( "ppmi" ) ) {
 }
 ppmi2nm = match_indices( fns, ppmi )
 zz=zz[!is.na(ppmi2nm)]
+nnz=nnz[!is.na(ppmi2nm)]
 ppmi2nm=na.omit(ppmi2nm)
 ppmiMatched=ppmi[ppmi2nm,]
+
 # now filter based on standard criteria: NM volume >= 200 & signal <= 2000
 volfilt=na2f( ppmiMatched$NM2DMT_NM_volume_substantianigra >= 200 )
 sigfilt=na2f(ppmiMatched$NM2DMT_NM_avg_substantianigra <= 2000)
-ppmiMatched=ppmiMatched[ volfilt & sigfilt , ]
-zz=zz[  volfilt & sigfilt  ]
+nm2keep = volfilt & sigfilt & nnz <= nnzthresh
+ppmiMatched=ppmiMatched[ nm2keep, ]
+zz=zz[  nm2keep  ]
+print( "Proportions kept & rejected ")
+print( table( nm2keep )/length(nm2keep))
 ```
 
 ```{r reflection}
 if ( ! exists( "doAsym" ) ) doAsym='asymmetry_index'
 if (  !exists("zzaind") |  !exists("zzavg") ) {
-#    zzavgsmall=resampleImage(zzavgmask,rep(1,3))
-#    zzavgrTx = reflectImage( zzavgsmall, axis=0, tx='SyN', verbose=TRUE )
-#    antsImageMutualInformation( zzavgrTx$warpedmovout, zzavgsmall )
     binarized = maskImage( mask, mask, level = c( 1, 5 ), binarize=TRUE ) * 2 + 
         maskImage( mask, mask, level = c( 2, 6 ), binarize=TRUE )
     zzavgrTx = reflectImage( binarized, axis=0, tx='antsRegistrationSyNRepro[s]', verbose=TRUE )
@@ -270,12 +272,15 @@ ppmiMatchedScl=cbind(ppmiMatchedScl, nmrr=imatrra, nmsnc=imata, nmavgsnc=imat[[1
 dxvar='joinedDX'
 dxvar='DXSubAsyn'
 mytbl = table(  ppmiMatchedScl[,dxvar ])
-dxsel = names(mytbl[mytbl>=9])
+dxsel = names(mytbl[mytbl>=10])
 if ( 'CNNegative' %in% names(mytbl) ) {
     ppmiMatchedScl[,dxvar ]=forcats::fct_relevel( ppmiMatchedScl[,dxvar ], 'CNNegative' )
 } else ppmiMatchedScl[,dxvar ]=forcats::fct_relevel( ppmiMatchedScl[,dxvar ], 'CN' )
 # lsel=ppmiMatchedScl$nmsnc<700 & !( ppmiMatchedScl$joinedDX %in% c("ProdromalSNCA","PDSNCA","PDPRKN"))
-lsel=ppmiMatchedScl$nmsnc<700 & ( ppmiMatchedScl[,dxvar] %in% dxsel)
+lsel=ppmiMatchedScl$nmsnc<quantile(ppmiMatchedScl$nmsnc,0.995) & ( ppmiMatchedScl[,dxvar] %in% dxsel) &
+    ppmiMatchedScl$mrimfg %in% c("Siemens","GE","Philips")
+# lsel=ppmiMatchedScl$nmsnc<quantile(ppmiMatchedScl$nmsnc,0.85) & ( ppmiMatchedScl[,dxvar] %in% dxsel) &
+#    ppmiMatchedScl$mrimfg %in% c("Siemens","GE","Philips")
 myeq = as.formula(paste( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + ', dxvar ))
 ppmiMatchedScl=ppmiMatchedScl[lsel,]
 mdl = lmer( myeq, data=ppmiMatchedScl)
@@ -290,10 +295,17 @@ coefmatA=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
 coefmatpvA=matrix( NA, nrow=length(gg),ncol=sum(maskb==1))
 rownames(coefmatA)=rownames(coefmatpvA)=rownames(mycoef)[gg]
 #########################
+table( ppmiMatchedScl[,dxvar], ppmiMatchedScl$mrimfg )
 dookoo
-output = run_voxel_analysis( sncnames, coefmat, coefmatpv, coefmatA, coefmatpvA, ppmiMatchedScl, dxvar,
-    covariates = '~ (1 | commonID) + (1 | SITE) + nmrr + NM2DMT_NM_substantianigra_z_coordinate + commonSex + age_BL + yearsbl + ',
-    show_plots = TRUE, threshold = 1e-4)
+raneff = "~ (1 | commonID) + "
+raneff = "~ (1 | commonID) + (1 | SITE) + "
+nmcovars = paste( raneff,
+        paste(getNamesFromDataframe("NM2DMT_NM_q0", ppmiMatched),collapse="+"), 
+        " + brainVolume +  nmrr + NM2DMT_NM_substantianigra_z_coordinate + commonSex + age_BL + yearsbl + ")
+output = run_voxel_analysis( sncnames, 
+    coefmat, coefmatpv, coefmatA, coefmatpvA, ppmiMatchedScl, dxvar,
+    covariates = nmcovars,
+    show_plots = TRUE, threshold = 1e-6 )
 ###############
 for ( k in 1:nrow(output$coefmat) ) {
     outfn = paste0('/tmp/tvalue_',rownames(output$coefmat)[k],'.nii.gz')

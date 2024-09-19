@@ -684,6 +684,9 @@ mycap="Table 2. Baseline PPMI IDP cohort. AR=at-risk; MSA = multi-system atrophy
 ####
 ```
 
+
+## Full cohort data table
+
 ```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
 sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
 
@@ -693,6 +696,10 @@ print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
 
 ```
 
+\newpage
+
+
+## Simpler interaction plots
 
 ```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
 set.seed( 0 )
@@ -777,34 +784,12 @@ normalizersfmri = function( dd, applyit='none' ) {
 ```
 
 
-
-```{r quicklmcog,echo=FALSE,eval=FALSE,fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the MDS-UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in MDS-UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that participants with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
-library(lme4)
-#########################################################
-# for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
-cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","_on") )
-col2sbl = nmstotest2# unique(c( nmstotest2, idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
-mydogp = fillBaselineColumn( mydogU,
-        col2sbl,
-        'subjectID', 'yearsbl', 0, 
-        fast=T, verbose=F )[[1]]
-mydogp$hy_BL = factor( mydogp$hy_BL )
-mydogp2=mydogp
-mydogp2$roundyears = round( mydogp2$yearsbl )
-mydogp2=highestQualityRepeat( mydogp2, 'commonID', 'roundyears', 'T1Hier_resnetGrade' )
-# for ( cog in  cogs[ -grep("tot",cogs)]  ) {
-cogtotest="updrs_totscore"
-cogtotest='updrs3_score' #  "updrs_totscore"
-# cogtotest='updrs2_score' #  "updrs_totscore"
-cogtotest=c( "pigd", "scopa", 'updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
-n.comp=100
-simfile=paste0("~/Downloads/ppmi_pym_data/pub_",n.comp,'_rezOR_only_ADNI')
-```
-
 ```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=14.625,fig.height=5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
 ########
-qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
 #########################################################
+maxy=2.25
+n.comp=100
+simfile=paste0("~/Downloads/ppmi_pym_data/pub_",n.comp,'_rezOR_only_ADNI')
 coggersAll = c("ess", "gds", "lns", "MOCA", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
 coggers = c("ess",  "MOCA", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
 coggers = c(  'MOCA',  "NP1APAT", "NP1DPRS", "pigd", "rem", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
@@ -947,17 +932,18 @@ for ( voi in c(37,52,79)  ) {
         ttl=( paste(  voix, myrez, " + ", cog,  " X: o", anvpx,  " L: o", anvp ) )
         m1=compare_model_predictions( resultsX$base_model, resultsX$full_model, mydogpnnaBase, cog, annot_size=3 )
         m2=compare_model_predictions( bmdl, mdl, mydogpnnaLong, redspns, annot_size=3 )
-        grid.arrange( m1, nrow=2 )
-        grid.arrange( m2, nrow=2 )
-        gglist=list()
-        print( jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]),  
-              interval=T, facet.modx=T, plot.points = F, partial.residuals=FALSE ) + ggtitle(paste("X:",vars3[k])) + theme(legend.position = "none")  )
+#        grid.arrange( grobs=m1, nrow=2 )
+#        grid.arrange( grobs=m2, nrow=2 )
+#        for ( k in 1:length(vars3)) 
+#          print( jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]),  
+#                interval=T, facet.modx=T, plot.points = F, partial.residuals=FALSE ) + ggtitle(paste("X:",vars3[k])) + #theme(legend.position = "none")  )
         for ( k in 1:length(vars3)) 
-            print( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
-        print( resultsX$coefficients )
+          print( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
+#        print( resultsX$coefficients )
         print( mycoffs )
+#        cat("\newpage")
     }
-  } 
+  }
 }
 }
 #####################

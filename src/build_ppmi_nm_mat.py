@@ -58,11 +58,10 @@ def normalize_images_by_mean(image_list):
         # Compute the mean of the image
         img_mean = img.mean()
         
-        if img_mean == 0:
-            continue
-        
-        # Divide the image by its mean
-        normalized_img = img / img_mean
+        if img_mean != 0:
+            normalized_img = img / img_mean
+        else:
+            normalize_img = img.clone()
         
         # Append the normalized image to the list
         normalized_images.append(normalized_img)

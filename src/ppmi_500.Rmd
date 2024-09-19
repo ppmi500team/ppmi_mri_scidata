@@ -234,12 +234,13 @@ ppmi$maxtominspc = apply(  ppmi[,c("spc0","spc1","spc2")], FUN=max, MARGIN=1 )/
 mith=-0.5
 ssimth=0.3
 psnrth=12.0
-mmspc=2.0
+mmspc=1.5
 evThresh=c(0.40,0.9)  # 0.3
+evThresh=c(0.0,1.0)  # 0.3
 rgThresh=0.2
-srth=0.0
+srth=0.002
 snrth=quantile(ppmi$snr,c(srth,1.0-srth),na.rm=T)
-zz=read.csv("/Users/stnava/data/PPMI500/repo/PPMI500/ppmi500//ppmi500/data/ppmi500_ids_date.csv")
+zz=read.csv( paste0( rdir, "ppmi500_ids_date.csv") )
 zz$subjectIDdate=zz$subjectID
 for ( k in 1:nrow(zz)) zz$subjectIDdate[k]=paste0(zz$subjectID[k],"-",zz$date[k])
 psel = ppmi$subjectID %in% zz$subjectID  & ppmi$yearsbl==0
@@ -395,13 +396,12 @@ mycap="Table 1. Baseline cohort for subjects with T1w IDPs and non-missing diagn
 ```
 
 ```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
+##########
 mytbl$joinedDX = as.character(mytbl$joinedDX  )
 sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
-
 # Print the ztable object, ensuring it's treated as LaTeX code
 print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
-
-
+##########
 ```
 
 
@@ -1014,15 +1014,16 @@ for ( cog in  cogs   ) {
     if ( antspymm_vartype( voi ) == "T1" ) motnameu="1"
     if ( antspymm_vartype( voi ) == "rsfMRI" )  {
       motnameu = motname
-      maxy=2.5
+#      maxy=2.5
       }
     if ( antspymm_vartype( voi ) == "DTI" )  {
       motnameu = motnamedt
-      maxy=3.0
+#      maxy=3.0
     }
     cogformcommon=paste( cog, "  ~  ",motnameu,"+ duration_yrs + LEDD + commonEdu + age + commonSex + brainVolume + TDX " )
     cogformcommon=paste( cog, "  ~  ",motnameu,"+ age + commonSex + TDX " )
     temp2 = mydogp[ !is.na( mydogp[,voi]) & !( mydogp$TDX %in% c("CN-","CN+","PDSp-", "PDSp+" ) ), ]
+    temp2 = mydogp[ !is.na( mydogp[,voi]), ]
     voix = shorten_pymm_names( voi )
     voix = gsub("_fcnxpro129", "",voix)
     voix = gsub("_fcnxpro122", "",voix)
@@ -1094,6 +1095,7 @@ sigth=0.005
 # for ( cog in cogs ) 
 mypvs = stadfrsf$anv
 psel = subtyper::fs( p.adjust( mypvs, 'none' ) <= sigth )
+table(psel)
 qdfsig=stadfrsf[ psel,]
 qdfsig = qdfsig[ order( qdfsig$anv ), ]
 qdfsig$voi = shorten_pymm_names( qdfsig$voi )
