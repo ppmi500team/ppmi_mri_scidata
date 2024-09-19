@@ -740,14 +740,15 @@ joinedem$joinedDX[
   multigrep( c("PDLRRK2"), joinedem$joinedDX )]='LRRK2PD'
 joinedem$joinedDX[ 
   multigrep( c("PDSporadic"), joinedem$joinedDX )]='Sporadic.PD'
-mlevs = c( "CN", "Sporadic.PD")
+mlevs = c( "CN", "Sporadic.PD","SMC")
 joinedem = joinedem[ joinedem$joinedDX %in% mlevs, ]
 joinedem$joinedDX[ joinedem$joinedDX  == "CN" & joinedem$imaging.protocol == 3 ]='CN.ADNI'
-mlevs = c("CN","CN.ADNI","Sporadic.PD")
+joinedem$joinedDX[ joinedem$joinedDX  == "SMC" & joinedem$imaging.protocol == 3 ]='SMC.ADNI'
+mlevs = c("CN","CN.ADNI",'SMC.ADNI',"Sporadic.PD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
 tblcols2=tblcols[ -grep("PTRACCAT", tblcols )]
 mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols2)]
-mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "CN", "Sporadic.Prodromal") ]=0
+mytbl$duration.yrs[ mytbl$joinedDX %in% c("CN","CN.ADNI",'SMC.ADNI') ]=0
 meanPDduration = mean( mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & !is.na(mytbl$duration.yrs) ] )
 mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & is.na(mytbl$duration.yrs) ]=meanPDduration
 mytbl$imaging.protocol=as.character(mytbl$imaging.protocol)
@@ -755,7 +756,7 @@ mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
 rownames(mytbl)=1:nrow(mytbl)
-mycap="Table 2. Baseline PPMI and ADNI IDP cohort from which technical validation reporting is derived. These sample sizes are based on raw data i.e. not filtered for image quality. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder."
+mycap="Table 2. Baseline PPMI and ADNI IDP cohort from which technical validation reporting is derived. These sample sizes are based on raw data i.e. not filtered for image quality. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder; SMC = subjective memory complaint."
 ####
 ```
 
@@ -763,7 +764,7 @@ mycap="Table 2. Baseline PPMI and ADNI IDP cohort from which technical validatio
 sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
 
 # Print the ztable object, ensuring it's treated as LaTeX code
-print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=FALSE)
+print(sttblPD, type = "latex", size=3,caption=mycap,sidewaystable=FALSE)
 
 
 ```
