@@ -1,0 +1,964 @@
+---
+output: 
+  pdf_document:
+    keep_tex: true
+    fig_caption: yes
+    template: null
+#    citation_package: natbib
+biblio-style: naturemag-doi
+bibliography: ppmiscidata.bib
+classoption: table
+header-includes:
+  - \usepackage{multirow}
+  - \usepackage{rotating}
+  - \usepackage{authblk}
+  - \renewcommand\Affilfont{\small}
+  - \usepackage{booktabs}
+  - \usepackage{lscape}
+linenumbers: true
+urlcolor: blue
+# nocite: '@*'
+link-citations: true
+---
+
+
+
+\begin{centering}
+
+$ $
+
+\vspace{0.1 cm}
+
+\LARGE
+
+{\bf Magnetic Resonance Imaging Data Phenotypes for the Parkinson's Progression Markers Initiative: Supplemental information}
+
+\vspace{1.0 cm}
+
+\normalsize
+
+Brian B Avants$^{1,2}$,
+Leon Fonville$^{1}$,
+Olivia Hampton$^{1}$,
+Alexandra Reardon$^{1}$,
+Andrew Stenger$^{1}$,
+Xue Wang$^{1}$,
+Nicholas J Tustison$^{2}$,
+James R Stone$^{2}$,
+Philip A Cook$^3$,
+Barbara Marebwa$^4$,
+Lana M Chahine$^5$,
+Kathleen L Poston$^6$,
+Kenneth Marek$^7$,
+Lino Becerra$^{1}$,
+Roger Gunn$^{1}$
+for the Alzheimer's Disease Neuroimaging Initiative*
+
+
+\vspace{0.25 cm}
+
+\small
+
+$^1$Invicro, Needham, MA, USA
+
+$^2$Department of Radiology and Medical Imaging, University of Virginia, Charlottesville, VA, USA
+
+$^3$Department of Radiology, Perelman School of Medicine at the University of Pennsylvania, Philadelphia, PA, USA
+
+$^4$Parkinson's Research, The Michael J. Fox Foundation,  New York City, New York, USA
+
+$^5$Department of Neurology, University of Pittsburgh, Pittsburgh, PA, USA
+
+$^6$Department of Neurology, Stanford University, Palo Alto, CA, USA
+
+$^7$Institute for Neurodegenerative Disorders, New Haven, CT, USA
+
+
+\end{centering}
+
+\vspace{2.2 cm}
+
+\small
+
+Corresponding author: \
+Brian B. Avants \
+avants@grasp.cis.upenn.edu
+
+\noindent\rule{4cm}{0.4pt}
+
+\footnotesize
+
+*Data used in preparation of this article were obtained from the Alzheimer’s Disease Neuroimaging Initiative (ADNI) database (adni.loni.usc.edu). As such, the investigators within the ADNI contributed to the design and implementation of ADNI and/or provided data but did not participate in analysis or writing of this report. A complete listing of ADNI investigators can be found at: http://adni.loni.usc.edu/wp-content/uploads/how_to_apply/ADNI_Acknowledgement_List.pdf
+
+\newpage
+
+\normalsize
+
+```{r samplesizes,echo=FALSE,eval=TRUE}
+redomerge=TRUE
+buildsci=buildsci2=TRUE
+```
+
+
+```{r ppmimerge, echo=FALSE,eval=redomerge,cache=FALSE}
+library(ztable)
+library(rsq)
+options(ztable.zebra.color="platinum")
+options(ztable.colnames.bold=TRUE)
+options(ztable.include.rownames=FALSE)
+library(moonBook)
+library(plyr)
+library(subtyper)
+library(forcats)
+library(lmerTest)
+library(lme4)
+library(ggplot2)
+library(ggpubr)
+library(gridExtra)
+library(mclust)
+library(MASS)
+library(dCUR)
+library(mlr3learners)
+library(mlr3verse)
+library(effects)
+library(ANTsR)
+library(glossary)
+glossary_reset()
+glosspath='/Users/stnava/Documents/writing/ppmi_mri_scidata/data/ppmi_glossary.yml'
+glossary_path(glosspath)
+glossary_add(
+  term = "Parkinson's disease",
+  def = "A progressive neurodegenerative disorder characterized by tremors, rigidity, bradykinesia, and postural instability (PD).", replace = TRUE)
+
+glossary_add(
+  term = "Idiopathic PD",
+  def = "PD without identifiable genetic or environmental factors.", replace = TRUE
+)
+
+glossary_add(
+  term = "Sporadic PD",
+  def = "No clear family history of PD, often assumed to be idiopathic.", replace = TRUE)
+
+
+glossary_add(
+  term = "Alpha-synuclein",
+  def = "A protein that plays a key role in the pathogenesis of Parkinson's disease, characterized by its tendency to misfold and aggregate into toxic fibrils that contribute to neurodegeneration.", replace = TRUE)
+
+glossary_add(
+  term = "SAA",
+  def = "Synuclein Amplification Assay, a laboratory test used to stratify participants as either alpha-synuclein positive or negative.", replace = TRUE)
+
+glossary_add(
+  term = "Prodromal",
+  def = "A period of time during which an individual experiences symptoms or warning signs of a disease before its full-blown onset.", replace = TRUE)
+
+glossary_add(
+  term = "MDS-UPDRS",
+  def = "Movement Disorder Society-Unified Parkinson's Disease Rating Scale, a standardized assessment tool for evaluating motor and non-motor symptoms of Parkinson's disease.", replace = TRUE)
+
+glossary_add(
+  term = "MOCA",
+  def = "Montreal Cognitive Assessment, a widely used screening test for detecting cognitive impairment.", replace = TRUE)
+
+glossary_add(
+  term = "REM",
+  def = "Rapid Eye Movement sleep, a stage of sleep characterized by vivid dreams and increased brain activity and associated with PD risk when resulting in abnormal motor behaviors such as acting out dreams.", replace = TRUE)
+
+glossary_add(
+  term = "LRRK2",
+  def = "Leucine-rich repeat kinase 2, a gene associated with an increased risk of developing Parkinson's disease.", replace = TRUE)
+
+glossary_add(
+  term = "GBA",
+  def = "Glucocerebrosidase, a gene associated with an increased risk of developing Parkinson's disease.", replace = TRUE)
+
+glossary_add(
+  term = "PIGD",
+  def = "Postural instability and gait disturbance, a subtype of Parkinson's disease characterized by postural instability and gait difficulties.", replace = TRUE)
+
+glossary_add(
+  term = "IDP",
+  def = "Imaging data phenotype, a summary measurement appropriate for representing and interpreting imaging data in tabular form.", replace = TRUE)
+
+glossary_add(
+  term = "sMRI",
+  def = "Structural Magnetic Resonance Imaging, a type of (usually T1-weighted) MRI that provides detailed images of brain anatomy.", replace = TRUE)
+
+glossary_add(
+  term = "dMRI",
+  def = "Diffusion Magnetic Resonance Imaging, a type of MRI that measures the diffusion of water molecules in the brain, providing information on white matter tracts and brain connectivity.", replace = TRUE)
+
+glossary_add(
+  term = "rsfMRI",
+  def = "Resting-state functional Magnetic Resonance Imaging, a type of functional MRI that measures brain activity while a person is at rest, providing information on brain functional connectivity.", replace = TRUE)
+
+glossary_add(
+  term = "Traveling participants",
+  def = "Participants in a research study who undergo repeated assessments and evaluations at different locations or time points, often used to study accuracy and reproducibility of imaging data across scanners.", replace = TRUE)
+
+glossary_popup("hover") 
+
+areunique = function( x ) {
+  x[ !duplicated( x[,c("studyName","commonID","age_BL","T1Hier_resnetGrade")]), ]
+}
+
+
+subset_and_combine_studies <- function(df, study_column, study_names, grade_column, k_values) {
+  # Check that study_names and k_values have exactly 2 elements
+  if (length(study_names) != 2 || length(k_values) != 2) {
+    stop("study_names and k_values should each have exactly 2 elements.")
+  }
+
+  # Define a helper function to subset and select top k rows for a given study
+  subset_and_select <- function(study_name, k) {
+    # Subset the dataframe for the specific study
+    study_df <- df[na2f(df[[study_column]] == study_name), ]
+    # Select the top k rows based on the specified grade column
+    selected_rows <- topk(study_df, grade_column, k)
+    # Return the subset of the dataframe with the selected rows
+    return(study_df[selected_rows, ])
+  }
+
+  # Apply the helper function to each study and combine the results
+  study1_subset <- subset_and_select(study_names[1], k_values[1])
+  study2_subset <- subset_and_select(study_names[2], k_values[2])
+
+  # Combine the two subsets
+  combined_df <- rbind(study1_subset, study2_subset)
+  
+  return(combined_df)
+}
+
+ 
+makeqcpc <- function(demog, modality='T1w') {
+  qcnames <- NULL
+  coreqcnames =  c("EVR", 'snr', 'psnr', 'ssim', 'cnr', "reflection_err", 'mi', 'noise', 'msk_vol', 'spc0', 'spc1', 'spc2' )
+  if (modality == 'T1w') {
+    qcnames = c("T1Hier_templateL1", "T1Hier_resnetGrade", 'T1Hier_mhdist', coreqcnames )
+  } else if (modality == 'DTI') {
+    temp = paste0( modality,"1_",coreqcnames)
+    qcnames = c("T1Hier_templateL1", "T1Hier_resnetGrade", temp)
+  } else if (modality == 'rsf') {
+    temp = paste0( modality,"1_",coreqcnames)
+    qcnames = c("T1Hier_templateL1", "T1Hier_resnetGrade", temp)
+  } else {
+    stop("Unsupported modality")
+  }
+  
+  # Identify rows with any NA values in the selected columns
+  na_rows <- apply(demog[, qcnames], 1, function(x) any(is.na(x)))
+  
+  # Filter out rows with NA values
+  non_na_demog <- demog[!na_rows, qcnames]
+  pcqcmat <- data.matrix(non_na_demog)
+  
+  # Perform PCA
+  pca_result <- prcomp(pcqcmat, scale. = TRUE)
+  new_pca_columns <- pca_result$x[, 1:4]
+  colnames(new_pca_columns) <- paste0(modality, colnames(new_pca_columns))
+  colnames(new_pca_columns)=gsub("PC","QC",colnames(new_pca_columns))
+  # Create a data frame with new PCA columns filled with NA for the original rows with NA
+  pca_columns_full <- matrix(NA, nrow = nrow(demog), ncol = 4)
+  colnames(pca_columns_full) <- colnames(new_pca_columns)
+  pca_columns_full[!na_rows, ] <- new_pca_columns
+  
+  # Combine the original data frame with the new PCA columns
+  demog <- cbind(demog, pca_columns_full)
+  
+  return(demog)
+}
+
+
+mypartrate=0.8
+npd=ngpd=nprepd=0
+mvanvp3=mvanvpu=mvanvp2=mvanvp1=1
+doadj=FALSE
+dxcts=data.frame()
+rdir=path.expand('~/code/multidisorder/data/')
+rdir=path.expand('~/Downloads/ppmi_pym_data/')
+ppmitrimfn = paste0(rdir,'ppmi_idps_trim_v1.4.0_',myrez,'.csv')
+rgT1 = c( 5000, 2150, 950 )
+########
+replaceOG=TRUE
+if ( file.exists( ppmitrimfn ) & ! exists("ppmitrim")  ) {
+  ppmitrim = read.csv(ppmitrimfn)
+  adjnames = getNamesFromDataframe( "_adjusted", ppmitrim )
+  ognames = gsub("_adjusted", "", adjnames )
+  if ( replaceOG ) {
+    ppmitrim[,ognames]=ppmitrim[,adjnames]
+  }
+} else if ( ! exists("ppmi") & !exists("ppmitrim") ) {
+  if ( ! exists("pymf") ) {
+    v='1.4.0'
+    pymfns = data.frame(
+      fns=c( 
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSV_v',v,'.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRFIRST_v',v,'.csv'),
+        paste0( rdir, 'ppmi_matched_qc_mm_processedCSVSRNext_v',v,'.csv')  ),
+      rez=c("OR","SRF","SRP") )
+    print(paste("ANTsPyMM Pipeline : ", myrez ) )
+    pym = read.csv(  pymfns$fn[pymfns$rez == myrez ] )
+    pymf = pym[ , !(colnames(pym) %in% getNamesFromDataframe("u_hier_id", pym))] # junk
+    pymf = filterNAcolumns( pymf, 20 ) # remove columns with > 20% missing
+    pymf[ is.na(pymf$mrimfg), 'mrimfg' ]='Unk'
+    pymf[ is.na(pymf$mrimodel), 'mrimodel' ]='Unk'
+    rm(pym)
+    }
+  if ( ! exists("adni") ) {
+    adni = read.csv( path.expand( paste0(rdir, "ADNIMERGE_10Feb2024_antspymm_v",v,".csv" ) ) )
+#    adnihq = highestQualityRepeat( adni, 'PTID', 'date', 'T1Hier_resnetGrade' )
+  }
+  studynames=c("ADNI", "NIFD4RTNI", "PPMI","UKBB","A4")
+  dxnames= c("DX_bl", "DX", "DXSub", "DX", "DX" )
+  sexnames=c("PTGENDER","SEX","SEX","sex_f31_0_0","PTGENDER")
+  agenames=c("AGE","Age_BL","age_BL","subjectAge_BL","PTAGE")
+  edunames=c("PTEDUCAT","EDUCATION","EDUCYRS","age_completed_full_time_education_f845_0_0","PTEDUCAT")
+  sidnames=c("PTID","LONI_ID","PATNO","eid","sid")
+  viznames=c("Years.bl","deltaTime","yearsbl","Years.bl","Years.bl")
+  adni$commonSex = adni$PTGENDER
+  adni$commonEdu = adni$PTEDUCAT
+  adni$commonID = adni$subjectID = adni$PTID
+  adni$age_BL = adni$age = adni$AGE
+  adni$yearsbl = adni$Years_bl
+  adni$joinedDX = adni$DX_bl
+  adni$joinedDX[ grep("MCI",adni$joinedDX)]="MCI"
+  adni$joinedDX[ adni$joinedDX == ""]=NA
+  adni$studyName='ADNI'
+  adniasynfn = path.expand( paste0(rdir,"AMPRION_ASYN_SAA_13Nov2023.csv"))
+  adniasyn = read.csv( adniasynfn )
+  names( adniasyn )[ names(adniasyn) == 'Result' ]='AsynStatus'
+  adniasyn[ subtyper::fs(adniasyn$AsynStatus %in% c('Detected-1','Detected-2')) , 'AsynStatus'] = 'Positive'
+  adniasyn[ subtyper::fs(adniasyn$AsynStatus %in% c('Not_Detected','Indeterminate')), 'AsynStatus' ] = 'Negative'
+  # map 
+  adni$AsynStatus=NA
+  uids = unique( adniasyn$RID[!is.na(adniasyn$AsynStatus)])
+  for ( k in 1:nrow(adniasyn) ) {
+        losel = subtyper::fs( adni$RID == adniasyn$RID[k] )
+        if ( sum(losel) > 0 ) {        
+            adni$AsynStatus[ losel ] = adniasyn$AsynStatus[k]
+        }
+    }
+  ########### PPMI critical stuff here ###########
+  demog=read.csv(paste0(rdir,"PPMI_20240401/Demographics_20240401.csv"))
+  curfn=paste0(rdir,'PPMI_Curated_Data_Cut_Public_20240129.csv')
+  saafn = paste0(rdir,'PPMI_CSFSAA_09Oct2023/PPMI_CSFSAA_09Oct2023.csv')
+  if ( ! file.exists( saafn ) ) {
+    saafn = paste0(rdir,'PPMI_CSFSAA_09Oct2023.csv')
+    }
+  saa=read.csv( saafn )
+  ppmidemog0=read.csv( curfn )
+  clin2b = merge_ppmi_imaging_clinical_demographic_data(
+    demog, ppmidemog0, pymf, pymversion=myrez, saa )
+  # add tracker
+  tracker = read.csv(paste0(rdir,"ppmi_2_0_internal_scan_tracking_report_v12-2024-02-08.csv"))
+
+  tracker = tracker[ tracker$Modality == "MR", ]
+  tracker$EVENT_ID=tracker$Visit
+  tracker$EVENT_ID[ grep("Baseline",tracker$EVENT_ID)]="BL"
+  tracker$date=NA
+  momap=data.frame( num=c( paste0("0",1:9), "10", "11", "12") )
+  rownames(momap)=c("JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC")
+  for ( k in 1:nrow(tracker) ) {
+    fixedev=unlist(strsplit( tracker$Visit[k], "/"))
+    if ( length( fixedev ) > 1 ) fixedev=fixedev[length( fixedev )]
+    tracker$EVENT_ID[k]=fixedev
+    fixeddt = unlist(strsplit( tracker$Scan.Date[k],"-"))
+    fixeddt[2] = momap[ fixeddt[2], 'num' ]
+    fixeddt = paste0( fixeddt[3] , fixeddt[2], fixeddt[1] )
+    tracker$date[k]=fixeddt
+    }
+  trackersub = tracker[, c("Subject.ID","date" )]
+  trackersub$imaging_protocol=2
+  names(trackersub)=c("PATNO","date", "imaging_protocol" )
+  clin2b=merge( clin2b, trackersub, by=c("PATNO","date"), all.x=TRUE )
+  clin2b$imaging_protocol[ is.na(clin2b$imaging_protocol) ]=1
+  # add LRRK2 
+  lrrk2 = read.csv( paste0(rdir,'CSFSAA_LRRK2_MRI_SAMPLES_08Jan2024/Data-Table1.csv'))
+  lrrk2$SAAGroup[ lrrk2$SAAGroup == " " ]=NA
+  clin2b$LRRK2_study=NA
+  uids = lrrk2$PATNO
+  lrrk2cols = colnames(lrrk2)
+  lrrk2cols=lrrk2cols[ !(lrrk2cols %in% "PATNO") ]
+  newcols = paste0("LRRK2_", lrrk2cols )
+  clin2b[,newcols]=NA
+  for ( k in 1:length(uids) ) {
+    clin2bsel = clin2b$PATNO == uids[k]
+    if ( sum( clin2bsel ) > 0 ) {
+      # print(paste("have",u))
+      clin2b[clin2bsel,newcols]=lrrk2[k,lrrk2cols]
+    } # else print(paste("miss",u))
+  }
+  clin2b$LRRK2_study = !is.na( clin2b$LRRK2_cohort)
+  summary( lm( LRRK2_MRIPROTOCOL ~ DTI_dti_tsnr_dwi_mean +T1Hier_evratio + noise + snr + msk_vol,data=clin2b) )
+  summary( lm( LRRK2_MRIPROTOCOL ~ DTI_dti_tsnr_b0_mean+DTI_dti_ssnr_b0_mean + DTI_dti_tsnr_dwi_mean+DTI_dti_ssnr_dwi_mean+T1Hier_resnetGrade +T1Hier_evratio + cnr + noise,data=clin2b) )
+  summary( lm( LRRK2_MRIPROTOCOL ~  cnr + noise  + msk_vol + spc0+	spc1+	spc2,data=clin2b) )
+  clin2b$subjectID = as.character(clin2b$subjectID)
+  clin2b$imageID = as.character(clin2b$imageID)
+  clin2b$dtid1 = as.character(clin2b$dtid1)
+  clin2b$dtid2 = as.character(clin2b$dtid2)
+  clin2b$rsfid1 = as.character(clin2b$rsfid1)
+  clin2b$rsfid2 = as.character(clin2b$rsfid2)
+  clin2b=dplyr::bind_rows( clin2b, adni )
+  nna=!is.na( clin2b$AsynStatus )
+  clin2b$DXSubAsyn[nna]=paste0( clin2b$joinedDX[nna], clin2b$AsynStatus[nna] )
+  clin2b$DXSubAsyn[ clin2b$DXSubAsyn == "NANegative"]=NA
+  clin2b$commonEdu[ clin2b$commonEdu == 1] = 12
+  clin2b$commonEdu[ clin2b$commonEdu == 2] = 16
+  clin2b$commonEdu[ clin2b$commonEdu == 3] = 20
+  ppmi = clin2b
+  rm(clin2b)
+  rm(pymf)
+  rm(adni)
+  gc()
+  ppmi$T1Hier_midbrain_pons_ratio = ppmi$T1Hier_vol_midbrainbrainstem / ppmi$T1Hier_vol_ponsbrainstem
+  ppmi$SITE = factor( ppmi$SITE )
+  ppmi$brainVolume = ppmi$T1Hier_vol_hemisphere_lefthemispheres + ppmi$T1Hier_vol_hemisphere_righthemispheres
+  ppmi$brainVolume = ppmi$brainVolume / mean(ppmi$brainVolume)
+  ppmi$imaging_protocol[ ppmi$studyName=='ADNI']=3
+  ppmi$imaging_protocol=factor(ppmi$imaging_protocol)
+  ppmi[ ppmi$studyName=='ADNI', 'age_BL']=ppmi[ ppmi$studyName=='ADNI', 'AGE']
+}
+
+
+
+```
+
+
+
+```{r, results='asis',echo=FALSE}
+glossary_style(color = "purple", 
+               text_decoration = "underline",
+               def_bg = "#333",
+               def_color = "white")
+```
+
+
+
+```{r ppmitrim,echo=FALSE,eval=!exists("ppmitrim"),fig.width=16,fig.height=10,message=FALSE,warning=FALSE,cache=FALSE}
+ppmi = fillBaselineColumn( ppmi,
+        c(  'brainVolume', 'T1Hier_resnetGrade' ),
+        'commonID', 'yearsbl', 0, 
+        fast=T, verbose=F )[[1]]
+ppmi = antspymm_predictors( ppmi, TRUE )
+ppmi$maxtominspc = apply(  ppmi[,c("spc0","spc1","spc2")], FUN=max, MARGIN=1 )/
+  apply(  ppmi[,c("spc0","spc1","spc2")], FUN=min, MARGIN=1 )
+#############
+mith=-0.5
+ssimth=0.3
+psnrth=12.0
+mmspc=2.0
+evThresh=c(0.45,0.9)  # 0.3
+evThresh=c(0.0,1.0)  # 0.3
+rgThresh=0.2
+eps=0.0
+qvary = c(eps,1.0-eps)
+if ( myrez == 'SRF' ) {
+  snrth=c( quantile(ppmi$snr,qvary,na.rm=T) )
+} else {
+  snrth=c( quantile(ppmi$snr,qvary,na.rm=T) )
+}
+asel = subtyper::fs( ppmi$studyName == 'ADNI' & 
+  ppmi$T1Hier_resnetGrade_BL >= rgThresh & ppmi$T1Hier_resnetGrade >= rgThresh )
+studies = c('PPMI','ADNI')
+# studies = c('PPMI')
+psel = subtyper::fs( 
+    ppmi$studyName %in% studies & !(ppmi$subjectID == "101021" ) & 
+    ppmi$SITE != 76 & 
+    ppmi$yearsbl <= 4.5 & # limit non-random bias
+    ( ppmi$snr >= snrth[1] & ppmi$snr <= snrth[2] ) &
+    ppmi$maxtominspc <= mmspc & 
+    ppmi$T1Hier_resnetGrade_BL >= rgThresh &
+    ppmi$T1Hier_resnetGrade >= rgThresh &
+#    ppmi$mi < mith & ppmi$ssim > ssimth & ppmi$psnr > psnrth &
+    ppmi$EVR >= evThresh[1] &  ppmi$EVR <= evThresh[2]
+)
+ppmitrim = ppmi[ psel , ]
+table( ppmitrim$studyName )
+
+for ( mymo in c("T1w","DTI","rsf") ) {
+  ppmitrim=makeqcpc( ppmitrim, mymo )
+}
+
+ppmitrim$mriMagneticFieldStrength[ 
+  ppmitrim$mriMagneticFieldStrength %in% c(1.494)]=1.5
+ppmitrim$mriMagneticFieldStrength[ 
+  ppmitrim$mriMagneticFieldStrength %in% c(2.89362)]=3
+ppmitrim$mriMagneticFieldStrength[ 
+  !(ppmitrim$mriMagneticFieldStrength %in% c(1.5,3))]='other'
+ppmitrim$mriMagneticFieldStrength=factor(ppmitrim$mriMagneticFieldStrength)
+
+nmnames = getNamesFromDataframe( c("NM2DMT_NM","_substantianigra"), ppmitrim, exclusions='z_coord'  )
+nmqcnames = getNamesFromDataframe( "NM2DMT", ppmitrim, exclusions='_substantianigra' )
+
+```
+
+```{r ppmitrimX,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,messages=FALSE,warnings=FALSE,cache=FALSE}
+library(GGally)
+qcnames=c( "T1Hier_resnetGrade", "noise", "snr", "EVR", "psnr", "ssim", "mi", "msk_vol", "reflection_err", "mriPixelBandwidth", "mriSAR", "maxtominspc",'updrs_totscore' )
+my_bin <- function(data, mapping, ..., low = "#132B43", high = "#56B1F7") {
+  ggplot(data = data, mapping = mapping) +
+    geom_bin2d(...) +
+    scale_fill_gradient(low = low, high = high)
+}
+ssel = subtyper::fs(ppmitrim$studyName == 'PPMI')
+qcdf=ppmitrim[  ssel, c(qcnames,'joinedDX')]
+qcdf$snc=ppmitrim$T1Hier_vol_mtg_sn_snc_LRAVGcit168[ssel]
+# qcdf=ppmi[,c(qcnames,'joinedDX')]
+# qcdf$snc=ppmi$T1Hier_vol_mtg_sn_snc_LRAVGcit168
+qcdf$DX = "Other"
+qcdf$DX[ grep("PD",qcdf$joinedDX)]="PD"
+qcdf$DX[ grep("CN",qcdf$joinedDX)]="CN"
+qcdf$DX[ grep("Prod",qcdf$joinedDX)]="AR"
+qcpairs <- ggpairs( qcdf, columns=c(qcnames,"snc"),
+  mapping = aes(color = DX),
+  lower = list(
+    combo = wrap("facethist", binwidth = 1),
+    continuous = wrap(my_bin,  high = "red")
+  ) )
+# print( qcpairs )
+# gc()
+
+# ntokeep = nrow(ppmitrim)-round(0.01*nrow(ppmitrim))
+# ppmitrim = ppmitrim[ head( order(ppmitrim$T1Hier_resnetGrade,decreasing=T),ntokeep) , ]
+updnames = getNamesFromDataframe("upd",ppmitrim,exclusions=c("BL","delta"))
+msnames = getNamesFromDataframe("pm_",ppmitrim,exclusions=c("BL","delta"))
+lrrk2names= getNamesFromDataframe("LRRK2_",ppmitrim,exclusions=c("BL","delta","LRRK2_MRIPROTOCOL"))
+t1namesctx = getNamesFromDataframe( c("T1Hier","LRAVG",'dktcortex','thk'), ppmitrim)
+t1namescit = getNamesFromDataframe( c("T1Hier","LRAVG",'deep','vol'), ppmitrim)
+t1namesnbm = getNamesFromDataframe( c("T1Hier","LRAVG",'nbm','vol'), ppmitrim)
+t1namesbst = getNamesFromDataframe( c("T1Hier",'brainstem','vol'), ppmitrim, exclusions=c("tissues","lobes"))[-1]
+t1namescrb = getNamesFromDataframe( c("T1Hier",'cerebellu','LRAVG','vol'), ppmitrim, exclusions=c("tissues","lobes","dktregion"))
+t1namesctxa = gsub("LRAVG","Asym",t1namesctx)
+t1namescita = gsub("LRAVG","Asym",t1namescit)
+t1namesnbma = gsub("LRAVG","Asym",t1namesnbm)
+t1namescrba = gsub("LRAVG","Asym",t1namescrb)
+t1vars = c(t1namesbst,t1namesctx,t1namescit,t1namesnbm,t1namescrb,t1namesctxa,t1namescita,t1namesnbma,t1namescrba)
+ppmitrim0 = ppmitrim[ , c("subjectID","age_BL",'commonSex', "hy_BL", "duration_yrs","LEDD","MOCA",updnames, msnames, 'joinedDX','AsynStatus', "DXSubAsyn", "educ","race",'tau','ptau','abeta', 'yearsbl', 'EVENT_ID', 'date', lrrk2names,  'filename', 'brainVolume', t1vars, 'imaging_protocol', 'T1Hier_resnetGrade' ) ]
+
+# get numbers for abstract
+viztbl = table( ppmitrim0$joinedDX, ppmitrim0$EVENT_ID )
+isbl=ppmitrim0$yearsbl==0
+isnotbl = ppmitrim0$yearsbl >= 0.5
+npd=viztbl["PDSporadic","BL"]
+npdf=sum(viztbl["PDSporadic",c("V04","V06","V08","V10","V12")])
+ngpd=sum( subtyper::fs(ppmitrim0$joinedDX[isbl] %in% c('PDGBA','PDLRRK2','PDSNCA' )))
+nctl=viztbl["CN","BL"]
+nprepd=sum( subtyper::fs(ppmitrim0$joinedDX[isbl] %in% c('ProdromalGBA','ProdromalLRRK2' ,'ProdromalSNCA','ProdromalSporadic' )))
+vizfll=mean( ppmitrim0$yearsbl[isnotbl] )
+vizfll=insight::format_value( vizfll )
+vizfll2=IQR( ppmitrim0$yearsbl[isnotbl] )
+vizfll2=insight::format_value( vizfll2 )
+quartiles <- quantile(ppmitrim0$yearsbl[isnotbl], probs = c(0.25, 0.75))
+quartilesf=insight::format_value(quartiles)
+# tt = table( table( ppmitrim0$subjectID[!isbl] ) )
+
+if ( FALSE ) {
+
+ppmitrimbl=ppmitrim[ ppmitrim$EVENT_ID=='BL', ]
+vv='T1Hier_vol_bn_str_pu_Asymdeep_cit168'
+vv='T1Hier_vol_bn_gp_gpi_Asymdeep_cit168'
+vv='T1Hier_vol_bn_gp_gpi_LRAVGdeep_cit168'
+qq=quantile( ppmitrimbl[,vv], 0.95 )
+table( ppmitrimbl$DXSubAsyn[ ppmitrimbl[,vv] > qq ] )
+qq=quantile( ppmitrimbl[,vv], 0.025 )
+table( ppmitrimbl$DXSubAsyn[ ppmitrimbl[,vv] < qq ] )
+
+# convert Asym to AsymNorm 
+ppmitrim = antspymm_predictors( ppmitrim, TRUE )
+asymvars = getNamesFromDataframe( "Asym", ppmitrim )
+for ( x in asymvars ) {
+  y=gsub("Asym","LRAVG",x)
+  myasym = ppmitrim[,x]
+  ppmitrim[,x]=myasym/(ppmitrim[,y]*2)
+  if ( max(ppmitrim[,x],na.rm=T) > 1 ) derka
+}
+}
+doadj=!("DTI_mean_md_nbm_LRAVG_pos_adjusted" %in% colnames(ppmitrim))
+########
+```
+
+
+```{r ppmitrimAdj,echo=FALSE,eval=doadj,fig.width=16,fig.height=10,message=FALSE,warning=FALSE,cache=FALSE}
+ppmitrim = ppmitrim[ ppmitrim$mrimfg %in% c("GE","Philips","Siemens"), ]
+nmstotest2=antspymm_predictors( ppmitrim, TRUE, TRUE )
+nmstotest2=nmstotest2[ -multigrep( c( "T1w_mean", "alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted"), nmstotest2)]
+# adjust each of these vars
+ppmitrim$isTrain=FALSE
+# fairly balanced
+dxsel = ppmitrim$joinedDX %in% c("CN",'ProdromalLRRK2','ProdromalGBA','ProdromalSporadic','SWEDDSporadic')
+# dxsel = ppmitrim$joinedDX %in% c("CN")
+agsel = ppmitrim$age_BL >= 50 & ppmitrim$age_BL <= 75
+ppmitrim$isTrain[ dxsel & agsel ]=TRUE
+table(ppmitrim$isTrain, ppmitrim$studyName )
+############################################
+ct=0
+for ( x in nmstotest2 ) {
+    ct=ct+1
+    if ( ct %% 100 == 0 ) cat( paste( ct / length(nmstotest2)*100 , "%" )  )
+    if ( antspymm_vartype(x) %in% c('rsfMRI','DTI') ) {
+        myform = paste( x, " ~ studyName + mrimfg")
+    } else myform = paste( x, " ~ studyName + mrimfg + mriMagneticFieldStrength ")
+    ppmitrim=adjustByCovariates( ppmitrim, myform, 'isTrain', TRUE, TRUE )
+}
+nmstotest2adj=paste0(nmstotest2,'_adjusted' )
+doadj=FALSE
+```
+
+# Overview of the supplement
+
+
+```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
+
+nmstotest2=antspymm_predictors( ppmitrim, TRUE, TRUE )
+nmstotest2=nmstotest2[ -multigrep( c("alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted","_BL","_delta","T1w_mean","area"), nmstotest2)]
+
+if ( ! exists("ppmitrimsave") & FALSE ) {
+#  ppmitrimsave = ppmitrim
+#  nmstotest2=gsub("_adjusted","",nmstotest2adj)
+#  ppmitrim[,nmstotest2]=ppmitrim[,nmstotest2adj]
+  write.csv( ppmitrim, ppmitrimfn, row.names=FALSE )
+
+  simfile="~/Downloads/ppmi_pym_data/PPMISiMLRW100"
+  presim=read_simlr_data_frames( path.expand(simfile), 
+      c("t1","t1a", "dt", "dta", "rsf" ))
+  ppmitrim = apply_simlr_matrices(  ppmitrim, presim, absolute_value=rep(TRUE,length(presim)), robust=FALSE )[[1]]
+  simnames = apply_simlr_matrices(  ppmitrim, presim, absolute_value=rep(TRUE,length(presim)), robust=FALSE )[[2]]
+#########
+  cnames = getNamesFromDataframe("common",ppmitrim)
+  cnames[ which(cnames=='commonAge')]='age_BL'
+  trimnames=c("studyName",cnames,'yearsbl', "date","filename",
+    getNamesFromDataframe("QC",ppmitrim), antspymm_qc_names(),nmstotest2, simnames)
+  trimnames=unique(intersect(trimnames,colnames(ppmitrim)))
+  write.csv( ppmitrim[,trimnames], gsub(".csv","_trim.csv",ppmitrimfn,fixed=TRUE), row.names=FALSE )
+}
+
+###
+toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
+toadd = c(  "age_BL", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
+biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
+tblcols = unique( c( toadd, 'joinedDX'  ) )
+bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
+joinedem=ppmitrim[bsel,tblcols]
+joinedem$imaging_protocol=as.character(joinedem$imaging_protocol)
+#joinedem$hasDTI=!is.na(ppmitrim[bsel,'DTI_dti_FD_max'])
+#joinedem$hasfMRI=!is.na(ppmitrim[bsel,'rsfMRI_fcnxpro129_FD_max'])
+names(joinedem)[1]=tblcols[1]='age'
+names(joinedem)[2]=tblcols[2]='Sex'
+wsaa=which(names(joinedem)=='AsynStatus' )
+names(joinedem)[wsaa]=tblcols[wsaa]='CSFSAA'
+tblcols=colnames(joinedem)
+tblcols=gsub("_",".",tblcols)
+tblcols=gsub(".mean","",tblcols)
+tblcols=gsub("DTI.","",tblcols)
+tblcols=gsub("rsfMRI.fcnxpro122.","rsfMRI.",tblcols)
+names(joinedem)=tblcols
+joinedem$race = as.character( joinedem$race )
+joinedem[ subtyper::fs(joinedem$race == '1'), 'race' ] = 'White'
+joinedem[ subtyper::fs(joinedem$race == '2'), 'race' ] = 'Black'
+joinedem[ subtyper::fs(joinedem$race == '3'), 'race' ] = 'Asian'
+joinedem[ subtyper::fs(joinedem$race == '4'), 'race' ] = 'Other'
+joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
+joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
+joinedem$joinedDX=as.character(joinedem$joinedDX)
+joinedem$joinedDX[ 
+  multigrep( c("ARSporadic"), joinedem$joinedDX )]='SporadicAR'
+joinedem$joinedDX[ 
+  multigrep( c("ARGBA", "ARLRRK2",  "ARSNCA"), joinedem$joinedDX )]='GenAR'
+joinedem$joinedDX[
+  multigrep( c( "PDPRKN", "PDSNCA"), joinedem$joinedDX )]='OtherGenPD'
+joinedem$joinedDX[ 
+  multigrep( c("PDGBA"), joinedem$joinedDX )]='GBAPD'
+joinedem$joinedDX[
+  multigrep( c("PDLRRK2"), joinedem$joinedDX )]='LRRK2PD'
+joinedem$joinedDX[ 
+  multigrep( c("PDSporadic"), joinedem$joinedDX )]='SporadicPD'
+mlevs = c( "CN", "GenAR", "SporadicAR","OtherGenPD", 'LRRK2PD', 'GBAPD', "SporadicPD")
+joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
+mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols)]
+mytbl$imaging.protocol=as.character(mytbl$imaging.protocol)
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
+mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
+rownames(mytbl)=1:nrow(mytbl)
+mycap="Table 2. Baseline PPMI IDP cohort. AR=at-risk; MSA = multi-system atrophy; OtherGen = other genetic; RBD = REM Sleep Behavior Disorder."
+####
+```
+
+```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
+sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
+
+# Print the ztable object, ensuring it's treated as LaTeX code
+print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+
+
+```
+
+
+```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
+set.seed( 0 )
+library(plyr)
+library(ggplot2)
+library( GoodmanKruskal )
+library(forcats)
+library(heatmap3)
+library(permute)
+library(interactions)
+library(reghelper)
+library(MGMM) # GMM methods 
+library(WeightedCluster) # cluster quality 
+library(tidyverse)
+library(clValid)
+library( cluster.datasets )
+library(magrittr)
+library(corrplot)
+library(GGally)
+library(ANTsR)
+library(subtyper)
+library(plyr)
+library(data.table)
+library(ggfortify)
+library(ztable)
+library(moonBook)
+library(kableExtra)
+library(flextable)
+library(plotly)
+library( ztable )
+library(ggpubr)
+library(gridExtra)
+library(ggsci)
+options(digits=3)
+library(lmerTest)
+library(lme4)
+library(mlr3verse)
+library(Evacluster)
+library( caret )
+library( optmatch )
+library( globaltest )
+library(emmeans)
+library(analyzer)
+library(forcats)
+options( ztable.type="latex" )
+tblcmd = ztable
+```
+
+```{r functions,echo=FALSE,eval=TRUE,warning=FALSE,message=FALSE,cache=FALSE}
+
+normalizersfmri = function( dd, applyit='none' ) {
+  nums=c(122,129,134)
+  t=c('_2_', "_falff", "_alff", "_peraf")
+  tnm=c("fcnxmean" ,'falffmean', 'alffmean', 'perafmean')
+  tns=c("fcnxsd" ,'falffsd', 'alffsd', 'perafsd')
+  for ( k in 1:length(nums) ) {
+    ct=0
+    for ( tt in t ) {
+      ct=ct+1
+      protype=paste0("fcnxpro",nums[k])
+      srch=c(t[ct],protype)
+#      print( srch )
+      mycolnm=getNamesFromDataframe( srch , dd )
+#      print(head(mycolnm,2))
+#      print(mycolnm  )
+      mnnm=paste0( tnm[ct],"_",nums[k])
+      sdnm=paste0( tns[ct],"_",nums[k])
+#      print(paste(mnnm))
+      dd[,mnnm]=apply( dd[, mycolnm], FUN=mean,MARGIN=1)
+#      print(paste(sdnm))
+      dd[,sdnm]=apply( dd[, mycolnm], FUN=sd,MARGIN=1)
+#      print( paste( " apply ", applyit, mnnm ) )
+      if ( applyit == 'mean' ) dd[,mycolnm]=dd[,mycolnm]-dd[,mnnm]
+      if ( applyit == 'dividemean' ) dd[,mycolnm]=dd[,mycolnm]/dd[,mnnm]
+      if ( applyit == 'meansd' ) {
+        dd[,mycolnm]=(dd[,mycolnm]-dd[,mnnm])/dd[,sdnm]
+      }
+    }
+  }
+  return( dd )
+}
+```
+
+
+
+```{r quicklmcog,echo=FALSE,eval=FALSE,fig.width=8,fig.height=3,warning=FALSE,message=FALSE,fig.cap='Partial regression interaction plots show a representative region for each of the MDS-UPDRS outcomes that we test.  Each panel demonstrates how different levels of the IDP (x-axis) lead to different amounts of change over time. For example, the slope of the relationship btween MD asymmetry in the internal capsule and change in MDS-UPDRS2 score increases over time with the largest differences occuring at the right side of the top right panel.  This indicates that participants with higher levels of baseline MD asymmetry in this IDP progress more rapidly on this score.'}
+library(lme4)
+#########################################################
+# for ( voi in sample( c(rsfnames,dtinamesasymlr) ) ) {
+cogs = getNamesFromDataframe( c("updrs","score"), mydog, exclusions=c(4,'_BL',"_delta","_on") )
+col2sbl = nmstotest2# unique(c( nmstotest2, idpst1, dtinamesasymlr, rsfnames, rsfnamescnx,  fdnames, cogs, nmstotest ))
+mydogp = fillBaselineColumn( mydogU,
+        col2sbl,
+        'subjectID', 'yearsbl', 0, 
+        fast=T, verbose=F )[[1]]
+mydogp$hy_BL = factor( mydogp$hy_BL )
+mydogp2=mydogp
+mydogp2$roundyears = round( mydogp2$yearsbl )
+mydogp2=highestQualityRepeat( mydogp2, 'commonID', 'roundyears', 'T1Hier_resnetGrade' )
+# for ( cog in  cogs[ -grep("tot",cogs)]  ) {
+cogtotest="updrs_totscore"
+cogtotest='updrs3_score' #  "updrs_totscore"
+# cogtotest='updrs2_score' #  "updrs_totscore"
+cogtotest=c( "pigd", "scopa", 'updrs1_score','updrs3_score','updrs2_score') #  "updrs_totscore"
+n.comp=100
+simfile=paste0("~/Downloads/ppmi_pym_data/pub_",n.comp,'_rezOR_only_ADNI')
+```
+
+```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=14.625,fig.height=5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
+########
+qdfcols =  c("cog", "voi" , 'n', "anv.x", "anv", 'sig', othercolsnm)
+#########################################################
+coggersAll = c("ess", "gds", "lns", "MOCA", "NP1APAT", "NP1ANXS", "NP1DPRS", "pigd", "rem", "quip", "scopa", "stai", "VLTANIM", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
+coggers = c("ess",  "MOCA", "NP1APAT", "NP1DPRS", "pigd", "rem",  "scopa",  "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore", 'ADAS13', 'hvlt_immediaterecall', 'FAQ', 'EcogPtTotal', 'EcogSPTotal' , 'MMSE' )
+coggers = c(  'MOCA',  "NP1APAT", "NP1DPRS", "pigd", "rem", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
+coggers = c(  'MOCA', "pigd", "rem", "updrs1_score", "updrs2_score", "updrs3_score", "updrs_totscore" )
+presim=read_simlr_data_frames( path.expand(simfile), 
+    c("t1","t1a", "dt", "dta", "rsf" ), verbose=TRUE )
+npc = ncol(presim[[1]])
+# npc = 10
+# coggers = c( 'MOCA',  "updrs1_score", "updrs2_score", "updrs3_score"  )
+mydogp = apply_simlr_matrices(  ppmitrim, presim, robust=FALSE, 
+  center = TRUE, scale = TRUE,
+  absolute_value=rep(TRUE,length(presim)) )[[1]]
+mydogp$SITE2=factor(paste0(mydogp$SITE,mydogp$studyName))
+nnhnames = apply_simlr_matrices(  mydogp, presim, robust=FALSE, absolute_value=rep(TRUE,length(presim)) )[[2]]
+mydogp$roundyears = round( mydogp$yearsbl )
+# mydogp$LEDD[ is.na(mydogp$LEDD) ]=0
+# mydogp$duration_yrs[ is.na(mydogp$duration_yrs) ]=0
+mydogp$hy[ is.na(mydogp$hy) ]=0
+mydogp = fillBaselineColumn( mydogp,
+        c(nnhnames,coggersAll,'hy'),
+        'subjectID', 'yearsbl', 0, 
+        fast=T, verbose=F )[[1]]
+####################
+stadnnh=data.frame()
+cogglist=list()
+cogglistnames=list()
+nnhqth = 0.05 / ( npc * length(coggers) )
+nnhqth = 1e-4
+#########################
+for ( voi in c(37,52,79)  ) {
+  for ( cog in (coggers) ) {
+    n = nrow(stadnnh)+1
+    vars3=paste0( names(presim), paste0( "PC", voi ))
+    vars3f=paste("(",paste(vars3,collapse='+'),")")
+    dxsel = c( "CN", "PDSporadic" )
+    covarsX=" commonEdu + age_BL + commonSex + ( yearsbl ) "
+    if ( cog %in% c("updrs_totscore", "updrs3_score"  , "pigd" ))
+      covarsX=paste("LEDD + ",covarsX )
+    redspns=paste0(cog,"_delta")
+    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+(1|SITE2)+ ", covarsX )
+    cogformcommon=paste( redspns, "~ ",paste0(cog,"_BL"),"+(1|commonID)+ ", covarsX )
+    newform = paste( cogformcommon, " * ", vars3f )
+    severity_selection = na2f( mydogp$updrs_totscore_BL <= 30 )
+    severity_selection = na2f( mydogp$hy_BL %in% c(0, 1, 2) )
+    dxvar='DXSubAsyn'
+    dxvar='joinedDX'
+    mydogpnna=mydogp[ complete.cases( mydogp[,all.vars(as.formula(newform))] ) & 
+      na2f( mydogp$DTI_dti_FD_mean <= 5 & mydogp$rsfMRI_fcnxpro129_FD_mean <= 0.5 ) &
+      mydogp$imaging_protocol %in% c(1,2) & # no ADNI
+      (mydogp[,dxvar] %in% dxsel ) & # severity_selection &
+      mydogp$yearsbl <= maxy, ]
+    mydogpnna=truncatehi(mydogpnna,paste0('t1aPC',voi),t=4,removeit=FALSE)
+    mydogpnna=truncatehi(mydogpnna,paste0('dtaPC',voi),t=4,removeit=FALSE)
+    topkval = round( 0.985 * nrow(mydogpnna) )
+    mydogpnna = mydogpnna[ topk( mydogpnna, "T1Hier_resnetGrade", topkval), ] # quality selection
+    mydogpnnaBase = mydogpnna[ mydogpnna$yearsbl == 0.0, ]
+    mydogpnnaLong = select_longitudinal_subjects( mydogpnna, 'commonID', 'roundyears', 2, baseline=0.0 )
+    if ( n == 1 ) {
+      mycogn=count_unique_subjects_per_diagnosis( mydogpnnaBase, dxvar,
+      'commonID', format_counts=F )
+      mycogn = paste( with(mycogn, paste(Diagnosis, Unique_Subjects, sep = ": ")), collapse=' / ' )
+      mycognL=count_unique_subjects_per_diagnosis( mydogpnnaLong, dxvar,
+      'commonID', format_counts=F )
+      mycognL = paste( with(mycognL, paste(Diagnosis, Unique_Subjects, sep = ": ")), collapse=' / ' )
+    }
+    if ( cog %in% c("NP1DPRS","NP1APAT") )
+      mydogpnnaLong[,redspns]=as.numeric(mydogpnnaLong[,redspns]>0)
+    resultsX = lm_anv_p_and_d( mydogpnnaBase, cog, vars3f, covarsX, predictoroperator='+', verbose=F )
+    anvpx=resultsX$model_comparison$Pr[2]
+    if ( nrow(mydogpnnaLong) > 10 ) {
+      if ( sd( mydogpnnaLong$LEDD) == 0 ) {
+        newform = gsub("+ LEDD","",newform)
+        newform = gsub("+ duration_yrs","",newform)
+      }
+      mydogpnnaLong = scale_variables_in_equation( mydogpnnaLong, newform , 
+        variables_to_exclude=c('yearsbl',vars3, cog, redspns ))
+      mdl=suppressMessages(lmer( newform, data=mydogpnnaLong ))
+      bmdl=suppressMessages(lmer( cogformcommon, data=mydogpnnaLong ))
+      nlong = length(unique( mydogpnnaLong$commonID ))
+      mycoffs = coefficients( summary( mdl ) )
+      anvp = suppressMessages( anova(bmdl,mdl)$Pr[2] )
+      othercols=rownames(mycoffs)[ grep("PC",rownames(mycoffs))]
+      chnd = data.frame( 
+        effectsize::t_to_d( mycoffs[ othercols, 't value'], c(nlong,nlong) ))
+      rownames(chnd)=othercols
+      stadnnh[n,'cog']=cog
+      stadnnh[n,'voi']=as.character(voi)
+      stadnnh[n,'n.x']=resultsX$n
+      stadnnh[n,'n.long']=nlong
+      stadnnh[n,'anv.x']=anvpx
+      stadnnh[n,'anv']=anvp
+      othercolsnm=c("d.b","d.y")
+      stadnnh[n,othercolsnm]=c(
+        max(abs(resultsX$effect_sizes[,1])),
+        max(abs(chnd[6:10,1]))
+      )
+      stadnnh[n,'res']=myrez
+      stadnnh[n,'singular']=isSingular(mdl)
+      if ( anvpx < anvp ) {
+        mycoffs=( resultsX$coefficients[-1,c(3:4)]) 
+        vars3xt=intersect(vars3,rownames(mycoffs))
+        theorder = order(mycoffs[vars3xt,"Pr(>|t|)" ])
+        mycoffsord=mycoffs[vars3xt,][theorder,]
+        xviz = rownames(mycoffsord)[1]
+        xviz2 = rownames(mycoffsord)[2]
+        wmat = unlist( strsplit( xviz, 'PC') )
+        wmat2 = unlist( strsplit( xviz2, 'PC') )
+        n2show=2
+        stadnnh[n,paste0("S_m1_",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
+        if ( mycoffsord[2,'Pr(>|t|)'] <= 0.01 ) {
+          stadnnh[n,paste0("S_m2_",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat2[1]]] , paste0('PC',wmat2[2]), n2show=n2show ))
+        }
+      } else {
+        mycoffs=( mycoffs[-1,c(4:5)])
+        vars3xt=paste0("yearsbl:",vars3)
+        vars3xt=intersect(vars3xt,rownames(mycoffs))
+        theorder = order(mycoffs[vars3xt,"Pr(>|t|)" ])
+        mycoffsord=mycoffs[vars3xt,][theorder,]
+        xviz = gsub("yearsbl:","",rownames(mycoffsord)[1])
+        xviz2 =  gsub("yearsbl:","",rownames(mycoffsord)[2])
+        wmat = unlist( strsplit( xviz, 'PC') )
+        wmat2 = unlist( strsplit( xviz2, 'PC') )
+        n2show=2
+        stadnnh[n,paste0("S_m1_",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=n2show ))
+        if ( mycoffsord[2,'Pr(>|t|)'] <= 0.05 ) {
+          stadnnh[n,paste0("S_m2_",1:n2show)]=names(interpret_simlr_vector2( presim[[wmat2[1]]] , paste0('PC',wmat2[2]), n2show=n2show ))
+        }
+      }
+      c2viz = c( "updrs1_score48", "updrs3_score64","updrs2_score76")
+      c2viz = c("NP1DPRS48", "updrs3_score55","updrs2_score50")
+      c2viz = c("updrs3_score4", "MOCA33", "updrs_totscore50", "updrs_totscore55", "rem70", "NP1DPRS71") # all
+      c2viz = c("updrs3_score1", "MOCA60", "updrs_totscore64", "pigd50" ,"updrs2_score97") # sporadic+cn
+      c2viz = c("updrs_totscore52", "MOCA79", "updrs2_score37")
+      if ( paste0(cog,voi) %in% c2viz   ) {
+#      if ( paste0(cog,voi) %in% c2viz  ) {
+        cogdel = paste0(cog,"_delta")
+        anvp = insight::format_p( anvp, digits=4 )
+        anvpx = insight::format_p( anvpx, digits=4 )
+        voix=paste0("SiMLR",voi)
+        ttl=( paste(  voix, myrez, " + ", cog,  " X: o", anvpx,  " L: o", anvp ) )
+        m1=compare_model_predictions( resultsX$base_model, resultsX$full_model, mydogpnnaBase, cog, annot_size=3 )
+        m2=compare_model_predictions( bmdl, mdl, mydogpnnaLong, redspns, annot_size=3 )
+        grid.arrange( m1, nrow=2 )
+        grid.arrange( m2, nrow=2 )
+        gglist=list()
+        print( jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]),  
+              interval=T, facet.modx=T, plot.points = F, partial.residuals=FALSE ) + ggtitle(paste("X:",vars3[k])) + theme(legend.position = "none")  )
+        for ( k in 1:length(vars3)) 
+            print( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k]))  + theme(legend.position = "none") )
+        print( resultsX$coefficients )
+        print( mycoffs )
+    }
+  } 
+}
+}
+#####################
+```
