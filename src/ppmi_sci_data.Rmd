@@ -145,8 +145,8 @@ glossary_add(
   def = "A protein that plays a key role in the pathogenesis of Parkinson's disease, characterized by its tendency to misfold and aggregate into toxic fibrils that contribute to neurodegeneration.", replace = TRUE)
 
 glossary_add(
-  term = "SAA",
-  def = "Synuclein Amplification Assay, a laboratory test used to stratify participants as either alpha-synuclein positive or negative.", replace = TRUE)
+  term = "asyn SAA",
+  def = "Synuclein Amplification Assay, a test used to stratify participants as either alpha-synuclein positive or negative.", replace = TRUE)
 
 glossary_add(
   term = "Prodromal",
@@ -695,7 +695,7 @@ if ( ! exists("ppmitrimsave") & FALSE ) {
 
 ###
 toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
-toadd = c(  "age_BL", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
+toadd = c(  "age_BL", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol','PTRACCAT')
 biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
 tblcols = unique( c( toadd, 'joinedDX'  ) )
 bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
@@ -718,6 +718,13 @@ joinedem[ subtyper::fs(joinedem$race == '1'), 'race' ] = 'White'
 joinedem[ subtyper::fs(joinedem$race == '2'), 'race' ] = 'Black'
 joinedem[ subtyper::fs(joinedem$race == '3'), 'race' ] = 'Asian'
 joinedem[ subtyper::fs(joinedem$race == '4'), 'race' ] = 'Other'
+joinedem$race[ na2f( joinedem$PTRACCAT == 'Black')] = 'Black'
+joinedem$race[ joinedem$PTRACCAT == 'White'] = 'White'
+joinedem$race[ joinedem$PTRACCAT == 'More than one'] = 'Other'
+joinedem$race[ joinedem$PTRACCAT == 'Asian'] = 'Asian'
+joinedem$race[ joinedem$PTRACCAT == 'Unknown'] = 'Other'
+joinedem$race[ joinedem$PTRACCAT == 'Hawaiian/Other PI'] = 'Pacific Islander'
+joinedem$race[ joinedem$PTRACCAT == 'Am Indian/Alaskan'] = 'Am Indian/Alaskan'
 joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
 joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
 joinedem$joinedDX=as.character(joinedem$joinedDX)
@@ -735,8 +742,11 @@ joinedem$joinedDX[
   multigrep( c("PDSporadic"), joinedem$joinedDX )]='Sporadic.PD'
 mlevs = c( "CN", "Sporadic.PD")
 joinedem = joinedem[ joinedem$joinedDX %in% mlevs, ]
+joinedem$joinedDX[ joinedem$joinedDX  == "CN" & joinedem$imaging.protocol == 3 ]='CN.ADNI'
+mlevs = c("CN","CN.ADNI","Sporadic.PD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
-mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols)]
+tblcols2=tblcols[ -grep("PTRACCAT", tblcols )]
+mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols2)]
 mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "CN", "Sporadic.Prodromal") ]=0
 meanPDduration = mean( mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & !is.na(mytbl$duration.yrs) ] )
 mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & is.na(mytbl$duration.yrs) ]=meanPDduration
@@ -745,7 +755,7 @@ mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
 rownames(mytbl)=1:nrow(mytbl)
-mycap="Table 2. Baseline PPMI IDP cohort. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder."
+mycap="Table 2. Baseline PPMI and ADNI IDP cohort from which technical validation reporting is derived. These sample sizes are based on raw data i.e. not filtered for image quality. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder."
 ####
 ```
 
@@ -1266,9 +1276,6 @@ ctrl <- lmerControl(
   check.conv.grad = .makeCC("warning", tol = 1e-4)  )
 
 ###################
-mydog$TDX[ mydog$joinedDX %in% c("CN")]='CN'
-# mydog$TDX[ mydog$joinedDX %in% c("MCI")]='CN'
-mydog$TDX[ mydog$joinedDX %in% c("SMC")]='CN'
 mydogU = mydog# [ mydog$joinedDX != 'AD', ]
 mytab = table( mydogU$studyName )
 frac = 0.99
