@@ -129,81 +129,6 @@ library(mlr3learners)
 library(mlr3verse)
 library(effects)
 library(ANTsR)
-library(glossary)
-glossary_reset()
-glosspath='/Users/stnava/Documents/writing/ppmi_mri_scidata/data/ppmi_glossary.yml'
-glossary_path(glosspath)
-glossary_add(
-  term = "Parkinson's disease",
-  def = "A progressive neurodegenerative disorder characterized by tremors, rigidity, bradykinesia, and postural instability (PD).", replace = TRUE)
-
-glossary_add(
-  term = "Idiopathic PD",
-  def = "PD without identifiable genetic or environmental factors.", replace = TRUE
-)
-
-glossary_add(
-  term = "Sporadic PD",
-  def = "No clear family history of PD, often assumed to be idiopathic.", replace = TRUE)
-
-
-glossary_add(
-  term = "Alpha-synuclein",
-  def = "A protein that plays a key role in the pathogenesis of Parkinson's disease, characterized by its tendency to misfold and aggregate into toxic fibrils that contribute to neurodegeneration.", replace = TRUE)
-
-glossary_add(
-  term = "SAA",
-  def = "Synuclein Amplification Assay, a laboratory test used to stratify participants as either alpha-synuclein positive or negative.", replace = TRUE)
-
-glossary_add(
-  term = "Prodromal",
-  def = "A period of time during which an individual experiences symptoms or warning signs of a disease before its full-blown onset.", replace = TRUE)
-
-glossary_add(
-  term = "MDS-UPDRS",
-  def = "Movement Disorder Society-Unified Parkinson's Disease Rating Scale, a standardized assessment tool for evaluating motor and non-motor symptoms of Parkinson's disease.", replace = TRUE)
-
-glossary_add(
-  term = "MOCA",
-  def = "Montreal Cognitive Assessment, a widely used screening test for detecting cognitive impairment.", replace = TRUE)
-
-glossary_add(
-  term = "REM",
-  def = "Rapid Eye Movement sleep, a stage of sleep characterized by vivid dreams and increased brain activity and associated with PD risk when resulting in abnormal motor behaviors such as acting out dreams.", replace = TRUE)
-
-glossary_add(
-  term = "LRRK2",
-  def = "Leucine-rich repeat kinase 2, a gene associated with an increased risk of developing Parkinson's disease.", replace = TRUE)
-
-glossary_add(
-  term = "GBA",
-  def = "Glucocerebrosidase, a gene associated with an increased risk of developing Parkinson's disease.", replace = TRUE)
-
-glossary_add(
-  term = "PIGD",
-  def = "Postural instability and gait disturbance, a subtype of Parkinson's disease characterized by postural instability and gait difficulties.", replace = TRUE)
-
-glossary_add(
-  term = "IDP",
-  def = "Imaging data phenotype, a summary measurement appropriate for representing and interpreting imaging data in tabular form.", replace = TRUE)
-
-glossary_add(
-  term = "sMRI",
-  def = "Structural Magnetic Resonance Imaging, a type of (usually T1-weighted) MRI that provides detailed images of brain anatomy.", replace = TRUE)
-
-glossary_add(
-  term = "dMRI",
-  def = "Diffusion Magnetic Resonance Imaging, a type of MRI that measures the diffusion of water molecules in the brain, providing information on white matter tracts and brain connectivity.", replace = TRUE)
-
-glossary_add(
-  term = "rsfMRI",
-  def = "Resting-state functional Magnetic Resonance Imaging, a type of functional MRI that measures brain activity while a person is at rest, providing information on brain functional connectivity.", replace = TRUE)
-
-glossary_add(
-  term = "Traveling participants",
-  def = "Participants in a research study who undergo repeated assessments and evaluations at different locations or time points, often used to study accuracy and reproducibility of imaging data across scanners.", replace = TRUE)
-
-glossary_popup("hover") 
 
 areunique = function( x ) {
   x[ !duplicated( x[,c("studyName","commonID","age_BL","T1Hier_resnetGrade")]), ]
@@ -432,14 +357,6 @@ if ( file.exists( ppmitrimfn ) & ! exists("ppmitrim")  ) {
 
 
 
-```{r, results='asis',echo=FALSE,warning=FALSE}
-glossary_style(color = "purple", 
-               text_decoration = "underline",
-               def_bg = "#333",
-               def_color = "white")
-```
-
-
 
 ```{r ppmitrim,echo=FALSE,eval=!exists("ppmitrim"),fig.width=16,fig.height=10,message=FALSE,warning=FALSE,cache=FALSE}
 ppmi = fillBaselineColumn( ppmi,
@@ -625,25 +542,6 @@ The main text focused on the largest groups available in this data release: cont
 nmstotest2=antspymm_predictors( ppmitrim, TRUE, TRUE )
 nmstotest2=nmstotest2[ -multigrep( c("alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted","_BL","_delta","T1w_mean","area"), nmstotest2)]
 
-if ( ! exists("ppmitrimsave") & FALSE ) {
-#  ppmitrimsave = ppmitrim
-#  nmstotest2=gsub("_adjusted","",nmstotest2adj)
-#  ppmitrim[,nmstotest2]=ppmitrim[,nmstotest2adj]
-  write.csv( ppmitrim, ppmitrimfn, row.names=FALSE )
-
-  simfile="~/Downloads/ppmi_pym_data/PPMISiMLRW100"
-  presim=read_simlr_data_frames( path.expand(simfile), 
-      c("t1","t1a", "dt", "dta", "rsf" ))
-  ppmitrim = apply_simlr_matrices(  ppmitrim, presim, absolute_value=rep(TRUE,length(presim)), robust=FALSE )[[1]]
-  simnames = apply_simlr_matrices(  ppmitrim, presim, absolute_value=rep(TRUE,length(presim)), robust=FALSE )[[2]]
-#########
-  cnames = getNamesFromDataframe("common",ppmitrim)
-  cnames[ which(cnames=='commonAge')]='age_BL'
-  trimnames=c("studyName",cnames,'yearsbl', "date","filename",
-    getNamesFromDataframe("QC",ppmitrim), antspymm_qc_names(),nmstotest2, simnames)
-  trimnames=unique(intersect(trimnames,colnames(ppmitrim)))
-  write.csv( ppmitrim[,trimnames], gsub(".csv","_trim.csv",ppmitrimfn,fixed=TRUE), row.names=FALSE )
-}
 
 ###
 toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
@@ -813,8 +711,6 @@ coggers = c(  'MOCA', "pigd", "rem", "updrs1_score", "updrs2_score", "updrs3_sco
 presim=read_simlr_data_frames( path.expand(simfile), 
     c("t1","t1a", "dt", "dta", "rsf" ), verbose=TRUE )
 npc = ncol(presim[[1]])
-# npc = 10
-# coggers = c( 'MOCA',  "updrs1_score", "updrs2_score", "updrs3_score"  )
 mydogp = apply_simlr_matrices(  ppmitrim, presim, robust=FALSE, 
   center = TRUE, scale = TRUE,
   absolute_value=rep(TRUE,length(presim)) )[[1]]
@@ -1032,22 +928,34 @@ We can also show -- here -- with this additional space the full feature sets ass
 
 
 ```{r simlridpDTA,echo=FALSE,fig.width=10,fig.height=7,echo=TRUE,fig.cap='The most highly weighted features for dtaPC52.'}
+n.comp=100
+simfile=paste0("~/Downloads/ppmi_pym_data/pub_",n.comp,
+  '_rezOR_only_ADNI')
+presim=read_simlr_data_frames( path.expand(simfile), 
+      c("t1","t1a", "dt", "dta", "rsf" ))
+ppmitrim = apply_simlr_matrices(  ppmitrim, presim, robust=FALSE, 
+  center = TRUE, scale = TRUE,
+  absolute_value=rep(TRUE,length(presim)) )[[1]]
 wmat=c("dta",52)
-v0=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=50 )
+v0=interpret_simlr_vector2( presim[[wmat[1]]], 
+  paste0('PC',wmat[2]), n2show=50 )
 v0=v0[v0>0.01]
 todisp=data.frame( feature=names(v0), weight=v0 )
 ggbarplot(todisp,'feature','weight') + 
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 80, hjust = 1))
+  ggplot2::theme( axis.text.x = 
+    ggplot2::element_text(angle = 80, hjust = 1))
 
 ```
 
 
-```{r simlridpRSF,fig.width=18,fig.height=10,echo=FALSE,fig.cap='The most highly weighted features for rsfPC52.'}
+```{r simlridpRSF,fig.width=18,fig.height=10,echo=TRUE,fig.cap='The most highly weighted features for rsfPC52.'}
 wmat=c("rsf",52)
-v1=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=80 )
+v1=interpret_simlr_vector2( presim[[wmat[1]]], 
+  paste0('PC',wmat[2]), n2show=80 )
 v1=v1[v1>0.1]
 todisp=data.frame( feature=names(v1), weight=v1 )
 ggbarplot(todisp,'feature','weight') + 
-  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 80, hjust = 1))
+  ggplot2::theme(axis.text.x = 
+    ggplot2::element_text(angle = 80, hjust = 1))
 
 ```
