@@ -51,7 +51,6 @@ Lana M Chahine$^5$,
 Kathleen L Poston$^6$,
 Kenneth Marek$^7$,
 Lino Becerra$^{1}$,
-Roger Gunn$^{1}$
 for the Alzheimer's Disease Neuroimaging Initiative*
 
 
@@ -629,6 +628,83 @@ The present study extends previous foundations by providing standardized imaging
 
 
 ```{r, echo = FALSE,results='asis'}
+kable_table <- function(data, caption, scl = 0.75) {
+  library(kableExtra)
+  kable( data, 
+        format = "latex", booktabs = TRUE, 
+        fontsize = 4, 
+#        width = "0.8\\textwidth", 
+#        height = "0.95\\textheight", 
+        caption = caption, 
+        caption.prefix = "",
+        caption.short = TRUE,
+        scale_down = scl,
+        label = NULL,
+        digits = 3,
+        row.names = FALSE)  %>%
+    kable_styling(latex_options = c("striped"), stripe_color = "gray!25") %>%
+    kableExtra::landscape() %>%
+  kableExtra::add_header_above(c(" \\begin{minipage}[t][0.7\\textheight][t]{0.8\\textwidth}"),
+                              c(" \\end{minipage}"))
+}
+
+kable_table <- function(data, caption, scl = 0.75) {
+  library(kableExtra)
+  kable(data, format = "latex", 
+        fontsize = 6, 
+        caption = caption, 
+        caption.prefix = "",
+        caption.short = TRUE,
+        scale_down = scl, 
+        width = "\\linewidth", 
+        table.attr = "style='width:40%;'",
+        column.spacing = 2, 
+        full_width = F,
+        booktabs = TRUE) %>%
+#    kable_styling(latex_options = c("striped", "centering", "hold_position"),
+#                  stripe_color = "gray!22") %>%
+    kableExtra::landscape()
+
+}
+
+
+kable_table <- function(data, caption, scl = 0.75, row.names=FALSE) {
+  library(kableExtra)
+  kable(data, format = "latex", caption = caption, 
+    table.attr = "style='height:80%;'", booktabs = TRUE,
+      scale_down = scl,
+      row.names = row.names, digits=3 ) %>% 
+        kableExtra::kable_styling( latex_options = c("striped"), stripe_color = "gray!22" ) %>%
+          kableExtra::landscape()
+}
+
+kable_table_no_stripe <- function(data, caption, scl = 0.75, row.names=FALSE) {
+  library(kableExtra)
+  kable(data, format = "latex", caption = caption, 
+    table.attr = "style='height:80%;'", booktabs = TRUE,
+      scale_down = scl,
+      row.names = row.names, digits=3 ) %>% 
+          kableExtra::landscape()
+}
+
+kable_table <- function(data, caption, scl = 0.75, row.names = FALSE, striped = TRUE, landscape=TRUE ) {
+  library(kableExtra)
+  
+  table <- kable(data, format = "latex", caption = caption, 
+                 table.attr = "style='height:80%;'", booktabs = TRUE,
+                 # escape = FALSE,
+                 scale_down = scl, row.names = row.names, digits = 3)
+  
+  # Apply striped styling if `striped = TRUE`
+  if (striped) {
+    table <- table %>%
+      kableExtra::kable_styling(latex_options = c("striped"), stripe_color = "gray!22")
+  }
+  if ( landscape ) {
+    table %>%
+      kableExtra::landscape()
+  } else table
+}
 
 convert_yaml_to_df <- function(y, max_length) {
   nms = names(y)
@@ -696,6 +772,7 @@ if ( ! exists("ppmitrimsave") & FALSE ) {
 ###
 toadd = c(  "age_BL", "commonSex", 'race', 'hy_BL', 'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol')
 toadd = c(  "age_BL", "commonSex", 'race',  'duration_yrs', "updrs_totscore", 'AsynStatus', 'LEDD', 'subgroup', 'imaging_protocol','PTRACCAT')
+toadd = c(  "age_BL", "commonSex", 'race',  "updrs_totscore", 'AsynStatus',  'subgroup', 'imaging_protocol','PTRACCAT')
 biomarkers = c('abeta', 'tau',  'nfl_serum', 'mean_striatum' )
 tblcols = unique( c( toadd, 'joinedDX'  ) )
 bsel = ppmitrim$yearsbl==0 # & ppmi$studyName == 'PPMI'
@@ -748,24 +825,40 @@ mlevs = c("CN","CN.ADNI",'SMC.ADNI',"Sporadic.PD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
 tblcols2=tblcols[ -grep("PTRACCAT", tblcols )]
 mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols2)]
-mytbl$duration.yrs[ mytbl$joinedDX %in% c("CN","CN.ADNI",'SMC.ADNI') ]=0
-meanPDduration = mean( mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & !is.na(mytbl$duration.yrs) ] )
-mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & is.na(mytbl$duration.yrs) ]=meanPDduration
+# mytbl$duration.yrs[ mytbl$joinedDX %in% c("CN","CN.ADNI",'SMC.ADNI') ]=0
+# meanPDduration = mean( mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & !is.na(mytbl$duration.yrs) ] )
+# mytbl$duration.yrs[ mytbl$joinedDX %in%  c( "Sporadic.PD") & is.na(mytbl$duration.yrs) ]=meanPDduration
 mytbl$imaging.protocol=as.character(mytbl$imaging.protocol)
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
 rownames(mytbl)=1:nrow(mytbl)
-mycap="Table 2. Baseline PPMI and ADNI IDP cohort from which technical validation reporting is derived. These sample sizes are based on raw data i.e. not filtered for image quality. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder; SMC = subjective memory complaint."
+mycap="Baseline PPMI and ADNI IDP cohort from which technical validation reporting is derived. These sample sizes are based on raw data i.e. not filtered for image quality. MSA = multi-system atrophy; RBD = REM Sleep Behavior Disorder; SMC = controls with subjective memory complaint."
 ####
 ```
 
 ```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
-sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
-
-# Print the ztable object, ensuring it's treated as LaTeX code
-print(sttblPD, type = "latex", size=3,caption=mycap,sidewaystable=FALSE)
-
+# sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2, format = "blank")
+# print(sttblPD, type = "latex", size=3,caption=mycap,sidewaystable=FALSE)
+ttvars = colnames(mytbl)
+ttvars = ttvars[ ttvars != 'joinedDX' ]
+temp = table_1( mytbl, ttvars, 'joinedDX' )
+toindent = c( 3, 4, 6, 7, 8, 9, 10, 11, 14, 15, 16, 18,  19, 20, 22, 23, 24 )
+temp = cbind( variable=rownames(temp), temp )
+ww = which( rownames(temp) %in% c("age","updrs.totscore"))
+# temp[ww[1], 1] <- cell_spec(temp[ww[1], 1], bold = TRUE)
+# temp[ww[2], 1] <- cell_spec(temp[ww[2], 1], bold = TRUE)
+kable_table( temp,  mycap, row.names=FALSE, striped=FALSE ) %>%
+  add_indent( toindent ) %>% 
+#    row_spec(1, bold = TRUE) %>% 
+    row_spec(2, bold = TRUE) %>% 
+    row_spec(5, bold = TRUE) %>% 
+#    row_spec(12, bold = TRUE) %>% 
+#    row_spec(13, bold = TRUE) %>% 
+    row_spec(13, bold = TRUE) %>% 
+#    row_spec(18, bold = TRUE) %>% 
+    row_spec(17, bold = TRUE) %>% 
+    row_spec(21, bold = TRUE) 
 
 ```
 
@@ -1278,7 +1371,10 @@ ctrl <- lmerControl(
 
 ###################
 mydogU = mydog# [ mydog$joinedDX != 'AD', ]
-mydogU[ na2f( mydogU$joinedDX == 'SMC' & mydogU$AsynStatus == 'Negative'), 'TDX']='CN'
+# mydogU[ na2f( mydogU$joinedDX %in% c('SMC','CN' ) & 
+#  mydogU$AsynStatus == 'Negative' & mydogU$AV45_bl <= 1.1), 'TDX']='CN'
+# mydogU[ na2f( mydogU$joinedDX %in% c('SMC','CN' )  ), 'TDX']='CN'
+mydogU[ na2f( mydogU$joinedDX %in% c( 'CN', 'SMC' ) &  mydogU$AsynStatus == 'Negative' ), 'TDX']='CN'
 mytab = table( mydogU$studyName )
 frac = 0.99
 ns = round( c( frac * mytab['ADNI'] , frac * mytab['PPMI'] ) )
@@ -1316,7 +1412,7 @@ for ( y in 0:4 ) {
   }
 dxform=" (1|commonID) + (1|SITE2) + age_BL + commonSex  + yearsbl "
 simplerlm=TRUE
-simplerlm=FALSE
+# simplerlm=FALSE
 dxglist=list()
 dxdfT1=data.frame()
 nms2viz = c("t1.vol.sncdp.", "t1.vol.bn.gp.gpidp.","dti.fa.lateral.occipital","dti.mean.md.uncinate.fasciculus.asym","t1.vol.asym.insula.ctx")
@@ -1497,7 +1593,7 @@ if ( length(dxglist) > 0  )
 ```
 
 
-## IDP differences in asyn SAA+ and asyn SAA- sporadic PD versus controls
+## IDP differences in asyn SAA+ and asyn SAA- sporadic PD versus asyn SAA- controls
 
 This section establishes reference models and associated effect sizes comparing asyn SAA- controls to asyn SAA+ sporadic PD and asyn SAA- sporadic PD participants.  Symptoms of PD exhibit heterogeneity both across individuals and within a single patient over time.  MRI is suited to objective *in vivo* characterization of the neural basis of these changes longitudinally with a variety of structural and functional measurements. Here, we assess longitudinal and cross-sectional effect sizes within IDPs that are pre-defined for PD relevance.  These regions are listed in Table 3 (sMRI), Table 4 (dMRI) and Table 5 (rsfMRI) and span motor, associative and limbic systems that may be impacted in PD and associated disorders [@ryman_mri_2020].  These include motor and parietal cortex [@filippi_progressive_2020;@sokolowski_longitudinal_2024], midbrain and striatal regions and basal forebrain [@batzu_increased_2023] from T1w.  Due to known concomitant, AD-related pathology in some PD participants, we also include a medial temporal lobe IDP [@das_episodic_2019].  Relatedly, we select mean diffusion and FA derived from DTI in the striatum and substantia nigra [@hu_diffusion_2023] as well as major white matter tracts [@gattellaro_white_2009;@pietracupa_freezing_2018], the fornix and external and internal capsule; a recent large-scale study demonstrated sensitivity of these measures to PD [@owens-walton_worldwide_2024].  Interestingly, DTI metrics in early PD -- within both the current study and the recent worldwide study [@owens-walton_worldwide_2024] -- appear to trend in directions that are opposite to that of other neurodegenerative diseases which provides an opportunity for future work and more nuanced stage-based statistical modeling.  In rsfMRI, we focus on connectivity between sensorimotor regions and other networks, in particular visual and cognitive control [@caspers_within_2021;@wang_investigation_2021;@tahmasian_systematic_2015].  In total, we test `r length(apriori_targets)` different measurements which include left-right averaged as well as asymmetry metrics:
 $$
@@ -1602,55 +1698,6 @@ mycap='Baseline group effects: asyn SAA+/- sporadic PD vs. controls. n.x = sampl
 #  knitr::kable("latex", booktabs = TRUE, caption=mycap) %>%
 #  kableExtra::kable_styling(latex_options = c("striped", "scale_down"))
 
-kable_table <- function(data, caption, scl = 0.75) {
-  library(kableExtra)
-  kable( data, 
-        format = "latex", booktabs = TRUE, 
-        fontsize = 4, 
-#        width = "0.8\\textwidth", 
-#        height = "0.95\\textheight", 
-        caption = caption, 
-        caption.prefix = "",
-        caption.short = TRUE,
-        scale_down = scl,
-        label = NULL,
-        digits = 3,
-        row.names = FALSE)  %>%
-    kable_styling(latex_options = c("striped"), stripe_color = "gray!25") %>%
-    kableExtra::landscape() %>%
-  kableExtra::add_header_above(c(" \\begin{minipage}[t][0.7\\textheight][t]{0.8\\textwidth}"),
-                              c(" \\end{minipage}"))
-}
-
-kable_table <- function(data, caption, scl = 0.75) {
-  library(kableExtra)
-  kable(data, format = "latex", 
-        fontsize = 6, 
-        caption = caption, 
-        caption.prefix = "",
-        caption.short = TRUE,
-        scale_down = scl, 
-        width = "\\linewidth", 
-        table.attr = "style='width:40%;'",
-        column.spacing = 2, 
-        full_width = F,
-        booktabs = TRUE) %>%
-#    kable_styling(latex_options = c("striped", "centering", "hold_position"),
-#                  stripe_color = "gray!22") %>%
-    kableExtra::landscape()
-
-}
-
-
-kable_table <- function(data, caption, scl = 0.75) {
-  library(kableExtra)
-  kable(data, format = "latex", caption = caption, 
-    table.attr = "style='height:80%;'", booktabs = TRUE,
-      scale_down = scl,
-      row.names = FALSE, digits=3 ) %>% 
-        kableExtra::kable_styling( latex_options = c("striped"), stripe_color = "gray!22" ) %>%
-          kableExtra::landscape()
-}
 
 kable_table( temp[temp$sig.x %in% c("fdr.x","fwe.x"),nmstemp2[nmstempw]], 
   mycap )
