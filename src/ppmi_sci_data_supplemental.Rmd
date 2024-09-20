@@ -1031,7 +1031,7 @@ grid.arrange( grobs = list(gg0, gg1 ) )
 We can also show -- here -- with this additional space the full feature sets associated with these SiMLR IDPs.  Figure 3 shows the asymmetry related features.  Figure 4 shows the resting state features.  A higher weight indicates a larger contribution to the final predictor value.  Note that weights are unsigned and therefore represent an average of these variables.  The maximum weight for each feature vector is 1 and we display only those features with individual weights greater than or equal to a given threshold.  The explicit `ANTsR` code for these displays is shown.
 
 
-```{r simlridpDTA,echo=FALSE,fig.width=10,fig.height=7,echo=TRUE}
+```{r simlridpDTA,echo=FALSE,fig.width=10,fig.height=7,echo=TRUE,fig.cap='The most highly weighted features for dtaPC52.'}
 wmat=c("dta",52)
 v0=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=50 )
 v0=v0[v0>0.01]
@@ -1042,7 +1042,7 @@ ggbarplot(todisp,'feature','weight') +
 ```
 
 
-```{r simlridpRSF,fig.width=18,fig.height=10,echo=FALSE}
+```{r simlridpRSF,fig.width=18,fig.height=10,echo=FALSE,fig.cap='The most highly weighted features for rsfPC52.'}
 wmat=c("rsf",52)
 v1=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=80 )
 v1=v1[v1>0.1]
