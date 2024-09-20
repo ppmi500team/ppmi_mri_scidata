@@ -94,13 +94,20 @@ avants@grasp.cis.upenn.edu
 
 \normalsize
 
-```{r samplesizes,echo=FALSE,eval=TRUE}
+
+\LaTeX{
+\setcounter{table}{0}
+\renewcommand{\thetable}{S\arabic{table}}
+}
+
+
+```{r samplesizes,echo=FALSE,eval=TRUE,warning=FALSE}
 redomerge=TRUE
 buildsci=buildsci2=TRUE
 ```
 
 
-```{r ppmimerge, echo=FALSE,eval=redomerge,cache=FALSE}
+```{r ppmimerge, echo=FALSE,eval=redomerge,cache=FALSE,warning=FALSE}
 library(ztable)
 library(rsq)
 options(ztable.zebra.color="platinum")
@@ -425,7 +432,7 @@ if ( file.exists( ppmitrimfn ) & ! exists("ppmitrim")  ) {
 
 
 
-```{r, results='asis',echo=FALSE}
+```{r, results='asis',echo=FALSE,warning=FALSE}
 glossary_style(color = "purple", 
                text_decoration = "underline",
                def_bg = "#333",
@@ -492,7 +499,7 @@ nmqcnames = getNamesFromDataframe( "NM2DMT", ppmitrim, exclusions='_substantiani
 
 ```
 
-```{r ppmitrimX,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,messages=FALSE,warnings=FALSE,cache=FALSE}
+```{r ppmitrimX,echo=FALSE,eval=TRUE,fig.width=16,fig.height=10,messages=FALSE,warning=FALSE,cache=FALSE}
 library(GGally)
 qcnames=c( "T1Hier_resnetGrade", "noise", "snr", "EVR", "psnr", "ssim", "mi", "msk_vol", "reflection_err", "mriPixelBandwidth", "mriSAR", "maxtominspc",'updrs_totscore' )
 my_bin <- function(data, mapping, ..., low = "#132B43", high = "#56B1F7") {
@@ -606,8 +613,14 @@ doadj=FALSE
 
 # Overview of the supplement
 
+We first provide additional information on the currently processed ADNI and PPMI cohort including the genetic and prodromal subgroups along with asyn SAA status for each.  Second, we share didactic material explaining in greater detail how to interpret the plots in Figure 9 of the main text.
 
-```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE}
+## The full PPMI cohort 
+
+The main text focused on the largest groups available in this data release: controls and sporadic PD.  However, other PD groups are of growing interest for more focused research.  In particular, both GBA and LRRK2 PD appear to take a different disease trajectory than is typical of sporadic PD \footnote{Typical should probably not be used to describe PD progression due to the immense variability that is observed across individual patients.}  Moreover, the prodromal stage is of growing interest due to the combination of an increased ability to identify these subjects and the potential for early intervention.  We believe the validity arguments made in the primary text extends to the IPDs that are associated with these other groups, summarized in Table S1.
+
+
+```{r tblprep,eval=TRUE,echo=FALSE,cache=FALSE,warning=FALSE}
 
 nmstotest2=antspymm_predictors( ppmitrim, TRUE, TRUE )
 nmstotest2=nmstotest2[ -multigrep( c("alff","peraf","template","fcnxpro134","fcnxpro122","_adjusted","_BL","_delta","T1w_mean","area"), nmstotest2)]
@@ -661,18 +674,18 @@ joinedem[ is.na(joinedem$race), 'race' ] = 'not.spec.'
 joinedem$joinedDX = gsub("Prodromal",'AR',joinedem$joinedDX)
 joinedem$joinedDX=as.character(joinedem$joinedDX)
 joinedem$joinedDX[ 
-  multigrep( c("ARSporadic"), joinedem$joinedDX )]='SporadicAR'
+  multigrep( c("ARSporadic"), joinedem$joinedDX )]='Sporadic.Pro'
 joinedem$joinedDX[ 
-  multigrep( c("ARGBA", "ARLRRK2",  "ARSNCA"), joinedem$joinedDX )]='GenAR'
+  multigrep( c("ARGBA", "ARLRRK2",  "ARSNCA"), joinedem$joinedDX )]='Gen.Pro'
 joinedem$joinedDX[
-  multigrep( c( "PDPRKN", "PDSNCA"), joinedem$joinedDX )]='OtherGenPD'
+  multigrep( c( "PDPRKN", "PDSNCA"), joinedem$joinedDX )]='OtherGen.PD'
 joinedem$joinedDX[ 
-  multigrep( c("PDGBA"), joinedem$joinedDX )]='GBAPD'
+  multigrep( c("PDGBA"), joinedem$joinedDX )]='GBA.PD'
 joinedem$joinedDX[
-  multigrep( c("PDLRRK2"), joinedem$joinedDX )]='LRRK2PD'
+  multigrep( c("PDLRRK2"), joinedem$joinedDX )]='LRRK2.PD'
 joinedem$joinedDX[ 
-  multigrep( c("PDSporadic"), joinedem$joinedDX )]='SporadicPD'
-mlevs = c( "CN", "GenAR", "SporadicAR","OtherGenPD", 'LRRK2PD', 'GBAPD', "SporadicPD")
+  multigrep( c("PDSporadic"), joinedem$joinedDX )]='Sporadic.PD'
+mlevs = c( "CN", "Gen.Pro", "Sporadic.Pro","OtherGen.PD", 'LRRK2.PD', 'GBA.PD', "Sporadic.PD")
 joinedem$joinedDX = factor( joinedem$joinedDX, levels = mlevs )
 mytbl = joinedem[ !is.na(joinedem$joinedDX),c(tblcols)]
 mytbl$imaging.protocol=as.character(mytbl$imaging.protocol)
@@ -680,35 +693,31 @@ mytbl$imaging.protocol[ mytbl$imaging.protocol=='1']='PPMI1'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='2']='PPMI2'
 mytbl$imaging.protocol[ mytbl$imaging.protocol=='3']='ADNI'
 rownames(mytbl)=1:nrow(mytbl)
-mycap="Table 2. Baseline PPMI IDP cohort. AR=at-risk; MSA = multi-system atrophy; OtherGen = other genetic; RBD = REM Sleep Behavior Disorder."
+mycap="Table S1. Baseline PPMI IDP cohort. Pro=prodromal; MSA = multi-system atrophy; OtherGen = other genetic; RBD = REM Sleep Behavior Disorder."
 ####
 ```
 
 
-## Full cohort data table
-
-```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis'}
+```{r clusterCharARtbl,eval=TRUE,echo=FALSE,cache=FALSE,results='asis',warning=FALSE}
 sttblPD=ztable(mytable(joinedDX~.,data=mytbl),zebra=2)
 
 # Print the ztable object, ensuring it's treated as LaTeX code
-print(sttblPD, type = "latex",size=4,caption=mycap,sidewaystable=TRUE)
+print(sttblPD, type = "latex",size=3,caption=mycap,sidewaystable=TRUE)
 
 
 ```
 
+
+\LaTeX{
+\setcounter{table}{1}
+\renewcommand{\thetable}{S\arabic{table}}
+}
+
+
 \newpage
 
 
-## Simpler interaction plots
-
-
-Interaction plots, such as those generated by the **`interactions`** package, help visualize the relationship between two or more predictor variables in a regression model, highlighting how the effect of one variable (the "moderator") changes depending on the value of another (the "focal" variable). In the code provided, the `interact_plot()` function plots the interaction between **`yearsbl`** and another variable (represented by **`vars3[k]`**). These plots include confidence intervals to show the precision of the estimates.
-
-The first plot faceted by the moderator (**`facet.modx = TRUE`**) presents multiple small plots, each corresponding to a different level of the moderator variable, allowing the reader to examine the interaction within each subgroup separately. This is helpful when the effect of the predictor might differ substantially across levels of the moderator. The second plot, with **`facet.modx = FALSE`**, integrates the interaction in a single plot, showing how the interaction unfolds across the entire range of the moderator. The absence of plotted points and partial residuals ensures that the reader focuses solely on the fitted lines and their confidence intervals, making it easier to interpret the overall trend without distraction from individual data points or noise.
-
-A naive reader should interpret these interaction plots by comparing how the slope of **`yearsbl`** (the focal predictor) changes depending on different values of the moderator variable. A steeper or flatter slope in different facets (or sections of the integrated plot) suggests that the relationship between **`yearsbl`** and the outcome variable varies depending on the moderator, implying a significant interaction effect.
-
-```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=TRUE}
+```{r pkgs,echo=FALSE,eval=TRUE,message=FALSE,cache=FALSE,warning=FALSE}
 set.seed( 0 )
 library(plyr)
 library(ggplot2)
@@ -791,7 +800,7 @@ normalizersfmri = function( dd, applyit='none' ) {
 ```
 
 
-```{r quicknnh,echo=FALSE,eval=!exists("qdfsignnh"),fig.width=10,fig.height=5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
+```{r quicknnh,echo=FALSE,eval=TRUE,fig.width=10,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology.'}
 ########
 #########################################################
 maxy=2.25
@@ -945,13 +954,6 @@ for ( voi in c(52)  ) {
 #        for ( k in 1:length(vars3)) 
 #          print( jtools::effect_plot( resultsX$full_model,  !!sym(vars3[k]),  
 #                interval=T, facet.modx=T, plot.points = F, partial.residuals=FALSE ) + ggtitle(paste("X:",vars3[k])) + #theme(legend.position = "none")  )
-        for ( k in 1:length(vars3))  {
-          print( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' faceted '))  + theme(legend.position = "none") )
-          print( interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=FALSE , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' integrated '))  + theme(legend.position = "none") )
-        }
-#        print( resultsX$coefficients )
-#        print( mycoffs )
-#        cat("\newpage")
     }
   }
 }
@@ -961,7 +963,15 @@ for ( voi in c(52)  ) {
 
 \newpage
 
-## The full regression model for this example
+
+## Understanding interaction effect plots
+
+Interaction plots, such as those generated by the **`interactions`** package, help visualize the relationship between two or more predictor variables in a regression model, highlighting how the effect of one variable (the "moderator") changes depending on the value of another (the "focal" variable). In the manuscript, we employ the `interact_plot()` function to plot the interaction between **`yearsbl`** and a given IDP. These plots include confidence intervals to show the precision of the estimates.
+
+The first plot faceted by the moderator (**`facet.modx = TRUE`**) presents multiple small plots, each corresponding to a different level of the moderator variable, allowing the reader to examine the interaction within each subgroup separately. This is helpful when the effect of the predictor might differ substantially across levels of the moderator. The second plot, with **`facet.modx = FALSE`**, integrates the interaction in a single plot, showing how the interaction unfolds across the entire range of the moderator. The absence of plotted points and partial residuals ensures that the reader focuses solely on the fitted lines and their confidence intervals, making it easier to interpret the overall trend without distraction from individual data points or noise.
+
+The reader should interpret these interaction plots by comparing how the slope of **`yearsbl`** (the focal predictor) changes depending on different values of the moderator variable. A steeper or flatter slope in different facets (or sections of the integrated plot) suggests that the relationship between **`yearsbl`** and the outcome variable varies depending on the moderator, implying a significant interaction effect.  The example shown below focuses on just one of the SiMLR IDPs and how it relates to the MDS-UPDRS total score.  As in the main text, the "omnibus" effect is gained by using `anova` to comare a baseline model (no IDPs) to an extended model with IDPs.   The $p$-value for this example is `r insight::format_p(anova(bmdl,mdl)$Pr[2])` which indicates that the additional IDP variables improve the model fit significantly.  The coefficients for the base model are shown in Table S2.  The coefficients for the extended model are shown in Table S3.  Investigating the invididual $p$-values in the extendend model (Table S3) suggests that the asymmetry in the DTI-derived variables (dtaPC52) and the resting state connectivity variables (rsfPC52) are most responsible for this improvement.   Figure 1 illustrates this visually for dtaPC52 while Figure 2 shows rsfPC52.  The remainder of the effect plots in the main manuscript can be interpreted in the same or a similar manner.
+
 
 ```{r star,echo=FALSE,results='asis'}
 library( stargazer )
@@ -986,5 +996,58 @@ kable(itidy, format = "latex", booktabs = TRUE, digits = 3,
 # Display fixed effects using stargazer
 # stargazer(as.data.frame(itidy), type = "latex", summary = FALSE,
 #          title = "Fixed Effects from extended (base + IDP) Model", digits = 3)
+
+```
+
+
+
+```{r theplotsDTA,echo=FALSE,eval=TRUE,fig.width=8,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology: DTA. The effect plot for the interaction of dtaPC52 with time shows its influence of UPDRS total score.  The top plot shows the faceted version of the plot on the bottom.  I.e. the same information is in both plots.   We see that increased asymmetry in these dMRI-derived variables leads to increased change in the score over time.'}
+k=4
+gg0=interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' faceted '))  + theme(legend.position = "none")
+gg1=interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=FALSE , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' integrated '))  + theme(legend.position = "none")
+
+grid.arrange( grobs = list(gg0, gg1 ) )
+
+```
+
+
+
+
+```{r theplotsRSF,echo=FALSE,eval=TRUE,fig.width=8,fig.height=4.5,warning=FALSE,message=FALSE,fig.cap='SiMLR mapping between M3RI and PD symptomology: rsfMRI. The effect plot for the interaction of dtaPC52 with time shows its influence of UPDRS total score.  The top plot shows the faceted version of the plot on the bottom.  I.e. the same information is in both plots.   We see that increased connectivity in these rsfMRI-derived variables leads to increased change in the score over time.'}
+k=5
+gg0=interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=T , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' faceted '))  + theme(legend.position = "none")
+gg1=interactions::interact_plot( mdl,  'yearsbl', !!sym(vars3[k]), interval=T, facet.modx=FALSE , plot.points = F, partial.residuals=FALSE,linearity.check = FALSE ) + ggtitle(paste("L:",vars3[k], ' integrated '))  + theme(legend.position = "none")
+
+grid.arrange( grobs = list(gg0, gg1 ) )
+
+```
+
+
+
+
+## The full SiMLR feature sets for these predictors 
+
+
+We can also show -- here -- with this additional space the full feature sets associated with these SiMLR IDPs.  Figure 3 shows the asymmetry related features.  Figure 4 shows the resting state features.  A higher weight indicates a larger contribution to the final predictor value.  Note that weights are unsigned and therefore represent an average of these variables.  The maximum weight for each feature vector is 1 and we display only those features with individual weights greater than or equal to a given threshold.  The explicit `ANTsR` code for these displays is shown.
+
+
+```{r simlridpDTA,echo=FALSE,fig.width=10,fig.height=7,echo=TRUE}
+wmat=c("dta",52)
+v0=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=50 )
+v0=v0[v0>0.01]
+todisp=data.frame( feature=names(v0), weight=v0 )
+ggbarplot(todisp,'feature','weight') + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 80, hjust = 1))
+
+```
+
+
+```{r simlridpRSF,fig.width=18,fig.height=10,echo=FALSE}
+wmat=c("rsf",52)
+v1=interpret_simlr_vector2( presim[[wmat[1]]] , paste0('PC',wmat[2]), n2show=80 )
+v1=v1[v1>0.1]
+todisp=data.frame( feature=names(v1), weight=v1 )
+ggbarplot(todisp,'feature','weight') + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 80, hjust = 1))
 
 ```
