@@ -280,7 +280,7 @@ rgT1 = c( 5000, 2150, 950 )
 ########
 replaceOG=TRUE
 if ( file.exists( ppmitrimfn ) & ! exists("ppmitrim")  ) {
-  ppmitrim = read.csv(ppmitrimfn)
+  ppmitrim = readr::read_csv(ppmitrimfn)
   adjnames = getNamesFromDataframe( "_adjusted", ppmitrim )
   ognames = gsub("_adjusted", "", adjnames )
   if ( replaceOG ) {
