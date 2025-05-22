@@ -195,14 +195,16 @@ mask = antsImageRead("~/Downloads/PPMI_NM_template_crop_mask.nii.gz")
 
 
 ```{r match}
-if ( ! exists( "ppmi" ) ) {
-    ppmi = read.csv( "~/Downloads/ppmi_pym_data/ppmi_idps_trim_v1.4.0_SRF.csv")
+if ( ! exists( "ppmiOG" ) ) {
+    ppmiOG = readr::read_csv( "~/Downloads/ppmi_pym_data/ppmi_idps_trim_v1.4.0_SRF.csv")
 }
-ppmi2nm = match_indices( fns, ppmi )
+
+
+ppmi2nm = match_indices( fns, ppmiOG )
 zz=zz[!is.na(ppmi2nm)]
 nnz=nnz[!is.na(ppmi2nm)]
 ppmi2nm=na.omit(ppmi2nm)
-ppmiMatched=ppmi[ppmi2nm,]
+ppmiMatched=ppmiOG[ppmi2nm,]
 
 # now filter based on standard criteria: NM volume >= 200 & signal <= 2000
 volfilt=na2f( ppmiMatched$NM2DMT_NM_volume_substantianigra >= 200 )
@@ -282,6 +284,7 @@ lsel=ppmiMatchedScl$nmsnc<quantile(ppmiMatchedScl$nmsnc,0.995) & ( ppmiMatchedSc
 # lsel=ppmiMatchedScl$nmsnc<quantile(ppmiMatchedScl$nmsnc,0.85) & ( ppmiMatchedScl[,dxvar] %in% dxsel) &
 #    ppmiMatchedScl$mrimfg %in% c("Siemens","GE","Philips")
 myeq = as.formula(paste( 'nmsnc ~ (1|commonID)+(1|SITE)+nmrr + commonSex + age_BL + yearsbl + ', dxvar ))
+myeq = as.formula(paste( 'nmsnc ~ (1|commonID)+nmrr + commonSex + age_BL + yearsbl + ', dxvar ))
 ppmiMatchedScl=ppmiMatchedScl[lsel,]
 mdl = lmer( myeq, data=ppmiMatchedScl)
 mycoef = coefficients( summary( mdl ) )
@@ -298,7 +301,6 @@ rownames(coefmatA)=rownames(coefmatpvA)=rownames(mycoef)[gg]
 table( ppmiMatchedScl[,dxvar], ppmiMatchedScl$mrimfg )
 dookoo
 raneff = "~ (1 | commonID) + "
-raneff = "~ (1 | commonID) + (1 | SITE) + "
 nmcovars = paste( raneff,
         paste(getNamesFromDataframe("NM2DMT_NM_q0", ppmiMatched),collapse="+"), 
         " + brainVolume +  nmrr + NM2DMT_NM_substantianigra_z_coordinate + commonSex + age_BL + yearsbl + ")
